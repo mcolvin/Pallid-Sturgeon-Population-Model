@@ -1,3 +1,7 @@
+# ignore output folder
+output/
+archive/
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
