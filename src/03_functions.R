@@ -1,28 +1,113 @@
 # FUNCTIONS
 
-## HELPER
-
+## HELPERS
 sim_nxt_adults<- function(matured,sexRatio,prev,S,tmax)
-{# FUNCTION TO SIMULATE THE NEXT YEARS ABUNDANCE
-# GIVEN PREVIOUS ABUNDANCE, MATURATION, AND SURVIVAL
-  nxt<-rbinom(tmax,prev,S)
-  nxt<- nxt+round(matured*sexRatio,0)
-  return(c(0,nxt[-tmax]))  
-}
+	{
+	# FUNCTION TO SIMULATE THE NEXT YEARS ABUNDANCE
+	# GIVEN PREVIOUS ABUNDANCE, MATURATION, AND SURVIVAL
+	nxt<-rbinom(tmax,prev,S)
+	nxt<- nxt+round(matured*sexRatio,0)
+	return(c(0,nxt[-tmax]))  
+	}
 
-bundleReps<- function(appendTo,append,rep)
-{ # FUNCTION TO BUNDLE UP REPLICATE SIMUALTIONS 
-  app<-as.data.frame(append)
-  names(app)<- paste("yr",c(1:ncol(app)))
-  app$rep<-rep
-  out<- rbind(appendTo,app)
-  return(out)
-}
+bundleReps<- function(appendTo,appendDat,rep)
+	{ 
+	# FUNCTION TO BUNDLE UP REPLICATE SIMUALTIONS 
+	app<-as.data.frame(appendDat)
+	names(app)<- paste("yr",c(1:ncol(app)))
+	app$rep<-rep
+	out<- rbind(appendTo,app)
+	return(out)
+	}
 
 ## SERVER
-  
-  inits<- function(input=input)
+inits_ind<- function(input=input)
 	{#reactive({
+	# FUNCTION TO INITIALIZE AGE STRUCTURED MODEL INPUTS
+    S<- c(input$S1,input$S2,rep(input$S3plus, input$maxAge-2))
+	# INITIALIZE JUVENILES
+	out<- data.frame(origin=c(rep("h",input$juv_ini_h*1000), rep("n",input$juv_ini_n*1000)),stage="jv")
+	# ASSIGN SEX
+	out$sex<- sample(c('m','f'),nrow(out),replace=TRUE,prob=c(0.5,0.5))# assumes 50:50 for juveniles
+	# ASSIGN AGE
+	out$age<- sample(c(1:(input$ee-1)),nrow(out),replace=TRUE,prob=cumprod(S[1:(input$ee-1)]))
+	out$yr_since_spawn<- -1	
+
+	
+	# INITIALIZE ADULTS	
+	yyy<- data.frame(origin=c(rep("h",input$adults_ini_h*1000), rep("n",input$adults_ini_n*1000)),stage=NA,sex=NA)
+	# ASSIGN STAGE	
+	yyy$stage<- "ad" #sample(c("sp","r"),nrow(yyy),replace=TRUE,prob=c(0.20,0.8))
+	# ASSIGN SEX
+	yyy[yyy$origin=="h",]$sex<- sample(c('m','f'),input$adults_ini_h,replace=TRUE,prob=c(1-input$sr_h,input$sr_h))
+	yyy[yyy$origin=="n",]$sex<- sample(c('m','f'),input$adults_ini_n,replace=TRUE,prob=c(1-input$sr_n,input$sr_n))
+	# ASSIGN AGE
+	yyy$age<- sample(c(input$ee:input$maxAge),nrow(yyy),replace=TRUE,prob=cumprod(S[input$ee:input$maxAge]))
+	# ASSIGN YEARS SINCE SPAWNING
+	yyy$yr_since_spawn<- sample(c(0:4),nrow(yyy), replace=TRUE,prob=c(1,1,1,1,1))
+	
+	out<- rbind(out, yyy)
+	out$fl<-input$Linf*(1-exp(-input$K*(out$age-input$t0)))#*rnorm(nrow(out),1, 0.1)
+    return(out)
+    }#})
+  
+
+xx_ind<- function(input=input)
+	{
+	# SURVIVAL FUNCTION
+	surv_fun<- approxfun(c(1:input$maxAge),c(input$S1,input$S2,rep(input$S3plus, input$maxAge-2)))
+	# MATURITY FUNCTION
+	x<-c(0,input$aa, input$bb,input$cc,input$dd,input$ee,input$maxAge)
+	y<-c(0,0,        0.25,    0.5,   0.75,   1,    1)
+	mat_fun<- approxfun(x,y)
+	
+	
+	
+	# t=0
+	pop<- inits_ind(input)	
+	pop$p<- surv_fun(pop$age)
+	pop$surv<- rbinom(nrow(pop),1,pop$p)
+	# POPULATION SUMMARY
+	xx<-as.data.frame(table(pop$origin,pop$yr_since_spawn))
+	xx$year<- 0
+
+	
+	for(i in 1:input$nyears)
+		{
+		# t+1
+		pop<- subset(pop,surv==1 & age<input$maxAge)
+		# RECRUITMENT
+		eggs<- round(sum(input$a_fec+pop[pop$yr_since_spawn==0 & pop$sex=='f',]$fl+input$b_fec),0)
+		embryos<- rbinom(1,eggs,input$viableGam)
+		age1<- rbinom(1,embryos,input$S0) 
+		
+		# UPDATE AGE
+		pop$age<- pop$age+1
+		# UPDATE YEARS SINCE SPAWNING
+		pop[pop$yr_since_spawn>0,]$yr_since_spawn<- pop[pop$yr_since_spawn>0,]$yr_since_spawn+1
+
+		# UPDATE STAGE
+		## JUVENILES BECOMING ADULTS THAT WILL SPAWN NEXT YEAR
+		pop$tmp<- rbinom(nrow(pop),1,mat_fun(pop$age))
+		pop[pop$yr_since_spawn== -1 & pop$tmp==1,]$yr_since_spawn<- 0
+			
+		# WHICH FISH WILL SURVIVE TO NEXT YEAR?
+		pop$p<- surv_fun(pop$age)
+		pop$surv<- rbinom(nrow(pop),1,pop$p)	
+	
+		return(out)    
+		}
+  
+
+
+
+
+
+
+  
+inits<- function(input=input)
+	{#reactive({
+	# FUNCTION TO INITIALIZE AGE STRUCTURED MODEL INPUTS
     S<- c(input$S1,input$S2,rep(input$S3plus, input$maxAge-2))
 	stages<- rbind(expand.grid(stage="jv",
 				origin = c("n","h"),
@@ -52,7 +137,7 @@ bundleReps<- function(appendTo,append,rep)
 		stages$origin=="n"&stages$sex=='m',]$ini<- rmultinom(1,adult_ini_n_m,c(1,1,1,1,1))
 	
 	## INITIALIZE JUVENILES WITH AGE STRUCTURE
-    max_juv<- 9
+    max_juv<- input$ee-1 # maximum juvenile age
     S_juv<- S
     S_juv[(max_juv+1):input$maxAge]<-0
     S_juv<- cumprod(S_juv)
@@ -67,17 +152,17 @@ bundleReps<- function(appendTo,append,rep)
 	ini$age<- c(1:input$maxAge)
 
     ## ASSIGN NUMBERS OF FISH FOR EACH STAGE TO AGE
+	out<- list(survivals=data.frame(age=c(0:input$maxAge),
+		survival=c(input$S0,S),
+		S_ad=c(0,S_ad)),
+		stages=stages)
 	for(i in 1:nrow(stages))
 		{
 		if(stages$stage[i]=="jv"){SS<-S_juv} else {SS<-S_ad}
-		indx<-match(stages$name[i],names(out))
+		indx<-match(stages$name[i],names(ini))
 		ini[,indx]<-rmultinom(1,(stages$ini[i]*1000),SS)
 		}
-    out<- list(survivals=data.frame(age=c(0:input$maxAge),
-					survival=c(input$S0,S),
-					S_ad=c(0,S_ad)),
-               inits=data.frame(ini),
-			   stages=stages)
+	out$inits<- data.frame(ini)
     return(out)
     }#})
 
@@ -96,12 +181,11 @@ xx<- function(input=input)
 	#out<- data.frame()
 	#j_n_out<-j_h_out<-a_h_m_out<-a_h_f_out<-a_n_f_out<-a_n_m_out<-data.frame()
 	maxAge<- input$maxAge
-		Linf=1683
-		K=0.036
-		t0=-5.9
+		Linf=input$Linf # 1683
+		K=input$K #0.036
+		t0=input$t0# -5.9
 		#sigma=93.77
-		FL<-Linf*(1-exp(-K*(c(1:maxAge)-t0)))
-
+		FL<-input$Linf*(1-exp(-input$K*(c(1:input$maxAge)-input$t0)))
 	mat_dat<- maturity(input)
 	yy<-inits(input)
 	stages<- yy$stages
@@ -120,13 +204,10 @@ xx<- function(input=input)
 			colindx<- match(stages$name[i],names(dat))
 			x[[stages$name[i]]][,1]<- dat[,colindx]
 			}
-# done to here
-# need to sim current to nxt
-
 		# SIMULATE POPULATION DYNAMICS
 		for(i in 2:input$nyears)
 			{
-			
+			eggs<- sum((dat$sp_n_f+dat$sp_h_f)*(input$a_fec*(input$Linf*(1-exp(-input$K*(c(1:input$maxAge)-input$t0))))^input$b_fec))
 			# AGE-0
 			## EMBRYOS
 			embryos<-sum()

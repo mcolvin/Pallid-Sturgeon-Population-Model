@@ -4,14 +4,20 @@ input<- list(
 	S0=0.051, 			# [0,0.3] Survival age-0 
 	S1=0.6, 			# [0.2,1] Survival age-1
 	S2=0.8, 			# [0.8,1] Survival age-2               
-	S3plus=0.92, 		# [0.8, 1] Survival age-3+    
+	S3plus=0.92, 		# [0.8, 1] Survival age-3+  
+	viableGam = 0.00000001,	# PROBABILITY OF PRODUCING VIABLE GAMETES
 
 	# MATURITY FUNCTION
 	aa=5, 				# [0,30] Minimum age of sexual maturity
 	bb=6, 				# [0,30] Age at 25% maturity           
 	cc=7, 				# [0,30] Age at 50% maturity
-	dd=7,				# [0,30] Age at 75% maturity"
+	dd=8,				# [0,30] Age at 75% maturity"
 	ee=9,				# [0,30] maximum juvenile age"
+  
+	# GROWTH
+	Linf = 1683,
+	K =0.036,
+	t0=-5.9,
   
 	# INITIAL STATE VALUES
 	sr_n=0.33,			# [0,1] Sex ratio natural origin fish 
@@ -22,8 +28,8 @@ input<- list(
 	adults_ini_h=50,	# [0,100] Hatchery origin Juvenile (>age-2) fish
 
 	# FECUNDITY
-	a_fec=3.48, 		# [1,4] Intercept  
-	b_fec=4.05, 		# [3.9,4.1] Scale
+	a_fec= –43 678, 	# from S1001  
+	b_fec=72.70, 		# from S1001 
 
 	# VIABILITY ANALYSIS INPUTS
 	fe_stock=0, 		# [0,1000000] Free embryos stocked
