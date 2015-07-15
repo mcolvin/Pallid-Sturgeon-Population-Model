@@ -5,7 +5,7 @@ input<- list(
 	S1=0.6, 			# [0.2,1] Survival age-1
 	S2=0.8, 			# [0.8,1] Survival age-2               
 	S3plus=0.92, 		# [0.8, 1] Survival age-3+  
-	viableGam = 0.00000001,	# PROBABILITY OF PRODUCING VIABLE GAMETES
+	viableGam = 0.0001,	# PROBABILITY OF PRODUCING VIABLE GAMETES
 
 	# MATURITY FUNCTION
 	aa=5, 				# [0,30] Minimum age of sexual maturity
@@ -28,9 +28,16 @@ input<- list(
 	adults_ini_h=50,	# [0,100] Hatchery origin Juvenile (>age-2) fish
 
 	# FECUNDITY
-	a_fec= –43 678, 	# from S1001  
+	a_fec= -43.678, 	# from S1001  
 	b_fec=72.70, 		# from S1001 
 
+	# SPAWING FREQUENCY
+	aaa = 0,			# 0 years since spawning
+	bbb = 0.25,			# 1 years since spawning
+	ccc = 0.50,			# 2 years since spawning
+	ddd = 0.75,			# 3 years since spawning
+	eee = 1, 			# 4 years since spawning
+	
 	# VIABILITY ANALYSIS INPUTS
 	fe_stock=0, 		# [0,1000000] Free embryos stocked
 	efl_stock=0, 		# [0,1000000] Exo. feeding larvae stocked
@@ -38,84 +45,9 @@ input<- list(
 	nreps=5,			# [1,100] Number of replicates"
 	nyears=50) 			# [20,100] Years to simulate
 	
-	
-	out<- xx(input=input) 	
-maturity		
-		
-		
-
-	
+	output<-xx_ind(input)
 	
 
-
-
-	
-# [1] LOAD VALUES
-
-## [1.1] GENERAL MODEL VALUES
-nyears=100
-mdn<-c(2895,0)# age-0 and age-1
-sims<- simulate(nyears=100,nreps=500,stocked=mdn, sensi="uncertainty") # evaluate uncertainty
-out<- sims$outp
-out$total<- out$jn+out$jh+out$an+out$ah
-figures(1)
-savePlot("./median_total_population_dynamics.wmf",type="wmf")
-savePlot("./median_total_population_dynamics.jpg",type="jpg")
-
-
-
-
-# WHAT LEVEL OF S0 IS NEEDED TO GET A LAMBDA > 1
-
-combos<- expand.grid(S_egg_embryo=seq(0.00001,0.0001, 0.00001), S0=seq(0,0.3,0.01))
-combos$prop_lam1<- 0
-k=nrow(combos)
-for (k in 1:nrow(combos))
-	{
-	sims<- simulate(nyears=100,
-		nreps=100,
-		stocked = c(0,0),
-		# ABUDNANCE
-		N_juv_Natural=c(0,500,1000),
-		N_adult_Natural=c(3750,4000,4250),
-		N_juv_Hatchery=c(18000,21500,25000),
-		N_adult_Hatchery=c(12500,14500,16750),
-		# RATES
-		sex_ratio=c(0.33*0.8,0.33,0.33*1.2),
-		S0=rep(combos[k,2],3),
-		S_egg_embryo=rep(combos[k,1],3),
-		S1=c(0.60,0.686,0.75),
-		S2=c(0.9,0.922,0.95),
-		stoch_in=FALSE)
-	out<- sims$outp
-	sims$parms
-	out$total<- out$jn+out$jh+out$an+out$ah
-	figures(1)
-	lambda<-dcast(out,year~rep,value.var="total",mean)[,-1]
-	vals<-(lambda[-1,]+1)/(lambda[-nrow(lambda),]+1)
-	# CALCUALTE STOCHASTIC LAMBDA
-	mn_lambda=apply(vals,2,function(x) exp(mean(log(x))))
-
-	S0_lambda<- sims$parms[sims$parms$parm =="S: age-0 to age-1",]
-	S0_lambda<- S0_lambda[order(S0_lambda$rep),]
-	S0_lambda$lambda<- mn_lambda
-	S0_lambda$bin<- ifelse(S0_lambda$lambda>=1,1,0)
-
-	combos[k,3]<- mean(S0_lambda$bin) # proportion of reps with lambda >=1
-	print(k)
-	}
-	
-write.csv(combos,"./output/lower_lambda1.csv")
-
-
-
-
-
-
-
-
-
-levelplot(prop_lam1~ S_egg_embryo*S0,combos)
 
 
 plot(lambda~vals,S0_lambda,subset=lambda<1,ylim=c(0.9,1.2))
