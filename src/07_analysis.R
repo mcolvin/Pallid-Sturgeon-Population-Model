@@ -22,10 +22,10 @@ input<- list(
 	# INITIAL STATE VALUES
 	sr_n=0.33,			# [0,1] Sex ratio natural origin fish 
 	sr_h=0.5, 			# [0,1] Sex ratio hatchery origin fish 
-	juv_ini_n=50,		# [0,100] Natural origin Juvenile (age 1-age -2) fish 
-	juv_ini_h=50,		# [0,100] Hatchery origin Juvenile (age 1-age -2) fish 
-	adults_ini_n=50,	# [0,100] Natural origin adult  (>age-2) fish
-	adults_ini_h=50,	# [0,100] Hatchery origin Juvenile (>age-2) fish
+	juv_ini_n=2000,		# [0,100] Natural origin Juvenile (age 1-age -2) fish 
+	juv_ini_h=50000,		# [0,100] Hatchery origin Juvenile (age 1-age -2) fish 
+	adults_ini_n=500,	# [0,100] Natural origin adult  (>age-2) fish
+	adults_ini_h=20000,	# [0,100] Hatchery origin Juvenile (>age-2) fish
 
 	# FECUNDITY
 	a_fec= -43.678, 	# from S1001  
@@ -39,13 +39,32 @@ input<- list(
 	eee = 1, 			# 4 years since spawning
 	
 	# VIABILITY ANALYSIS INPUTS
-	fe_stock=0, 		# [0,1000000] Free embryos stocked
-	efl_stock=0, 		# [0,1000000] Exo. feeding larvae stocked
-	juv_stock=0, 		# [0,100000]
+	#fe_stock=0, 		# [0,1000000] Free embryos stocked
+	#efl_stock=0, 		# [0,1000000] Exo. feeding larvae stocked
+	#juv_stock=0, 		# [0,100000]
+	age0_stock = 10000,	# NUMBER OF AGE-0 FISH STOCKED
+	age1_stock = 0,		# NUMBER OF AGE-1 FISH STOCKED
 	nreps=5,			# [1,100] Number of replicates"
-	nyears=50) 			# [20,100] Years to simulate
+	nyears=50, 			# [20,100] Years to simulate
 	
-	output<-xx_ind(input)
+	spawn_frequency=2)
+	
+	input$nreps<-2
+	output<-xx_ind(input=input)
+	
+	# RESHAPE OUTPUT FROM WIDE TO LONG
+	tmp<- reshape(output,
+		varying = names(output) [4:9],
+		v.names = "count",
+		timevar= "stage",
+		times =  names(output) [4:9],
+		direction = "long")
+	# SUMMARIZE OUTPUT
+	dcast(
+	
+	
+	
+	
 	
 
 

@@ -1,6 +1,8 @@
 # ignore output folder
 output/
 archive/
+*.docx
+*.zip
 
 # Windows image file caches
 Thumbs.db

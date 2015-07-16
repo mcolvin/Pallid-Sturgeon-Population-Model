@@ -1,0 +1,15 @@
+<NotepadPlus>
+    <Session activeView="0">
+        <mainView activeIndex="7">
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="223" startPos="0" endPos="0" selMode="0" lang="R" encoding="-1" filename="C:\Users\mcolvin\Documents\projects\Pallid Sturgeon\Analysis\Pallid-Sturgeon-Population-Model\src\01_global.R" backupFilePath="" originalFileLastModifTimestamp="1436903926" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1" startPos="0" endPos="0" selMode="0" lang="R" encoding="-1" filename="C:\Users\mcolvin\Documents\projects\Pallid Sturgeon\Analysis\Pallid-Sturgeon-Population-Model\src\02_load.R" backupFilePath="" originalFileLastModifTimestamp="1435805198" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1713" startPos="0" endPos="0" selMode="0" lang="R" encoding="-1" filename="C:\Users\mcolvin\Documents\projects\Pallid Sturgeon\Analysis\Pallid-Sturgeon-Population-Model\src\03_functions.R" backupFilePath="" originalFileLastModifTimestamp="1436903936" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="923" startPos="0" endPos="0" selMode="0" lang="R" encoding="-1" filename="C:\Users\mcolvin\Documents\projects\Pallid Sturgeon\Analysis\Pallid-Sturgeon-Population-Model\src\04_tables.R" backupFilePath="" originalFileLastModifTimestamp="1435772464" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1284" startPos="0" endPos="0" selMode="0" lang="R" encoding="-1" filename="C:\Users\mcolvin\Documents\projects\Pallid Sturgeon\Analysis\Pallid-Sturgeon-Population-Model\src\05_figures.R" backupFilePath="" originalFileLastModifTimestamp="1435773033" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1" startPos="0" endPos="0" selMode="0" lang="R" encoding="-1" filename="C:\Users\mcolvin\Documents\projects\Pallid Sturgeon\Analysis\Pallid-Sturgeon-Population-Model\src\06_run.R" backupFilePath="" originalFileLastModifTimestamp="1409779255" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1" startPos="0" endPos="0" selMode="0" lang="R" encoding="-1" filename="C:\Users\mcolvin\Documents\projects\Pallid Sturgeon\Analysis\Pallid-Sturgeon-Population-Model\src\07_analysis.R" backupFilePath="" originalFileLastModifTimestamp="1436904343" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1042" startPos="0" endPos="0" selMode="0" lang="R" encoding="-1" filename="C:\Users\mcolvin\Documents\projects\Pallid Sturgeon\Analysis\Pallid-Sturgeon-Population-Model\src\08_main.R" backupFilePath="" originalFileLastModifTimestamp="1425966356" />
+        </mainView>
+        <subView activeIndex="0" />
+    </Session>
+</NotepadPlus>
