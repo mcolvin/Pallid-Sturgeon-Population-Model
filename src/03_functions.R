@@ -90,8 +90,7 @@ xx_ind<- function(input=input)
 			
 		# RECRUIT AGE-0 FISH TO THE POPULATION
 		pop<- rbind(pop, recruits)
-		pop<- subset(pop, yr_since_spawn>=-1)# to remove sham row prior to summary
-
+		pop<- subset(pop, yr_since_spawn>=-1)# to remove sham row prior to summary		
 		
 		# POPULATION LEVEL SUMMARY
 		app<-dcast(pop, age+origin+sex~yr_since_spawn, value.var='fl',length,subset=.(age<38))
@@ -151,17 +150,42 @@ xx_ind<- function(input=input)
 			
 			# RECRUIT AGE-0 FISH TO THE POPULATION
 			pop<- rbind(pop, recruits)	
-			pop<- subset(pop, yr_since_spawn>=-1)# to remove sham row prior to summary
-		
-		
+			
+			
+			# HATCHERY STOCKING
+			stocked<- data.frame(origin='h',sex=NA,age=0,yr_since_spawn=-100,fl=NA,p=0,surv=0,tmp=0)
+			if(sum(input$age0_stock,input$age1_stock,input$age2_stock+
+				input$age3_stock,input$age4_stock,
+				input$age5_stock,input$age6_stock,
+				input$age7_stock)>0){
+				stocked<- rbind(stocked,
+						data.frame(origin='h',sex=NA,age=c(rep(0,input$age0_stock),rep(1,input$age1_stock),
+						rep(2,input$age2_stock),rep(3,input$age3_stock),rep(4,input$age4_stock),
+						rep(5,input$age5_stock),rep(6,input$age6_stock),rep(6,input$age7_stock)),
+					yr_since_spawn=-1,fl=NA,p=1,surv=1,tmp=0))
+				stocked$sex<- sample(c('m','f'),nrow(stocked),replace=TRUE,prob=c(0.5,0.5))
+				stocked$fl<- input$Linf*(1-exp(-input$K*(stocked$age-input$t0)))#*rnorm(nrow(out),1, 0.1)
+				}
+			pop<- rbind(pop, stocked)		
+
+			
 			# SUMMARY
-			app<-dcast(pop, age+origin+sex~yr_since_spawn, value.var='fl',length,subset=.(age<38))
-			app<-merge(expand.grid(age=c(0:input$maxAge),origin=c("n",'h'),sex=c('f','m')),app,
-				by=c('age','origin','sex'),all.x=TRUE)	
-			app[is.na(app)]<-0
-			app$year<- i
-			app$r<- j
-			xx<- rbind.fill(xx,app)
+			pop<- subset(pop, yr_since_spawn>=-1)# to remove sham row prior to summary
+			if(nrow(pop)>0){
+				app<-dcast(pop, age+origin+sex~yr_since_spawn, value.var='fl',length)
+				app<-merge(expand.grid(age=c(0:input$maxAge),origin=c("n",'h'),sex=c('f','m')),app,
+					by=c('age','origin','sex'),all.x=TRUE)	
+				app[is.na(app)]<-0
+				app$year<- i
+				app$r<- j
+				}else {
+				app<- expand.grid(age=c(0:input$maxAge),
+					origin=c("h","n"),
+					sex=c("f","m"),    
+					"-1" =0,"0" =0,"1" =0,"2"=0,"3" =0,"4" =0, 
+					year=i,r=j)
+				}
+			xx<- rbind.fill(xx,app)			
 			} # END I
 		}# END J
 	xx[is.na(xx)]<-0
@@ -170,10 +194,7 @@ xx_ind<- function(input=input)
 	
 	
 	
-	
-	
-	
-	
+
 	
 	
 	
