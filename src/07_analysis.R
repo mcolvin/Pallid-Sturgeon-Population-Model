@@ -63,28 +63,32 @@ input<- list(
 	
 	spawn_frequency=1)
 	
-	# CHANGE VARIABLES
-	input$nreps<-2
-	input$nyears<- 100
-	age0_stock<- c(1000,2000,3000)
+	# CHANGE VARIABLES FOR ANALYSIS
+	scenarios<- expand.grid(spawn_frequency=c(1,2,5,10),
+		S0=c(0.001,0.0001,0.001),
+		age0_stock=c(1000,2000,3000))
 	yyy<- data.frame()
-	for(i in 1:3)
+	for(i in 1:nrow(scenarios))
 		{
-		input$age0_stock<- age0_stock[i]
+		input$age0_stock<- scenarios$age0_stock[i]
+		input$spawn_frequency<-scenarios$spawn_frequency[i]
+		input$S0<-scenarios$S0[i]
 		output<-xx_ind(input=input)
 		output$scenario<-i
-		yyy<- rbind(yyy,output)
+		yyy<- rbind.fill(yyy,output)
 		}
+		
 	# RESHAPE OUTPUT FROM WIDE TO LONG
+	vv<- names(yyy)[-match(c("origin","sex","year","r","scenario"),names(yyy))]
 	tmp<- reshape(yyy,
-		varying = names(yyy) [4:9],
+		varying = vv,
 		v.names = "count",
 		timevar= "stage",
-		times =  names(yyy) [4:9],
+		times =  vv,
 		direction = "long")
 	
 	# SUMMARY OUTPUT TOTAL POPULATION
-	total_pop<-dcast(tmp,year+r+scenario~origin, value.var="count",sum,subset=.(age>0))
+	total_pop<-dcast(tmp,year+r+scenario~origin, value.var="count",sum)
 	total_pop$total<- total_pop$n+total_pop$h
 	plot(total~year,total_pop,type='n')
 	for(j in 1:max(total_pop$scenario))

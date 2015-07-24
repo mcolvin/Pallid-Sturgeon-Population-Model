@@ -110,9 +110,9 @@ xx_ind<- function(input=input)
 		pop<- subset(pop, yr_since_spawn>=-1)# to remove sham row prior to summary		
 		
 		# POPULATION LEVEL SUMMARY
-		app<-dcast(pop, age+origin+sex~yr_since_spawn, value.var='fl',length,subset=.(age<38))
-		app<-merge(expand.grid(age=c(0:input$maxAge),origin=c("n",'h'),sex=c('f','m')),app,
-			by=c('age','origin','sex'),all.x=TRUE)	
+		app<-dcast(pop, origin+sex~yr_since_spawn, value.var='fl',length,subset=.(age<38))
+		app<-merge(expand.grid(origin=c("n",'h'),sex=c('f','m')),app,
+			by=c('origin','sex'),all.x=TRUE)	
 		app[is.na(app)]<-0
 		app$year<- 0
 		app$r<- j
@@ -150,6 +150,8 @@ xx_ind<- function(input=input)
 			## ADULTS BECOMING SEXUALLY MATURE AND WILL SPAWN NEXT YEAR
 			
 			pop$tmp<- rbinom(nrow(pop),1,sp_fun(yr=pop$yr_since_spawn-1, mid=input$sp_mid, high=input$sp_high))
+			if(nrow(pop[pop$yr_since_spawn> 4,]))
+				{pop[pop$yr_since_spawn> 4,]$tmp<- 1}
 			if(nrow(pop[pop$yr_since_spawn>0 & pop$tmp==1,])){pop[pop$yr_since_spawn>0 & pop$tmp==1,]$yr_since_spawn<- 0	}
 
 			# UPDATE SURVIVAL FOR FISH GREATER OR EQUAL TO AGE 1
@@ -173,6 +175,9 @@ xx_ind<- function(input=input)
 			
 			
 			# HATCHERY STOCKING
+			# ASSUMES FISH ARE STOCKED AT THE END OF THE YEAR
+			# AND ARE NOT SUBJECT TO SURVIVAL
+			# BUT SURVIVAL COULD BE MODIFIED HERE...surv=1 line 189
 			stocked<- data.frame(origin='h',sex=NA,age=0,yr_since_spawn=-100,fl=NA,p=0,surv=0,tmp=0)
 			if(sum(input$age0_stock,input$age1_stock,input$age2_stock+
 				input$age3_stock,input$age4_stock,
@@ -192,20 +197,21 @@ xx_ind<- function(input=input)
 			# SUMMARY
 			pop<- subset(pop, yr_since_spawn>=-1)# to remove sham row prior to summary
 			if(nrow(pop)>0){
-				app<-dcast(pop, age+origin+sex~yr_since_spawn, value.var='fl',length)
-				app<-merge(expand.grid(age=c(0:input$maxAge),origin=c("n",'h'),sex=c('f','m')),app,
-					by=c('age','origin','sex'),all.x=TRUE)	
+				app<-dcast(pop, origin+sex~yr_since_spawn, value.var='fl',length)
+				app<-merge(expand.grid(origin=c("n",'h'),sex=c('f','m')),app,
+					by=c('origin','sex'),all.x=TRUE)	
 				app[is.na(app)]<-0
 				app$year<- i
 				app$r<- j
 				}else {# error handling when population crashes
-				app<- expand.grid(age=c(0:input$maxAge),
-					origin=c("h","n"),
+				app<- expand.grid(origin=c("h","n"),
 					sex=c("f","m"),    
 					"-1" =0,"0" =0,"1" =0,"2"=0,"3" =0,"4" =0,"5"=0, 
 					year=i,r=j)
 				}
-			xx<- rbind.fill(xx,app)			
+
+			xx<- rbind.fill(xx,app)		
+		
 			} # END I
 		}# END J
 	xx[is.na(xx)]<-0
