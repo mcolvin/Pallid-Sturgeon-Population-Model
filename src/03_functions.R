@@ -1,3 +1,20 @@
+## GLOBAL
+# MATURITY FUNCTION JUVENILES TO ADULTS
+mat_fun<- function(age, mid=5, high=9)
+	{
+	k= log(99)/(high-mid)# solve for K given mid point and age at 99% 
+	p<- 1/(1+exp(-k*(age-mid)))
+	return(p)
+	}
+# MATURITY FUNCTION RECRUDESCENT ADULTS TO SPAWNING ADULTS
+sp_fun<-function(yr, mid=2, high=4)
+	{
+	k= log(99)/(high-mid)# solve for K given mid point and age at 99% 
+	p<- 1/(1+exp(-k*(yr-mid)))
+	return(p)
+	}
+
+
 
 
 
@@ -17,7 +34,7 @@ inits_ind<- function(input=input)
 	## ASSIGN SEX
 	out$sex<- sample(c('m','f'),nrow(out),replace=TRUE,prob=c(0.5,0.5))# assumes 50:50 for juveniles
 	## ASSIGN AGE
-	out$age<- sample(c(1:(input$ee-1)),nrow(out),replace=TRUE,prob=cumprod(S[1:(input$ee-1)]))
+	out$age<- sample(c(1:(input$mat_high-1)),nrow(out),replace=TRUE,prob=cumprod(S[1:(input$mat_high-1)]))
 	## ASSIGN FORK LENGTH
 	out$fl<- input$Linf*(1-exp(-input$K*(out$age-input$t0)))#*rnorm(nrow(out),1, 0.1)
 	## ASSIGN YEARS SINCE SPAWNING
@@ -51,12 +68,12 @@ xx_ind<- function(input=input)
 	# SURVIVAL FUNCTION
 	surv_fun<- approxfun(c(0:input$maxAge),c(input$S0,input$S1,input$S2,rep(input$S3plus, input$maxAge-2)))
 	# MATURITY FUNCTION
-	x<-c(0,input$aa, input$bb,input$cc,input$dd,input$ee,input$maxAge)
-	y<-c(0,0,        0.25,    0.5,   0.75,   1,    1)
-	mat_fun<- approxfun(x,y)
-	sp_fun<- approxfun(c(0,1,2,3,4),c(input$aaa,input$bbb,input$ccc,input$ddd,input$eee),rule=2)
+	#x<-c(0,input$aa, input$bb,input$cc,input$dd,input$ee,input$maxAge)
+	#y<-c(0,0,        0.25,    0.5,   0.75,   1,    1)
+	#mat_fun<- approxfun(x,y)
+	#sp_fun<- approxfun(c(0,1,2,3,4),c(input$aaa,input$bbb,input$ccc,input$ddd,input$eee),rule=2)
 	
-	xx<- data.frame()
+	xx<- data.frame() #SET UP DATAFRAME TO HOLD RESULTS
 	
 	for(j in 1:input$nreps)
 		{
@@ -125,11 +142,14 @@ xx_ind<- function(input=input)
 			# UPDATE YEARS SINCE SPAWNING
 			pop[pop$yr_since_spawn>=0,]$yr_since_spawn<- pop[pop$yr_since_spawn>=0,]$yr_since_spawn+1
 			
+						
 			## JUVENILES BECOMING ADULTS THAT WILL SPAWN NEXT YEAR
-			pop$tmp<- rbinom(nrow(pop),1,mat_fun(pop$age))
-			if(nrow(pop[pop$yr_since_spawn== -1 & pop$tmp==1,])){pop[pop$yr_since_spawn== -1 & pop$tmp==1,]$yr_since_spawn<- 0}
+			pop$tmp<- rbinom(nrow(pop),1,mat_fun(age=pop$age,mid=input$mat_mid, high=input$mat_high))
+			if(nrow(pop[pop$yr_since_spawn== -1 & pop$tmp==1,]))
+				{pop[pop$yr_since_spawn== -1 & pop$tmp==1,]$yr_since_spawn<- 0}
 			## ADULTS BECOMING SEXUALLY MATURE AND WILL SPAWN NEXT YEAR
-			pop$tmp<- rbinom(nrow(pop),1,sp_fun(pop$yr_since_spawn-1))
+			
+			pop$tmp<- rbinom(nrow(pop),1,sp_fun(yr=pop$yr_since_spawn-1, mid=input$sp_mid, high=input$sp_high))
 			if(nrow(pop[pop$yr_since_spawn>0 & pop$tmp==1,])){pop[pop$yr_since_spawn>0 & pop$tmp==1,]$yr_since_spawn<- 0	}
 
 			# UPDATE SURVIVAL FOR FISH GREATER OR EQUAL TO AGE 1
@@ -178,11 +198,11 @@ xx_ind<- function(input=input)
 				app[is.na(app)]<-0
 				app$year<- i
 				app$r<- j
-				}else {
+				}else {# error handling when population crashes
 				app<- expand.grid(age=c(0:input$maxAge),
 					origin=c("h","n"),
 					sex=c("f","m"),    
-					"-1" =0,"0" =0,"1" =0,"2"=0,"3" =0,"4" =0, 
+					"-1" =0,"0" =0,"1" =0,"2"=0,"3" =0,"4" =0,"5"=0, 
 					year=i,r=j)
 				}
 			xx<- rbind.fill(xx,app)			

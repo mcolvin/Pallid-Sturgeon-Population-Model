@@ -1,18 +1,24 @@
 input<- list(
 	# POPULATION DEMOGRAPHIC RATES
 	maxAge=41, 			# [0,90] Maximum age
-	S0=0.0001, 			# [0,0.3] Survival age-0 0.051
+	S0=0.0001, 			# [0,0.3] Survival age-0 0.051; 0.0001 IS THE SAME AS STEFFENSEN'S ANALYSIS
 	S1=0.6, 			# [0.2,1] Survival age-1
 	S2=0.8, 			# [0.8,1] Survival age-2               
 	S3plus=0.92, 		# [0.8, 1] Survival age-3+  
-	viableGam = 0.0001,	# PROBABILITY OF PRODUCING VIABLE GAMETES
+	viableGam = 0.01,	# PROBABILITY OF PRODUCING VIABLE GAMETES GAMETES TO DEVELOPING EMBRYOS
 
 	# MATURITY FUNCTION
-	aa=5, 				# [0,30] Minimum age of sexual maturity
-	bb=6, 				# [0,30] Age at 25% maturity           
-	cc=7, 				# [0,30] Age at 50% maturity
-	dd=8,				# [0,30] Age at 75% maturity"
-	ee=9,				# [0,30] maximum juvenile age"
+	#aa=5, 				# [0,30] Minimum age of sexual maturity
+	#bb=6, 				# [0,30] Age at 25% maturity           
+	#cc=7, 				# [0,30] Age at 50% maturity
+	#dd=8,				# [0,30] Age at 75% maturity"
+	#ee=9,				# [0,30] maximum juvenile age"
+	
+	mat_mid=5,				# AGE AT 50% SEXUALLY MATURE
+	mat_high=9, 			# AGE AT 99% SEXUALLY MATURE
+
+	sp_mid=2,				# AGE AT 50% SEXUALLY MATURE
+	sp_high=4, 			# AGE AT 99% SEXUALLY MATURE	
   
 	# GROWTH
 	Linf = 1683,
@@ -53,33 +59,66 @@ input<- list(
 
 	
 	nreps=5,			# [1,100] Number of replicates"
-	nyears=50, 			# [20,100] Years to simulate
+	nyears=100,			# [20,100] Years to simulate
 	
 	spawn_frequency=1)
 	
+	# CHANGE VARIABLES
 	input$nreps<-2
-	input$age0_stock<- 1000
 	input$nyears<- 100
-	
-	output<-xx_ind(input=input)
-	
+	age0_stock<- c(1000,2000,3000)
+	yyy<- data.frame()
+	for(i in 1:3)
+		{
+		input$age0_stock<- age0_stock[i]
+		output<-xx_ind(input=input)
+		output$scenario<-i
+		yyy<- rbind(yyy,output)
+		}
 	# RESHAPE OUTPUT FROM WIDE TO LONG
-	tmp<- reshape(output,
-		varying = names(output) [4:9],
+	tmp<- reshape(yyy,
+		varying = names(yyy) [4:9],
 		v.names = "count",
 		timevar= "stage",
-		times =  names(output) [4:9],
+		times =  names(yyy) [4:9],
 		direction = "long")
 	
 	# SUMMARY OUTPUT TOTAL POPULATION
-	total_pop<-dcast(tmp,year+r~origin, value.var="count",sum,subset=.(age>0))
+	total_pop<-dcast(tmp,year+r+scenario~origin, value.var="count",sum,subset=.(age>0))
 	total_pop$total<- total_pop$n+total_pop$h
 	plot(total~year,total_pop,type='n')
-	for(i in 1:max(total_pop$r))
+	for(j in 1:max(total_pop$scenario))
 		{
-		points(total~year, total_pop,subset=r==i,type='l',col=i)
+		for(i in 1:max(total_pop$r))
+			{
+			points(total~year, total_pop,
+				subset=r==i & scenario==j,
+				type='l',col=i)
+			}
 		}
 	
+	plot(n~year,total_pop,type='n')
+	for(j in 1:max(total_pop$scenario))
+		{
+		for(i in 1:max(total_pop$r))
+			{
+			points(n~year, total_pop,
+				subset=r==i & scenario==j,
+				type='l',col=i)
+			}
+		}
+	plot(h~year,total_pop,type='n')
+	for(j in 1:max(total_pop$scenario))
+		{
+		for(i in 1:max(total_pop$r))
+			{
+			points(h~year, total_pop,
+				subset=r==i & scenario==j,
+				type='l',col=i)
+			}
+		}
+
+		
 	plot(h~year,total_pop,type='n')
 	for(i in 1:max(total_pop$r))
 		{

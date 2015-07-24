@@ -3,6 +3,8 @@ output/
 archive/
 *.docx
 *.zip
+*.pptx
+
 
 # Windows image file caches
 Thumbs.db
