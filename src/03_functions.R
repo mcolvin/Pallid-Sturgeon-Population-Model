@@ -25,7 +25,9 @@ inits_ind<- function(input=input)
 	# TO INITIALIZE THE MODEL. 
 	
 	# SURVIVAL AGE-1 TO MAX AGE
-    S<- c(input$S1,input$S2,rep(input$S3plus, input$maxAge-2))	
+    S<- c(logit(rnorm(1,log(-input$S1/(input$S1-1)),abs(input$S1_cv*mn))),
+		logit(rnorm(1,log(-input$S2/(input$S2-1)),abs(input$S2_cv*mn))),
+		rep(logit(rnorm(1,log(-input$S3plus/(input$S3plus-1)),abs(input$S3plus_cv*mn))), input$maxAge-2))
 	
 	
 	# JUVENILES	
@@ -47,7 +49,7 @@ inits_ind<- function(input=input)
 	yyy[yyy$origin=="h",]$sex<- sample(c('m','f'),input$adults_ini_h,replace=TRUE,prob=c(1-input$sr_h,input$sr_h))
 	yyy[yyy$origin=="n",]$sex<- sample(c('m','f'),input$adults_ini_n,replace=TRUE,prob=c(1-input$sr_n,input$sr_n))
 	## ASSIGN AGE
-	yyy$age<- sample(c(input$ee:input$maxAge),nrow(yyy),replace=TRUE,prob=cumprod(S[input$ee:input$maxAge]))
+	yyy$age<- sample(c(input$mat_high:input$maxAge),nrow(yyy),replace=TRUE,prob=cumprod(S[input$mat_high:input$maxAge]))
 	## ASSIGN FORK LENGTH
 	yyy$fl<- input$Linf*(1-exp(-input$K*(yyy$age-input$t0)))#*rnorm(nrow(out),1, 0.1)
 	## ASSIGN YEARS SINCE SPAWNING
@@ -58,25 +60,27 @@ inits_ind<- function(input=input)
 	# AGE-0 
 	## NUMBER OF AGE-0 FISH
 	eggs<- round(sum(input$a_fec+pop[pop$yr_since_spawn==0 & pop$sex=='f',]$fl+input$b_fec),0)
-	age0<- rbinom(1,eggs,input$viableGam) # NUMBER OF EMBRYOS
+	age0<- rbinom(1,eggs,logit(rnorm(1,log(-input$viableGam/(input$viableGam-1)),abs(input$viableGam_cv*mn)))) # NUMBER OF EMBRYOS
     return(list(pop=pop,age0=age0))
     }#})
   
 
 xx_ind<- function(input=input)
 	{
-	# SURVIVAL FUNCTION
-	surv_fun<- approxfun(c(0:input$maxAge),c(input$S0,input$S1,input$S2,rep(input$S3plus, input$maxAge-2)))
-	# MATURITY FUNCTION
-	#x<-c(0,input$aa, input$bb,input$cc,input$dd,input$ee,input$maxAge)
-	#y<-c(0,0,        0.25,    0.5,   0.75,   1,    1)
-	#mat_fun<- approxfun(x,y)
-	#sp_fun<- approxfun(c(0,1,2,3,4),c(input$aaa,input$bbb,input$ccc,input$ddd,input$eee),rule=2)
 	
 	xx<- data.frame() #SET UP DATAFRAME TO HOLD RESULTS
 	
 	for(j in 1:input$nreps)
 		{
+		S0<-logit(rnorm(1,log(-input$S0/(input$S0-1)),abs(input$S0_cv*mn)))
+		
+		# SURVIVAL FUNCTION
+		surv_fun<- approxfun(c(0:input$maxAge),
+			c(S0,
+			logit(rnorm(1,log(-input$S1/(input$S1-1)),abs(input$S1_cv*mn))),
+			logit(rnorm(1,log(-input$S2/(input$S2-1)),abs(input$S2_cv*mn))),
+			rep(logit(rnorm(1,log(-input$S3plus/(input$S3plus-1)),abs(input$S3plus_cv*mn))), input$maxAge-2)))	
+			
 		# INITIAL NUMBERS AT T=0
 		inits<- inits_ind(input)
 		
@@ -92,9 +96,9 @@ xx_ind<- function(input=input)
 		## NUMBER OF EGGS PRODUCED
 		eggs<- spawn*round(sum(input$a_fec+pop[pop$yr_since_spawn==0 & pop$sex=='f',]$fl+input$b_fec),0)
 		## NUMBER OF VIABLE EMBRYOS PRODUCED
-		embryos<- rbinom(1,eggs,input$viableGam)
+		embryos<- rbinom(1,eggs,logit(rnorm(1,log(-input$viableGam/(input$viableGam-1)),abs(input$viableGam_cv*mn))))
 		## NUMBER OF VIABLE EMBRYOS SURVIVING TO RECRUIT TO AGE-1
-		age0<- rbinom(1,embryos,input$S0) 
+		age0<- rbinom(1,embryos,S0) 
 		## A PLACEHOLDER TO HELP HANDLE YEARS OF NO AGE-0 FISH
 		recruits<- data.frame(origin='n',sex=NA,age=0,yr_since_spawn=-100,fl=NA,p=0,surv=0)
 		if(age0>0){
@@ -120,6 +124,16 @@ xx_ind<- function(input=input)
 		
 		for(i in 1:input$nyears)
 			{
+			S0<-logit(rnorm(1,log(-input$S0/(input$S0-1)),abs(input$S0_cv*mn)))
+		
+			# SURVIVAL FUNCTION
+			surv_fun<- approxfun(c(0:input$maxAge),
+				c(S0,
+				logit(rnorm(1,log(-input$S1/(input$S1-1)),abs(input$S1_cv*mn))),
+				logit(rnorm(1,log(-input$S2/(input$S2-1)),abs(input$S2_cv*mn))),
+				rep(logit(rnorm(1,log(-input$S3plus/(input$S3plus-1)),abs(input$S3plus_cv*mn))), input$maxAge-2)))	
+			
+			
 			# t+1
 			pop<- subset(pop,surv==1 & age<input$maxAge) # GET SURVIVORS
 			# UPDATE AGE
@@ -134,9 +148,9 @@ xx_ind<- function(input=input)
 			## NUMBER OF EGGS PRODUCED
 			eggs<- spawn*round(sum(input$a_fec+pop[pop$yr_since_spawn==0 & pop$sex=='f',]$fl+input$b_fec),0)
 			## NUMBER OF VIABLE EMBRYOS PRODUCED
-			embryos<- rbinom(1,eggs,input$viableGam)
+			embryos<- rbinom(1,eggs,logit(rnorm(1,log(-input$viableGam/(input$viableGam-1)),abs(input$viableGam_cv*mn))))
 			# NUMBER OF VIABLE EMBRYOS SURVIVING TO RECRUIT TO AGE-1
-			age0<- rbinom(1,embryos,input$S0) 
+			age0<- rbinom(1,embryos,S0) 
 			
 			
 			# UPDATE YEARS SINCE SPAWNING

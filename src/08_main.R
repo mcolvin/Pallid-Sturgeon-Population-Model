@@ -4,13 +4,17 @@
 	source("./src/02_load.R")
 	source("./src/03_functions.R")
 	source("./src/04_tables.R")
-	#source("./src/05_figures.R")
+	source("./src/05_figures.R")
+	#source("./src/07_analysis.R")
 	
-	#source("./src/06_run.R")
-	source("./src/07_analysis.R")
-	source("./src/08_main.R")
-
-
+	
+	
+	# Figure 1: TOTAL POPULATION DYNAMICS
+	figures(1)
+	# Figure 2: NATURAL ORIGIN POPULATION DYNAMICS
+	figures(2)
+	# Figure 3: HATCHERY ORIGIN POPULATION DYNAMICS
+	figures(3)
 
 
 
