@@ -5,4 +5,6 @@ library(reshape2)
 library(lattice)
 library(data.table)
 library(xlsx)
+library(snow)
+library(snowfall)
 
