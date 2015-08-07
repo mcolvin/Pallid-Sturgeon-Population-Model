@@ -74,7 +74,7 @@ inits_ind<- function(input=input)
 xx_ind<- function(input=input)
 	{
 	
-	xx<- data.frame() #SET UP DATAFRAME TO HOLD RESULTS
+	xx<- data.table() #SET UP DATAFRAME TO HOLD RESULTS
 	
 	# INITIALIZE AT T=0
 	viableGam<- rtriangle(1, input$viableGam_rng[1],input$viableGam_rng[2] ,input$viableGam)
@@ -89,7 +89,7 @@ xx_ind<- function(input=input)
 	inits<- inits_ind(input)
 		
 	# JUVENILE AND ADULT STAGES
-	pop<-inits$pop		# INITIAL POST SPAWN POPULATION 
+	pop<-data.table(inits$pop)	# INITIAL POST SPAWN POPULATION 
 	pop$p<- surv_fun(pop$age)# PROBABILITY OF SURVIVING TO NEXT YEAR
 	pop$surv<- rbinom(nrow(pop),1,pop$p) # SURVIVE OR NOT (0,1) TO NEXT YEAR		
 
@@ -103,35 +103,29 @@ xx_ind<- function(input=input)
 	## NUMBER OF VIABLE EMBRYOS SURVIVING TO RECRUIT TO AGE-1
 	age0<- rbinom(1,embryos,S0) 
 	## A PLACEHOLDER TO HELP HANDLE YEARS OF NO AGE-0 FISH
-	recruits<- data.frame(origin='n',sex=NA,age=0,yr_since_spawn=-100,fl=NA,p=0,surv=0)
+	recruits<- data.table(origin='n',sex=NA,age=0,yr_since_spawn=-100,fl=NA,p=0,surv=0)
 	if(age0>0){
 		age0_m<-rbinom(1,age0,0.5)		
-		recruits<- rbind(recruits,
-			data.frame(origin='n',sex=c(rep('m',age0_m), rep('f', age0-age0_m)),age=0,
+		recruits<- list(recruits,
+			new=data.table(origin='n',sex=c(rep('m',age0_m), rep('f', age0-age0_m)),age=0,
 			yr_since_spawn=-1,fl=NA,p=1,surv=1))
+		recruits<-rbindlist(recruits,use.names=TRUE)
 		recruits$fl<- input$Linf*(1-exp(-input$K*(recruits$age-input$t0)))#*rnorm(nrow(out),1, 0.1)
 		}
 			
 	# RECRUIT AGE-0 FISH TO THE POPULATION
-	pop<- rbind(pop, recruits)
+	pop<- rbindlist(list(pop, recruits),use.names=TRUE)
 	
 	# SUMMARY
 	pop<- subset(pop, yr_since_spawn>=-1)# to remove sham row prior to summary
 	if(nrow(pop)>0){
-		app<-dcast(pop, origin+sex~yr_since_spawn, value.var='fl',length)
-		app<-merge(expand.grid(origin=c("n",'h'),sex=c('f','m')),app,
-			by=c('origin','sex'),all.x=TRUE)	
-		app[is.na(app)]<-0
-		app$year<- 0
-		}else {# error handling when population crashes
-		app<- expand.grid(origin=c("h","n"),
-			sex=c("f","m"),    
-			"-1" =0,"0" =0,"1" =0,"2"=0,"3" =0,"4" =0,"5"=0, 
-			year=0)
+		app<-data.table(pop[,j=list(abundance=length(fl)),by=list(origin,sex,yr_since_spawn)])
+		app$year<-1
 		}
-	xx<- rbind.fill(xx,app)			
-	pop<- subset(pop, yr_since_spawn>=-1)# to remove sham row prior to summary		
+	xx<- rbindlist(list(xx,app),use.names=TRUE)			
 	
+		
+	## LOOP OVER YEARS
 	for(i in 1:input$nyears)
 		{
 		S0<-rtriangle(1,input$S0_rng[1],input$S0_rng[2],input$S0)
@@ -142,7 +136,7 @@ xx_ind<- function(input=input)
 		surv_fun<- approxfun(c(0,1,2),	c(S0,S1,S2),rule=2)		
 
 		# t+1
-		pop<- pop[pop$surv==1 & pop$age<input$maxAge,] # GET SURVIVORS
+		pop<- subset(pop,surv==1 & age<input$maxAge) # GET SURVIVORS
 		# UPDATE AGE
 		pop$age<- pop$age+1
 		# UPDATE SIZE (GROWTH)
@@ -166,8 +160,8 @@ xx_ind<- function(input=input)
 		pop$tmp<- rbinom(nrow(pop),1,mat_fun(age=pop$age,mid=input$mat_mid, high=input$mat_high))
 		if(nrow(pop[pop$yr_since_spawn== -1 & pop$tmp==1,]))
 			{pop[pop$yr_since_spawn== -1 & pop$tmp==1,]$yr_since_spawn<- 0}
+
 		## ADULTS BECOMING SEXUALLY MATURE AND WILL SPAWN NEXT YEAR
-		
 		pop$tmp<- rbinom(nrow(pop),1,sp_fun(yr=pop$yr_since_spawn-1, mid=input$sp_mid, high=input$sp_high))
 		if(nrow(pop[pop$yr_since_spawn> 4,]))
 			{pop[pop$yr_since_spawn> 4,]$tmp<- 1}
@@ -178,52 +172,50 @@ xx_ind<- function(input=input)
 		pop$surv<- rbinom(nrow(pop),1,pop$p)
 		
 		# ADD AGE-0 FISH RECRUITED TO THE POPULATION IN THE NEXT YEAR
-		recruits<- data.frame(origin='n',sex=NA,age=0,yr_since_spawn=-100,fl=NA,p=0,surv=0,tmp=0)
+		recruits<- data.table(origin='n',sex=NA,age=0,yr_since_spawn=-100,fl=NA,p=0,surv=0,tmp=NA)
 		if(age0>0){
 			age0_m<-rbinom(1,age0,0.5)		
-			recruits<- rbind(recruits,
-				data.frame(origin='n',sex=c(rep('m',age0_m), rep('f', age0-age0_m)),age=0,
-				yr_since_spawn=-1,fl=NA,p=1,surv=1,tmp=0))
+			recruits<- list(recruits,
+				new=data.table(origin='n',sex=c(rep('m',age0_m), rep('f', age0-age0_m)),age=0,
+				yr_since_spawn=-1,fl=NA,p=1,surv=1,tmp=NA))
+			recruits<-rbindlist(recruits,use.names=TRUE)
 			recruits$fl<- input$Linf*(1-exp(-input$K*(recruits$age-input$t0)))#*rnorm(nrow(out),1, 0.1)
 			}
-
+				
 		# RECRUIT AGE-0 FISH TO THE POPULATION
-		pop<- rbind(pop, recruits)	
-		
+		pop<- rbindlist(list(pop, recruits),use.names=TRUE)
+	
+		# SUMMARY
+		pop<- subset(pop, yr_since_spawn>=-1)# to remove sham row prior to summary
+				
 		# HATCHERY STOCKING
 		# ASSUMES FISH ARE STOCKED AT THE END OF THE YEAR
 		# AND ARE NOT SUBJECT TO SURVIVAL
 		# BUT SURVIVAL COULD BE MODIFIED HERE...surv=1 line 189
-		stocked<- data.frame(origin='h',sex=NA,age=0,yr_since_spawn=-100,fl=NA,p=0,surv=0,tmp=0)
+		stocked<- data.table(origin='h',sex=NA,age=0,yr_since_spawn=-100,fl=NA,p=0,surv=0,tmp=0)
 		if(sum(input$age0_stock,input$age1_stock,input$age2_stock+
 			input$age3_stock,input$age4_stock,
 			input$age5_stock,input$age6_stock,
 			input$age7_stock)>0){
-			stocked<- rbind(stocked,
-					data.frame(origin='h',sex=NA,age=c(rep(0,input$age0_stock),rep(1,input$age1_stock),
+			newStocked<- data.table(origin='h',sex=NA,age=c(rep(0,input$age0_stock),rep(1,input$age1_stock),
 					rep(2,input$age2_stock),rep(3,input$age3_stock),rep(4,input$age4_stock),
 					rep(5,input$age5_stock),rep(6,input$age6_stock),rep(6,input$age7_stock)),
-				yr_since_spawn=-1,fl=NA,p=1,surv=1,tmp=0))
+				yr_since_spawn=-1,fl=NA,p=1,surv=1,tmp=0)
+			stocked<- rbindlist(list(stocked,newStocked))
 			stocked$sex<- sample(c('m','f'),nrow(stocked),replace=TRUE,prob=c(0.5,0.5))
 			stocked$fl<- input$Linf*(1-exp(-input$K*(stocked$age-input$t0)))#*rnorm(nrow(out),1, 0.1)
 			}
-		pop<- rbind(pop, stocked)		
+		pop<- rbindlist(list(pop, stocked),use.names=TRUE)		
 
 		# SUMMARY
-		pop<- pop[pop$yr_since_spawn>=-1,]# to remove sham row prior to summary
-		if(nrow(pop)>0){
-			app<-dcast(pop, origin+sex~yr_since_spawn, value.var='fl',length)
-			app<-merge(expand.grid(origin=c("n",'h'),sex=c('f','m')),app,
-				by=c('origin','sex'),all.x=TRUE)	
-			app[is.na(app)]<-0
-			app$year<- i
-			}else {# error handling when population crashes
-			app<- expand.grid(origin=c("h","n"),
-				sex=c("f","m"),    
-				"-1" =0,"0" =0,"1" =0,"2"=0,"3" =0,"4" =0,"5"=0, 
-				year=i)
+		pop<- subset(pop,yr_since_spawn>=-1)# to remove sham row prior to summary
+
+		if(nrow(pop)>0)
+			{
+			app<-data.table(pop[,j=list(abundance=length(fl)),by=list(origin,sex,yr_since_spawn)])
+			app$year<-1
 			}
-		xx<- rbind.fill(xx,app)	
+		xx<- rbindlist(list(xx,app),use.names=TRUE)			
 		}	 # END I
 	} # END FUNCTION
 	

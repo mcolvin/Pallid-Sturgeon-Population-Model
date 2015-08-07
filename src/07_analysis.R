@@ -1,28 +1,33 @@
 
 # CHANGE VARIABLES FOR ANALYSIS
-	scenarios<- list(spawn_frequency=c(1,2,5,10,20),
-		age0_stock=c(1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,15000,20000,
-			25000,30000,35000,40000,45000,50000))
-	yyy<- data.frame()
 	
-	for(i in 1:nrow(scenarios))
+	fn<-dir("./output")
+	for(j in (length(fn)+1):(length(fn)+10))
 		{
-		input$age0_stock<- round(runif(1,100,50000))
+		input$age0_stock<- round(runif(1,0,40000))# range of age-0 is 0 to 40k from Steffansons model
+		input$age1_stock<- 0 #round(runif(1,0,14000))# range of age-0 is 0 to 40k from Steffansons model
 		input$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
 		output<-xx_ind(input=input)
-		output$scenario<-i
-		yyy<- rbind.fill(yyy,output)
-		print(i/nrow(scenarios))
+		save(input,output,file=
+			paste("./output/output_",j,".csv",sep=""))
 		}
-		
-	# RESHAPE OUTPUT FROM WIDE TO LONG
-	vv<- names(yyy)[-match(c("origin","sex","year","r","scenario"),names(yyy))]
-	tmp<- reshape(yyy,
-		varying = vv,
-		v.names = "count",
-		timevar= "stage",
-		times =  vv,
-		direction = "long")
+	
+	
+	
+	
+	
+	input$nyears<-20
+	Rprof("out.out")
+	for (i in 1:3) pos = xx_ind(input)
+	Rprof(NULL)
+	proftable("out.out")
+	summaryRprof("out.out")
+
+	ptm <- proc.time()
+	output<-xx_ind(input=input)
+	proc.time() - ptm
+
+	
 	
 	# SUMMARY OUTPUT TOTAL POPULATION
 	total_pop<-dcast(tmp,year+r+scenario~origin, value.var="count",sum)
