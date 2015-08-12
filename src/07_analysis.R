@@ -1,40 +1,52 @@
 
 # CHANGE VARIABLES FOR ANALYSIS
 	
-	fn<-dir("./output")
-	lapply((length(fn)+1):(length(fn)+2),function(j)
-		{
-		input$age0_stock<- round(runif(1,0,40000))# range of age-0 is 0 to 40k from Steffansons model
-		input$age1_stock<- 0 #round(runif(1,0,14000))# range of age-0 is 0 to 40k from Steffansons model
-		input$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
-		output<-xx_ind(input=input)
-		save(input,output,file=
-			paste("./output/output_",j,".Rdata",sep=""))
-		return()
-		})
+#	fn<-dir("./output")
+#	lapply((length(fn)+1):(length(fn)+2),function(j)
+#		{
+#		input$age0_stock<- round(runif(1,0,40000))# range of age-0 is 0 to 40k from Steffansons model
+#		input$age1_stock<- 0 #round(runif(1,0,14000))# range of age-0 is 0 to 40k from Steffansons model
+#		input$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
+#		output<-xx_ind(input=input)
+#		save(input,output,file=
+#			paste("./output/output_",j,".Rdata",sep=""))
+#		return()
+#		})
 	
-	fn<-dir("./output")
+	
+	
+	indx<- c(1:20000)
+	indx<- indx[!(indx%in%fn)]
 	# SET UP FOR MULTICORE
-	ncpus=2 # number of cores to use
+	ncpus=4 # number of cores to use
 	sfInit(parallel=T, cpus=ncpus)
 	sfExportAll()
 	sfLibrary(triangle)
 	sfLibrary(data.table)
 	sfClusterSetupRNG()
 	# RUN THE FUNCTION run_mc on 4 cores
-	result <- sfLapply((length(fn)+1):(length(fn)+2), 
+	result <- sfLapply(indx, 
 		function(j){
 			input$age0_stock<- round(runif(1,0,40000))# range of age-0 is 0 to 40k from Steffansons model
 			input$age1_stock<- 0 #round(runif(1,0,14000))# range of age-0 is 0 to 40k from Steffansons model
 			input$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
 			output<-xx_ind(input=input)
-			save(input,output,file=
-				paste("./output/output_",j,".Rdata",sep=""))
+			write.csv(output, paste("./output/output_",j,".csv",sep=""))
+			saveRDS(input,file=paste("./output/input_",j,".rds",sep=""))
+			rm(list=c("ouput"))
 		})
 	sfStop()
 	
 	
-	
+	result <- lapply(1:2, 
+		function(j){
+			input$age0_stock<- round(runif(1,0,40000))# range of age-0 is 0 to 40k from Steffansons model
+			input$age1_stock<- 0 #round(runif(1,0,14000))# range of age-0 is 0 to 40k from Steffansons model
+			input$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
+			output<-xx_ind(input=input)
+			write.csv(output, paste("./output/output_",j,".csv",sep=""))
+			saveRDS(input,file=paste("./output/input_",j,".rds",sep=""))
+		})
 	
 	
 	

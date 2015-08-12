@@ -98,6 +98,7 @@ xx_ind<- function(input=input)
 	spawn<- rbinom(1,1,(1/input$spawn_frequency))# DID SPAWNING OCCUR?
 	## NUMBER OF EGGS PRODUCED
 	eggs<- spawn*round(sum(input$a_fec+pop[pop$yr_since_spawn==0 & pop$sex=='f',]$fl+input$b_fec),0)
+	if(length(pop[pop$origin=='n',]$fl)> 300000){eggs<-0}
 	## NUMBER OF VIABLE EMBRYOS PRODUCED
 	embryos<- rbinom(1,eggs,viableGam)
 	## NUMBER OF VIABLE EMBRYOS SURVIVING TO RECRUIT TO AGE-1
@@ -148,6 +149,7 @@ xx_ind<- function(input=input)
 		spawn<- rbinom(1,1,(1/input$spawn_frequency))# DID SPAWNING OCCUR?
 		## NUMBER OF EGGS PRODUCED
 		eggs<- spawn*round(sum(input$a_fec+pop[pop$yr_since_spawn==0 & pop$sex=='f',]$fl+input$b_fec),0)
+		if(length(pop[pop$origin=='n',]$fl)> 500000){eggs<-0}
 		## NUMBER OF VIABLE EMBRYOS PRODUCED
 		embryos<- rbinom(1,eggs,viableGam)
 		# NUMBER OF VIABLE EMBRYOS SURVIVING TO RECRUIT TO AGE-1
@@ -213,10 +215,11 @@ xx_ind<- function(input=input)
 		if(nrow(pop)>0)
 			{
 			app<-data.table(pop[,j=list(abundance=length(fl)),by=list(origin,sex,yr_since_spawn)])
-			app$year<-1
+			app$year<-i
 			}
 		xx<- rbindlist(list(xx,app),use.names=TRUE)			
 		}	 # END I
+	return(xx)
 	} # END FUNCTION
 	
 	

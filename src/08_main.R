@@ -8,6 +8,11 @@
 	#source("./src/07_analysis.R")
 	
 	
+	# COMPILE SIMULATIONS FOR EVALAUATE IN OTHER ROOT DIRECTORY
+	tmp<- tables(1)
+	saveRDS(tmp,
+		file="C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Stocking-Assessment/dat")
+	
 	
 	# Figure 1: TOTAL POPULATION DYNAMICS
 	figures(1)

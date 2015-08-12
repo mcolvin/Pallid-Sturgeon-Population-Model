@@ -1,8 +1,15 @@
 
+fnames<-dir("./output")
 
+fn<- unlist(lapply(c(1:length(fnames)), function(x) 
+	{unlist(strsplit(unlist(strsplit(fnames[x],"_"))[2],"[.]"))[1]}))
+fn<-unique(as.numeric(fn))
+
+	
 # returns string w/o leading or trailing whitespace
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
+# LOAD INPUTS
 input<- read.xlsx("./dat/inputs.xlsx",
 	sheetName="lower",header=FALSE,
 	colClasses=c("character", 
@@ -13,7 +20,7 @@ input<-split(input[,-1],input[,1])
 input<-lapply(input,function (x) x[!is.na(x)]) 
 
 
-load("./output/total_pop.Rdata")	
+#load("./output/total_pop.Rdata")	
 
 #input<- list(
 #	# POPULATION DEMOGRAPHIC RATES
