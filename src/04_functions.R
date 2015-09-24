@@ -1,5 +1,18 @@
 ## GLOBAL
 
+delete_all_output<-function(x="N")
+	{
+	if(x=="N"){return(print("No files deleted"))}
+	if(x=="Y")
+		{fnames<-dir("./output")
+		file.remove(paste("./output",fnames,sep="/"))
+		return(print("Output directory has been cleared"))
+		}
+	}
+
+
+
+
 logit<- function(x){exp(x)/(1+exp(x))}
 
 # MATURITY FUNCTION JUVENILES TO ADULTS
@@ -26,18 +39,44 @@ inits_ind<- function(input=input)
 	{# FUNCTION TO INITIALIZE AGE STRUCTURED MODEL INPUTS
 	# FUNCTION RETURNS THE NUMBER OF POST SPAWN PALLID STURGEON (JUVENILES, ADULTS, EMBRYOS)
 	# TO INITIALIZE THE MODEL. 
-	viableGam<- rtriangle(1, input$viableGam_rng[1],input$viableGam_rng[2] ,input$viableGam)
-	S0<-rtriangle(1,input$S0_rng[1],input$S0_rng[2],input$S0)
-	S1<-rtriangle(1,input$S1_rng[1],input$S1_rng[2],input$S1)
-	S2<-rtriangle(1,input$S2_rng[1],input$S2_rng[2],input$S2)
-			
+	
+	if(input$type=="triag")
+		{
+		viableGam<- rtriangle(1, input$viableGam_rng[1],input$viableGam_rng[2] ,input$viableGam)
+		S0<-rtriangle(1,input$S0_rng[1],input$S0_rng[2],input$S0)
+		S1<-rtriangle(1,input$S1_rng[1],input$S1_rng[2],input$S1)
+		S2<-rtriangle(1,input$S2_rng[1],input$S2_rng[2],input$S2)
+		}
+	if(input$type=="unif")
+		{
+		viableGam<- runif(1, input$viableGam_rng[1],
+			input$viableGam_rng[2])
+		S0<-runif(1,input$S0_rng[1],input$S0_rng[2])
+		S1<-runif(1,input$S1_rng[1],input$S1_rng[2])
+		S2<-runif(1,input$S2_rng[1],input$S2_rng[2])
+		}
+
 	# SURVIVAL AGE-1 TO MAX AGE
     S<- c(S1,S2,rep(S2,input$maxAge-1))
 	
 	
 	# JUVENILES	
 	## INITIALIZE NUMBER OF JUVENILES BY ORIGIN	
-	out<- data.frame(origin=c(rep("h",input$juv_ini_h), rep("n",input$juv_ini_n)),sex=NA,age=NA,yr_since_spawn=-1)
+	
+	if(input$type=="triag")
+		{
+		juv_ini_n<- rtriangle(1,input$juv_ini_n_rng[1],input$juv_ini_n_rng[2], input$juv_ini_n)
+		juv_ini_h<-rtriangle(1,input$juv_ini_h_rng[1],input$juv_ini_h_rng[2], input$juv_ini_h)
+		}
+	if(input$type=="unif")
+		{
+		juv_ini_n<- runif(1,input$juv_ini_n_rng[1],
+			input$juv_ini_n_rng[2])
+		juv_ini_h<-runif(1,input$juv_ini_h_rng[1],
+			input$juv_ini_h_rng[2])
+		}
+	
+	out<- data.frame(origin=c(rep("h",juv_ini_h), rep("n",juv_ini_n)),sex=NA,age=NA,yr_since_spawn=-1)
 	## ASSIGN SEX
 	out$sex<- sample(c('m','f'),nrow(out),replace=TRUE,prob=c(0.5,0.5))# assumes 50:50 for juveniles
 	## ASSIGN AGE
@@ -49,25 +88,50 @@ inits_ind<- function(input=input)
 	
 	# ADULTS
 	## INITIALIZE NUMBER OF ADULTS BY ORIGIN	
-	yyy<- data.frame(origin=c(rep("h",input$adults_ini_h), rep("n",input$adults_ini_n)),sex=NA,age=NA,yr_since_spawn=-1)
-	## ASSIGN SEX
-	yyy[yyy$origin=="h",]$sex<- sample(c('m','f'),input$adults_ini_h,replace=TRUE,prob=c(1-input$sr_h,input$sr_h))
-	yyy[yyy$origin=="n",]$sex<- sample(c('m','f'),input$adults_ini_n,replace=TRUE,prob=c(1-input$sr_n,input$sr_n))
-	## ASSIGN AGE
+	
+	if(input$type=="triag")
+		{
+		adults_ini_n<- rtriangle(1,input$adults_ini_n_rng[1],input$adults_ini_n_rng[2], input$adults_ini_n)
+		adults_ini_h<-rtriangle(1,input$adults_ini_h_rng[1],input$adults_ini_h_rng[2], input$adults_ini_h)	
+		}
+	if(input$type=="unif")
+		{
+		adults_ini_n<- runif(1,input$adults_ini_n_rng[1],
+			input$adults_ini_n_rng[2])
+		adults_ini_h<-runif(1,input$adults_ini_h_rng[1],
+			input$adults_ini_h_rng[2])	
+		}
+	yyy<- data.frame(origin=c(rep("h",adults_ini_h), rep("n",adults_ini_n)),sex=NA,age=NA,yr_since_spawn=-1)
+
+	# ASSIGN SEX TO INDIVUAL FISH GIVEN INITIAL SEX RATIO
+	yyy[yyy$origin=="h",]$sex<- sample(c('m','f'),adults_ini_h,replace=TRUE,prob=c(1-input$sr_h,input$sr_h))
+	yyy[yyy$origin=="n",]$sex<- sample(c('m','f'),adults_ini_n,replace=TRUE,prob=c(1-input$sr_n,input$sr_n))
+	
+	# ASSIGN AGE TO INDVIDUAL FISH ASSUMING 
+	# APPROXIMATE EQULIBRIUM 
 	yyy$age<- sample(c(input$mat_high:input$maxAge),nrow(yyy),replace=TRUE,prob=cumprod(S[input$mat_high:input$maxAge]))
-	## ASSIGN FORK LENGTH
+	
+	# ASSIGN FORK LENGTH TO INVIDUAL FISH, GIVEN AGE
 	yyy$fl<- input$Linf*(1-exp(-input$K*(yyy$age-input$t0)))#*rnorm(nrow(out),1, 0.1)
-	## ASSIGN YEARS SINCE SPAWNING
+	# ASSIGN YEARS SINCE SPAWNING TO INDVIDUAL FISH
 	yyy$yr_since_spawn<- sample(c(0:4),nrow(yyy), replace=TRUE,prob=c(1,1,1,1,1))
 	pop<- rbind(out, yyy)
 
-	
-	# AGE-0 
-	## NUMBER OF AGE-0 FISH
+	# NUMBER OF EGGS PRODUCED BY SEXUALLY MATURE FEMALES
 	eggs<- round(sum(input$a_fec+pop[pop$yr_since_spawn==0 & pop$sex=='f',]$fl+input$b_fec),0)
-	embryos<- rbinom(1,eggs,viableGam) # NUMBER OF EMBRYOS
+	
+	# NUMBER OF EMBRYOS PRODUCE FROM EGGS
+	embryos<- rbinom(1,eggs,viableGam) # NUMBER OF EMBRYOS	
+	
+	# NUMBER OF AGE-1 FISH PRODUCED FROM EMBRYOS
 	age0<- rbinom(1,eggs,S0)
-    return(list(pop=pop,age0=age0))
+	
+	# BUNDLE UP THE DATA
+	out_vals<- list(viableGam=viableGam,
+		S0=S0,S1=S1,S2=S2, 
+		juv_ini_n=juv_ini_n,juv_ini_h=juv_ini_h,
+		adults_ini_h=adults_ini_h,adults_ini_n=adults_ini_n)
+    return(list(pop=pop,age0=age0,out_vals=out_vals))
     }#})
   
 
@@ -75,19 +139,34 @@ xx_ind<- function(input=input)
 	{
 	
 	xx<- data.table() #SET UP DATAFRAME TO HOLD RESULTS
-	
+
 	# INITIALIZE AT T=0
-	viableGam<- rtriangle(1, input$viableGam_rng[1],input$viableGam_rng[2] ,input$viableGam)
-	S0<-rtriangle(1,input$S0_rng[1],input$S0_rng[2],input$S0)
-	S1<-rtriangle(1,input$S1_rng[1],input$S1_rng[2],input$S1)
-	S2<-rtriangle(1,input$S2_rng[1],input$S2_rng[2],input$S2)
-				
+	if(input$type=="triag")
+		{
+		viableGam<- rtriangle(1, input$viableGam_rng[1],input$viableGam_rng[2] ,input$viableGam)
+		S0<-rtriangle(1,input$S0_rng[1],input$S0_rng[2],input$S0)
+		S1<-rtriangle(1,input$S1_rng[1],input$S1_rng[2],input$S1)
+		S2<-rtriangle(1,input$S2_rng[1],input$S2_rng[2],input$S2)
+		}
+	if(input$type=="unif")
+		{
+		viableGam<- runif(1, input$viableGam_rng[1],
+			input$viableGam_rng[2])
+		S0<-runif(1,input$S0_rng[1],input$S0_rng[2])
+		S1<-runif(1,input$S1_rng[1],input$S1_rng[2])
+		S2<-runif(1,input$S2_rng[1],input$S2_rng[2])
+		}
+
 	# SURVIVAL FUNCTION
 	surv_fun<- approxfun(c(0,1,2),	c(S0,S1,S2),rule=2)	
 		
 	# INITIAL NUMBERS AT T=0
 	inits<- inits_ind(input)
-		
+	out_vals<-inits$out_vals
+	out_vals$age0_stock<-input$age0_stock
+	out_vals$age1_stock<-input$age1_stock
+	out_vals$spawn_frequency<- input$spawn_frequency
+
 	# JUVENILE AND ADULT STAGES
 	pop<-data.table(inits$pop)	# INITIAL POST SPAWN POPULATION 
 	pop$p<- surv_fun(pop$age)# PROBABILITY OF SURVIVING TO NEXT YEAR
@@ -129,10 +208,19 @@ xx_ind<- function(input=input)
 	## LOOP OVER YEARS
 	for(i in 1:input$nyears)
 		{
-		S0<-rtriangle(1,input$S0_rng[1],input$S0_rng[2],input$S0)
-		S1<-rtriangle(1,input$S1_rng[1],input$S1_rng[2],input$S1)
-		S2<-rtriangle(1,input$S2_rng[1],input$S2_rng[2],input$S2)
-				
+		if(input$type=="triag")
+			{
+			S0<-rtriangle(1,input$S0_rng[1],input$S0_rng[2],input$S0)
+			S1<-rtriangle(1,input$S1_rng[1],input$S1_rng[2],input$S1)
+			S2<-rtriangle(1,input$S2_rng[1],input$S2_rng[2],input$S2)
+			}
+		if(input$type=="unif")
+			{
+			S0<-runif(1,input$S0_rng[1],input$S0_rng[2])
+			S1<-runif(1,input$S1_rng[1],input$S1_rng[2])
+			S2<-runif(1,input$S2_rng[1],input$S2_rng[2])
+			}
+		
 		# SURVIVAL FUNCTION
 		surv_fun<- approxfun(c(0,1,2),	c(S0,S1,S2),rule=2)		
 
@@ -219,7 +307,7 @@ xx_ind<- function(input=input)
 			}
 		xx<- rbindlist(list(xx,app),use.names=TRUE)			
 		}	 # END I
-	return(xx)
+	return(list(xx=xx,out_vals=out_vals))
 	} # END FUNCTION
 	
 	

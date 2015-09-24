@@ -7,7 +7,7 @@ shinyUI(
 	navbarPage("Pallid Sturgeon Effects Analysis",theme = shinytheme("flatly"),
 		tabPanel("In a nutshell",
 			sidebarLayout(
-        sidebarPanel(includeMarkdown("nutshell.md")),# end sidebarPanel
+        sidebarPanel(includeMarkdown("nutshell.md"),style = "color:red"),# end sidebarPanel
   			mainPanel(
   			  tabsetPanel(position="right",
   					tabPanel("Introduction",includeMarkdown("include.md")),

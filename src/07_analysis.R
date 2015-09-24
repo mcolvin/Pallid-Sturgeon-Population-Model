@@ -1,24 +1,30 @@
 
-# CHANGE VARIABLES FOR ANALYSIS
+# MAKE A SUB DIRECTORY IF 
+# ONE DOES NOT EXIST ALREADY
+subdir<-"wh_lower"
+fp<- paste("./output/",subdir,sep="")
+if(subdir %in% dir("./output")==FALSE) 
+	{
+	dir.create(fp) 
+	}
+
+	# CHANGE VARIABLES FOR ANALYSIS
+	nreps<- 2500
+	ncpus<-4
+	# STOCKING LOWER BASIN	
+	stocking<- rbind(data.frame(age0=seq(0,40,10)*1000,age1= 0),
+		data.frame(age0=0,age1= seq(2,14,2)*1000))
+	indx<- c(1:nreps)
 	
-#	fn<-dir("./output")
-#	lapply((length(fn)+1):(length(fn)+2),function(j)
-#		{
-#		input$age0_stock<- round(runif(1,0,40000))# range of age-0 is 0 to 40k from Steffansons model
-#		input$age1_stock<- 0 #round(runif(1,0,14000))# range of age-0 is 0 to 40k from Steffansons model
-#		input$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
-#		output<-xx_ind(input=input)
-#		save(input,output,file=
-#			paste("./output/output_",j,".Rdata",sep=""))
-#		return()
-#		})
-	
-	
-	
-	indx<- c(1:20000)
-	indx<- indx[!(indx%in%fn)]
+	# CHECK TO SEE WHAT REPLICATES HAVE BEEN DONE
+	fnames<-dir(fp)
+	fnames<-fnames[grep(".csv",fnames)]
+	if(length(fnames)>0){
+	fn<- unlist(lapply(c(1:length(fnames)), function(x) 
+		{unlist(strsplit(unlist(strsplit(fnames[x],"_"))[2],"[.]"))[1]}))
+	fn<-unique(as.numeric(na.omit(fn)))}
+	if(exists("fn")){indx<- indx[!(indx%in%fn)]}
 	# SET UP FOR MULTICORE
-	ncpus=4 # number of cores to use
 	sfInit(parallel=T, cpus=ncpus)
 	sfExportAll()
 	sfLibrary(triangle)
@@ -27,53 +33,208 @@
 	# RUN THE FUNCTION run_mc on 4 cores
 	result <- sfLapply(indx, 
 		function(j){
-			input$age0_stock<- round(runif(1,0,40000))# range of age-0 is 0 to 40k from Steffansons model
-			input$age1_stock<- 0 #round(runif(1,0,14000))# range of age-0 is 0 to 40k from Steffansons model
-			input$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
-			output<-xx_ind(input=input)
-			write.csv(output, paste("./output/output_",j,".csv",sep=""))
-			saveRDS(input,file=paste("./output/input_",j,".rds",sep=""))
-			rm(list=c("ouput"))
+			tmp<- sample(1:nrow(stocking),1)
+			input_low_wh$age0_stock<- stocking[tmp,1] 
+			input_low_wh$age1_stock<- stocking[tmp,2]
+			input_low_wh$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
+			output<-xx_ind(input=input_low_wh)
+			write.csv(output$xx, 
+				paste(fp,"/output_",j,".csv",sep=""))
+			write.csv(output$out_vals, 
+				paste(fp,"/inputs_",j,".csv",sep=""))
+			rm(list=c("output"))
 		})
 	sfStop()
 	
+
+
+# MAKE A SUB DIRECTORY IF 
+# ONE DOES NOT EXIST ALREADY
+subdir<-"wh_upper"
+fp<- paste("./output/",subdir,sep="")
+if(subdir %in% dir("./output")==FALSE) 
+	{
+	dir.create(fp) 
+	}
+
+	# CHANGE VARIABLES FOR ANALYSIS
+	nreps<- 2500
+	ncpus<-4
+	# STOCKING LOWER BASIN	
+	stocking<- rbind(data.frame(age0=seq(0,40,10)*1000,age1= 0),
+		data.frame(age0=0,age1= seq(2,14,2)*1000))
+	indx<- c(1:nreps)
 	
-	result <- lapply(1:2, 
+	# CHECK TO SEE WHAT REPLICATES HAVE BEEN DONE
+	fnames<-dir(fp)
+	fnames<-fnames[grep(".csv",fnames)]
+	if(length(fnames)>0){
+	fn<- unlist(lapply(c(1:length(fnames)), function(x) 
+		{unlist(strsplit(unlist(strsplit(fnames[x],"_"))[2],"[.]"))[1]}))
+	fn<-unique(as.numeric(na.omit(fn)))}
+	if(exists("fn")){indx<- indx[!(indx%in%fn)]}
+	# SET UP FOR MULTICORE
+	sfInit(parallel=T, cpus=ncpus)
+	sfExportAll()
+	sfLibrary(triangle)
+	sfLibrary(data.table)
+	sfClusterSetupRNG()
+	# RUN THE FUNCTION run_mc on 4 cores
+	result <- sfLapply(indx, 
 		function(j){
-			input$age0_stock<- round(runif(1,0,40000))# range of age-0 is 0 to 40k from Steffansons model
+			tmp<- sample(1:nrow(stocking),1)
+			input_upp_wh$age0_stock<- stocking[tmp,1] 
+			input_upp_wh$age1_stock<- stocking[tmp,2]
+			input_upp_wh$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
+			output<-xx_ind(input=input_upp_wh)
+			write.csv(output$xx, 
+				paste(fp,"/output_",j,".csv",sep=""))
+			write.csv(output$out_vals, 
+				paste(fp,"/inputs_",j,".csv",sep=""))
+			rm(list=c("output"))
+		})
+	sfStop()
+#########################################################	
+	 
+	
+	
+
+
+# DELETE SIMULATION REPOSITORY?
+	delete_all_output("N") # N=NO, Y=YES
+	if(length(fnames)>0){
+	fn<- unlist(lapply(c(1:length(fnames)), function(x) 
+		{unlist(strsplit(unlist(strsplit(fnames[x],"_"))[2],"[.]"))[1]}))
+	fn<-unique(as.numeric(fn))}
+
+
+
+	# CHANGE VARIABLES FOR ANALYSIS
+	nreps<- 9000
+	ncpus<-4
+	
+	 
+	# AGE-0 STOCKING LOWER BASIN	
+	indx<- c(1:nreps)
+	if(exists("fn")){indx<- indx[!(indx%in%fn)]}
+	# SET UP FOR MULTICORE
+	sfInit(parallel=T, cpus=ncpus)
+	sfExportAll()
+	sfLibrary(triangle)
+	sfLibrary(data.table)
+	sfClusterSetupRNG()
+	# RUN THE FUNCTION run_mc on 4 cores
+	result <- sfLapply(indx, 
+		function(j){
+			input$age0_stock<- sample(seq(0,40,10)*1000,1) # range of age-0 is 0 to 40k from Steffansons model
 			input$age1_stock<- 0 #round(runif(1,0,14000))# range of age-0 is 0 to 40k from Steffansons model
 			input$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
 			output<-xx_ind(input=input)
-			write.csv(output, paste("./output/output_",j,".csv",sep=""))
-			saveRDS(input,file=paste("./output/input_",j,".rds",sep=""))
+			write.csv(output$xx, paste("./output/output_",j,".csv",sep=""))
+			write.csv(output$out_vals, paste("./output/inputs_",j,".csv",sep=""))
+			rm(list=c("output"))
 		})
-	
-	
-	
-	input$nyears<-20
-	Rprof("out.out")
-	for (i in 1:3) pos = xx_ind(input)
-	Rprof(NULL)
-	proftable("out.out")
-	summaryRprof("out.out")
-
-	ptm <- proc.time()
-	output<-xx_ind(input=input)
-	proc.time() - ptm
+	sfStop()
 
 	
+# AGE-1 STOCKING LOWER BASIN
+	indx<- c(10000:(10000+nreps))
+	if(exists("fn")){indx<- indx[!(indx%in%fn)]}
+	# SET UP FOR MULTICORE
+	sfInit(parallel=T, cpus=ncpus)
+	sfExportAll()
+	sfLibrary(triangle)
+	sfLibrary(data.table)
+	sfClusterSetupRNG()
+	# RUN THE FUNCTION run_mc on 4 cores
+	result <- sfLapply(indx, 
+		function(j){
+			input$age0_stock<- 0 # range of age-0 is 0 to 40k from Steffansons model
+			input$age1_stock<- sample(seq(2,14,2)*1000,1)# range of age-0 is 0 to 14k from Steffansons model
+			input$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
+			output<-xx_ind(input=input)
+			write.csv(output$xx, paste("./output/output_",j,".csv",sep=""))
+			write.csv(output$out_vals, paste("./output/inputs_",j,".csv",sep=""))
+			rm(list=c("output"))
+		})
+	sfStop()
 	
-	# SUMMARY OUTPUT TOTAL POPULATION
-	total_pop<-dcast(tmp,year+r+scenario~origin, value.var="count",sum)
-	total_pop$total<- total_pop$n+total_pop$h
-	save(scenarios, total_pop,input, file="./output/sim_output.Rdata")	
+
+	
+##### UPPER BASIN
+# whats been done?
+	fnames_up<-dir("./output/upper")
+	if(length(fnames_up)>0){
+	fn_up<- unlist(lapply(c(1:length(fnames_up)), function(x) 
+		{unlist(strsplit(unlist(strsplit(fnames_up[x],"_"))[2],"[.]"))[1]}))
+	fn_up<-unique(as.numeric(fn_up))}
+
+
+
+	# CHANGE VARIABLES FOR ANALYSIS
+	nreps<- 5000
+	ncpus<-4
+	
+	 
+	# AGE-0 STOCKING LOWER BASIN	
+	indx<- c(1:nreps)
+	if(exists("fn_up")){indx<- indx[!(indx%in%fn_up)]}
+	# SET UP FOR MULTICORE
+	sfInit(parallel=T, cpus=ncpus)
+	sfExportAll()
+	sfLibrary(triangle)
+	sfLibrary(data.table)
+	sfClusterSetupRNG()
+	# RUN THE FUNCTION run_mc on 4 cores
+	result <- sfLapply(indx, 
+		function(j){
+			input$age0_stock<- sample(seq(0,40,10)*1000,1) # range of age-0 is 0 to 40k from Steffansons model
+			input$age1_stock<- 0 #round(runif(1,0,14000))# range of age-0 is 0 to 40k from Steffansons model
+			input$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
+			output<-xx_ind(input=input)
+			write.csv(output$xx, paste("./output/upper/output_",j,".csv",sep=""))
+			write.csv(output$out_vals, paste("./output/upper/inputs_",j,".csv",sep=""))
+			rm(list=c("output"))
+		})
+	sfStop()
+
+	
+# AGE-1 STOCKING LOWER BASIN
+	indx<- c(10000:(10000+nreps))
+	if(exists("fn_up")){indx<- indx[!(indx%in%fn_up)]}
+	# SET UP FOR MULTICORE
+	sfInit(parallel=T, cpus=ncpus)
+	sfExportAll()
+	sfLibrary(triangle)
+	sfLibrary(data.table)
+	sfClusterSetupRNG()
+	# RUN THE FUNCTION run_mc on 4 cores
+	result <- sfLapply(indx, 
+		function(j){
+			input$age0_stock<- 0 # range of age-0 is 0 to 40k from Steffansons model
+			input$age1_stock<- sample(seq(2,14,2)*1000,1)# range of age-0 is 0 to 14k from Steffansons model
+			input$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
+			output<-xx_ind(input=input)
+			write.csv(output$xx, paste("./output/upper/output_",j,".csv",sep=""))
+			write.csv(output$out_vals, paste("./output/upper/inputs_",j,".csv",sep=""))
+			rm(list=c("output"))
+		})
+	sfStop()
+		
+	
+	
+	
+	
+	
+	
+	
 	
 	
 # dont delete this	
 lambda<-dcast(out,year~rep,value.var="total",mean)
 vals<-(lambda[-1,]+1)/(lambda[-nrow(lambda),]+1)
 g_mn<- data.frame(scenario="Median stocking", 
-	mn_lambda=apply(vals,2,function(x) exp(mean(log(x)))))	
+mn_lambda=apply(vals,2,function(x) exp(mean(log(x)))))	
 	
 	
 

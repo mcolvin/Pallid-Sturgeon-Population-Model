@@ -9,24 +9,34 @@ tables<- function(n)
 		#})
 	if(n==1)
 		{# compile parameters inputs
-		rds<- fnames[grep(".rds",fnames)]
-		out<- lapply(1:length(rds),function(x)
+		fnames<-dir("./output")
+		dat<- fnames[grep("input",fnames)]
+		out<- lapply(1:length(dat),function(x)
 			{
-			app<- readRDS(paste("./output/",rds[x],sep=""))
-			app$scenario<- unlist(strsplit(unlist(strsplit(fnames[x],"_"))[2],"[.]"))[1]
+			err<-try(app<- fread(paste("./output/",dat[x],sep="")),silent=TRUE)
+			if(class(err)[1] != "try-error")
+				{
+				app$scenario<- unlist(strsplit(unlist(strsplit(dat[x],"_"))[2],"[.]"))[1]
+				}
 			return(app)
 			})
+		out<-rbindlist(out)
 		return(out)
 		}
 	if(n==2)
 		{
-		dat<- fnames[grep(".csv",fnames)]
-		out<- lapply(1:length(dat),function(x)
+		fnames<-dir("./output")
+		dat<- fnames[grep("output",fnames)]
+		out<- lapply(1:length(dat),function(x)#length(dat)
 			{
-			app<- fread(paste("./output/",dat[x],sep=""))
-			app$scenario<- unlist(strsplit(unlist(strsplit(fnames[x],"_"))[2],"[.]"))[1]
+			err<-try(app<- fread(paste("./output/",dat[x],sep="")),silent=TRUE)
+			if(class(err)[1] != "try-error")
+				{
+				app$scenario<- unlist(strsplit(unlist(strsplit(dat[x],"_"))[2],"[.]"))[1]
+				}
 			return(app)
 			})
+		out<- rbindlist(out)
 		return(out)
 		}
 		
