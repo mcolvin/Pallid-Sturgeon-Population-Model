@@ -9,15 +9,17 @@ tables<- function(n)
 		#})
 	if(n==1)
 		{# compile parameters inputs
-		fnames<-dir("./output")
+		fnames<-dir(fp)
 		dat<- fnames[grep("input",fnames)]
+		dat<- dat[-grep("NA",dat)]
 		out<- lapply(1:length(dat),function(x)
 			{
-			err<-try(app<- fread(paste("./output/",dat[x],sep="")),silent=TRUE)
+			err<-try(app<- fread(paste(fp,"/",dat[x],sep="")),silent=TRUE)
 			if(class(err)[1] != "try-error")
 				{
 				app$scenario<- unlist(strsplit(unlist(strsplit(dat[x],"_"))[2],"[.]"))[1]
 				}
+			print(x)
 			return(app)
 			})
 		out<-rbindlist(out)
@@ -25,11 +27,12 @@ tables<- function(n)
 		}
 	if(n==2)
 		{
-		fnames<-dir("./output")
+		fnames<-dir(fp)
 		dat<- fnames[grep("output",fnames)]
+		dat<- dat[-grep("NA",dat)]
 		out<- lapply(1:length(dat),function(x)#length(dat)
 			{
-			err<-try(app<- fread(paste("./output/",dat[x],sep="")),silent=TRUE)
+			err<-try(app<- fread(paste(fp,"/",dat[x],sep="")),silent=TRUE)
 			if(class(err)[1] != "try-error")
 				{
 				app$scenario<- unlist(strsplit(unlist(strsplit(dat[x],"_"))[2],"[.]"))[1]

@@ -1,18 +1,4 @@
 
-fnames<-dir("./output")
-fnames<-fnames[grep(".csv",fnames)]
-if(length(fnames)>0){
-fn<- unlist(lapply(c(1:length(fnames)), function(x) 
-	{unlist(strsplit(unlist(strsplit(fnames[x],"_"))[2],"[.]"))[1]}))
-fn<-unique(as.numeric(na.omit(fn)))}
-
-fnames_up<-dir("./output/upper")
-fnames<-fnames[grep(".csv",fnames)]
-if(length(fnames)>0){
-fn_up<- unlist(lapply(c(1:length(fnames)), function(x) 
-	{unlist(strsplit(unlist(strsplit(fnames[x],"_"))[2],"[.]"))[1]}))
-fn_up<-unique(as.numeric(na.omit(fn_up)))}	
-
 # returns string w/o leading or trailing whitespace
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
@@ -36,7 +22,7 @@ input_low_wh<- input_low_wh[,-4]
 input_low_wh[,1]<- trim(input_low_wh[,1])
 input_low_wh<-split(input_low_wh[,-1],input_low_wh[,1])
 input_low_wh<-lapply(input_low_wh,function (x) x[!is.na(x)]) 
-input_low_wh$type<- ifelse(input_low_wh$type==1,"triag","unif")
+#input_low_wh$type<- ifelse(input_low_wh$type==1,"triag","unif")
 
 input_upp_wh<- read.xlsx("./dat/inputs.xlsx",
 	sheetName="upper_wh",header=FALSE,
@@ -46,7 +32,7 @@ input_upp_wh<- input_upp_wh[,-4]
 input_upp_wh[,1]<- trim(input_upp_wh[,1])
 input_upp_wh<-split(input_upp_wh[,-1],input_upp_wh[,1])
 input_upp_wh<-lapply(input_upp_wh,function (x) x[!is.na(x)])
-input_upp_wh$type<- ifelse(input_upp_wh$type==1,"triag","unif")
+#input_upp_wh$type<- ifelse(input_upp_wh$type==1,"triag","unif")
 
 ## UPPER BASIN
 input_up<- read.xlsx("./dat/inputs.xlsx",

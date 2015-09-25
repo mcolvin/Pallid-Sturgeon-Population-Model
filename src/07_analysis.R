@@ -1,29 +1,31 @@
 
-# MAKE A SUB DIRECTORY IF 
-# ONE DOES NOT EXIST ALREADY
-subdir<-"wh_lower"
-fp<- paste("./output/",subdir,sep="")
-if(subdir %in% dir("./output")==FALSE) 
+run_analysis<- function(
+	subdir="lower",
+	ncpus=3,
+	nreps=100,
+	inputs=input)	
 	{
-	dir.create(fp) 
-	}
-
-	# CHANGE VARIABLES FOR ANALYSIS
-	nreps<- 2500
-	ncpus<-4
-	# STOCKING LOWER BASIN	
-	stocking<- rbind(data.frame(age0=seq(0,40,10)*1000,age1= 0),
-		data.frame(age0=0,age1= seq(2,14,2)*1000))
-	indx<- c(1:nreps)
-	
+	# MAKE A SUB DIRECTORY IF 
+	# ONE DOES NOT EXIST ALREADY
+	fp<- paste("./output/",subdir,sep="")
+	if(subdir %in% dir("./output")==FALSE) 
+		{
+		dir.create(fp) 
+		}
 	# CHECK TO SEE WHAT REPLICATES HAVE BEEN DONE
+	indx<- c(1:nreps)
+	if(exists("fn")){rm(list=c("fn"))}
 	fnames<-dir(fp)
 	fnames<-fnames[grep(".csv",fnames)]
 	if(length(fnames)>0){
 	fn<- unlist(lapply(c(1:length(fnames)), function(x) 
 		{unlist(strsplit(unlist(strsplit(fnames[x],"_"))[2],"[.]"))[1]}))
-	fn<-unique(as.numeric(na.omit(fn)))}
+		fn<-unique(as.numeric(na.omit(fn)))}
 	if(exists("fn")){indx<- indx[!(indx%in%fn)]}
+
+	# STOCKING
+	stocking<- rbind(data.frame(age0=seq(0,40,2)*1000,age1= 0),
+		data.frame(age0=0,age1= seq(2,14,2)*1000))
 	# SET UP FOR MULTICORE
 	sfInit(parallel=T, cpus=ncpus)
 	sfExportAll()
@@ -34,10 +36,10 @@ if(subdir %in% dir("./output")==FALSE)
 	result <- sfLapply(indx, 
 		function(j){
 			tmp<- sample(1:nrow(stocking),1)
-			input_low_wh$age0_stock<- stocking[tmp,1] 
-			input_low_wh$age1_stock<- stocking[tmp,2]
-			input_low_wh$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
-			output<-xx_ind(input=input_low_wh)
+			inputs$age0_stock<- stocking[tmp,1] 
+			inputs$age1_stock<- stocking[tmp,2]
+			inputs$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
+			output<-xx_ind(input=inputs)
 			write.csv(output$xx, 
 				paste(fp,"/output_",j,".csv",sep=""))
 			write.csv(output$out_vals, 
@@ -45,59 +47,40 @@ if(subdir %in% dir("./output")==FALSE)
 			rm(list=c("output"))
 		})
 	sfStop()
+	}
+
 	
+	
+subdir<-"wh_lower"	
+yy<- run_analysis(subdir=subdir,
+	ncpus=3,
+	nreps=50,
+	inputs=input_low_wh)
+fp<- paste("./output/",subdir,sep="")
+tmp<- tables(1)# compile inputs
+write.csv(tmp,
+	file="C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Stocking-Assessment/dat/lower_wf_inputs.csv")
+	tmp<- tables(2)
+	write.csv(tmp,
+		file="C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Stocking-Assessment/dat/lower_wf_sims.csv")
 
-
-# MAKE A SUB DIRECTORY IF 
-# ONE DOES NOT EXIST ALREADY
+		input=input_low_wh
+		
 subdir<-"wh_upper"
+yy<- run_analysis(subdir=subdir,
+	ncpus=3,
+	nreps=50,
+	inputs=input_low_wh)
 fp<- paste("./output/",subdir,sep="")
-if(subdir %in% dir("./output")==FALSE) 
-	{
-	dir.create(fp) 
-	}
-
-	# CHANGE VARIABLES FOR ANALYSIS
-	nreps<- 2500
-	ncpus<-4
-	# STOCKING LOWER BASIN	
-	stocking<- rbind(data.frame(age0=seq(0,40,10)*1000,age1= 0),
-		data.frame(age0=0,age1= seq(2,14,2)*1000))
-	indx<- c(1:nreps)
-	
-	# CHECK TO SEE WHAT REPLICATES HAVE BEEN DONE
-	fnames<-dir(fp)
-	fnames<-fnames[grep(".csv",fnames)]
-	if(length(fnames)>0){
-	fn<- unlist(lapply(c(1:length(fnames)), function(x) 
-		{unlist(strsplit(unlist(strsplit(fnames[x],"_"))[2],"[.]"))[1]}))
-	fn<-unique(as.numeric(na.omit(fn)))}
-	if(exists("fn")){indx<- indx[!(indx%in%fn)]}
-	# SET UP FOR MULTICORE
-	sfInit(parallel=T, cpus=ncpus)
-	sfExportAll()
-	sfLibrary(triangle)
-	sfLibrary(data.table)
-	sfClusterSetupRNG()
-	# RUN THE FUNCTION run_mc on 4 cores
-	result <- sfLapply(indx, 
-		function(j){
-			tmp<- sample(1:nrow(stocking),1)
-			input_upp_wh$age0_stock<- stocking[tmp,1] 
-			input_upp_wh$age1_stock<- stocking[tmp,2]
-			input_upp_wh$spawn_frequency<-sample(c(1,2,5,10,20),1,replace=TRUE)
-			output<-xx_ind(input=input_upp_wh)
-			write.csv(output$xx, 
-				paste(fp,"/output_",j,".csv",sep=""))
-			write.csv(output$out_vals, 
-				paste(fp,"/inputs_",j,".csv",sep=""))
-			rm(list=c("output"))
-		})
-	sfStop()
+tmp<- tables(1)# compile inputs
+write.csv(tmp,
+	file="C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Stocking-Assessment/dat/upper_wf_inputs.csv")
+tmp<- tables(2)
+write.csv(tmp,
+	file="C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Stocking-Assessment/dat/upper_wf_sims.csv")
 #########################################################	
-	 
-	
-	
+
+
 
 
 # DELETE SIMULATION REPOSITORY?
