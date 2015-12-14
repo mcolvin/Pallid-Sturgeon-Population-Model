@@ -2,7 +2,7 @@
 run_analysis<- function(
 	subdir="lower",
 	ncpus=3,
-	nreps=100,
+	nreps=500,
 	inputs=input)	
 	{
 	# MAKE A SUB DIRECTORY IF 
@@ -53,8 +53,8 @@ run_analysis<- function(
 	
 subdir<-"wh_lower"	
 yy<- run_analysis(subdir=subdir,
-	ncpus=3,
-	nreps=50,
+	ncpus=4,
+	nreps=500,
 	inputs=input_low_wh)
 fp<- paste("./output/",subdir,sep="")
 tmp<- tables(1)# compile inputs
@@ -64,12 +64,11 @@ write.csv(tmp,
 	write.csv(tmp,
 		file="C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Stocking-Assessment/dat/lower_wf_sims.csv")
 
-		input=input_low_wh
 		
 subdir<-"wh_upper"
 yy<- run_analysis(subdir=subdir,
-	ncpus=3,
-	nreps=50,
+	ncpus=4,
+	nreps=500,
 	inputs=input_low_wh)
 fp<- paste("./output/",subdir,sep="")
 tmp<- tables(1)# compile inputs
@@ -79,8 +78,9 @@ tmp<- tables(2)
 write.csv(tmp,
 	file="C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Stocking-Assessment/dat/upper_wf_sims.csv")
 #########################################################	
-
-
+	 
+	
+	
 
 
 # DELETE SIMULATION REPOSITORY?

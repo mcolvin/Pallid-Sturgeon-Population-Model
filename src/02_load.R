@@ -22,7 +22,7 @@ input_low_wh<- input_low_wh[,-4]
 input_low_wh[,1]<- trim(input_low_wh[,1])
 input_low_wh<-split(input_low_wh[,-1],input_low_wh[,1])
 input_low_wh<-lapply(input_low_wh,function (x) x[!is.na(x)]) 
-#input_low_wh$type<- ifelse(input_low_wh$type==1,"triag","unif")
+input_low_wh$type<- ifelse(input_low_wh$type==1,"triag","unif")
 
 input_upp_wh<- read.xlsx("./dat/inputs.xlsx",
 	sheetName="upper_wh",header=FALSE,
@@ -32,7 +32,7 @@ input_upp_wh<- input_upp_wh[,-4]
 input_upp_wh[,1]<- trim(input_upp_wh[,1])
 input_upp_wh<-split(input_upp_wh[,-1],input_upp_wh[,1])
 input_upp_wh<-lapply(input_upp_wh,function (x) x[!is.na(x)])
-#input_upp_wh$type<- ifelse(input_upp_wh$type==1,"triag","unif")
+input_upp_wh$type<- ifelse(input_upp_wh$type==1,"triag","unif")
 
 ## UPPER BASIN
 input_up<- read.xlsx("./dat/inputs.xlsx",
