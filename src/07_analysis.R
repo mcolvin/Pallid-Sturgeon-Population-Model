@@ -1,4 +1,156 @@
 
+
+
+
+### VERSON 2
+
+# SAMPLING INPUTS
+samling_inputs<- expand.grid(p=c(0.1,0.4),
+	nsec=c(2,4,6,8,10),
+	distribution_type=c("uniform","heterogeneous"),
+	n_reaches=c(5,10,15,20,25,30,40, 50,100,150,200),
+	nprim=5)
+	
+input<- list()
+input$n_bends<- 317
+input$rkm<- runif(317,1,5)
+input$den<- 0.2
+input$den_sd<- 0.3
+input$spread<- 0 # SPREAD: 0 IS RANDOM MIXING
+input$ini_adults<- 100
+input$nyears<- 50
+input$daug<- 500000 # DATA AUGMENTATION (SUPER POPULATION)
+input$phi<- 0.92
+input$sample_month<- 8
+input$nprim<- 5
+input$nsec<-4
+input$p<- 0.4 # CAPTURE PROBABILITY
+input$maxage<- 41
+input$natural<- 200
+input$hatchery<- 600
+input$sexratio<- 0.33
+input$age_mat<- 8 # AGE AT 50% MATURITY
+input$mat_k<- 0.7 # HOW FAST CURVE REACHES 1
+
+# SURVIVALS
+input$pr_fert<- 0.01# EGG TO E
+input$phi_1<- 0.001# E TO FE
+input$phi_2<- 0.001# FE TO EFL
+input$phi_3<- 0.001 # EFL TO AGE-0
+input$phi_4<- 0.051 # AGE-0 TO AGE-1
+input$phi_5<- 0.6 # AGE-1 TO AGE-2
+input$phi_6<- 0.92 # AGE-2+
+
+input$k<- 0.3
+input$t0<- 0
+input$linf<- 1400
+input$vb_er<- 0.2
+input$fec_a<- 0.1
+input$fec_b<- 1.1
+input$fec_er<- 0.1 # lognormal error
+
+# SIMULATE CAPTURE HISTORIES
+ppp<- sim_ch(input)
+
+ch<- ppp$ch_out	
+ 
+## ESTIMATE POPULATION 
+	
+# SET UP A HETERGENEOUS POPULATION
+# AND CLOSURE WITHIN REACH
+# ASSUMES REACH IS CLOSED TO EMIGRATION AND MORTALITY
+# ASSUMES CONSTANT CAPTURE PROBABILITY
+dat<-data.frame()
+pb <- txtProgressBar(min = 1, max = nrow(input), style = 3)
+for(s in 1:nrow(input))
+	{
+	for(r in 1:50)
+		{
+		N<- input$N[s]
+		n_reaches<-input$n_reaches[s]
+		x<- seq(input$seg_start[s],input$seg_end[s],input$reach_length[s])
+		xx<- c(1:length(x))# index reaches
+		n_occ<- input$n_occ[s]
+		# reach_locations<- sort(sample(x,n_reaches, replace=FALSE))
+		p_capture<- matrix(input$p[s],length(xx),n_occ)
+		# ASSIGN FISH TO A REACH
+		p_loc<- runif(length(xx))
+		p_loc<- p_loc/sum(p_loc)
+		loc<- cbind(xx,rmultinom(1,N,p_loc))
+
+		
+		loc<- loc[loc[,2]>0,]
+		loc<- rep(loc[,1],loc[,2]) # what reach the fish is in
+		
+		tmmpp<- as.data.frame(table(loc))
+		#plot(lo
+		ch<- matrix(0,N,n_occ)
+		for(k in 1:n_occ)
+			{
+			ch[,k]<-rbinom(N,1,p_capture[loc,k])		
+			}
+		flag<- apply(ch,1,sum)
+		# SAMPLE REACHES
+		sample_reaches<- sample(xx,input$n_reaches[s],replace=FALSE)
+		# KEEP REACH INDEX
+		INDX<- which(loc %in% sample_reaches & flag>0)
+		loc_sampled<- loc[INDX]
+		ch_sampled<- ch[INDX,]
+		app<- out<-data.frame()
+		if(class(ch_sampled)=="matrix" & length(INDX)>10)
+			{
+			out<-closedp.t(ch_sampled)
+			app<- as.data.frame(out$results)
+			app$model<- rownames(out$results)
+			app$r<- r
+			app$s<-s
+			dat<- rbind.fill(dat,app)		
+			}
+
+		}
+	setTxtProgressBar(pb, s)
+	}
+
+
+out<- merge(input,dat, by="s",all.x=TRUE)
+out_dt<- data.table(out)
+write.csv(out,"./PSPAP_sim.csv")
+
+out<- fread("./PSPAP_sim.csv")
+# SUBSET OUT Mo
+#test<- out_dt[,.SD[which.min(AIC)],by=list(s,r)]
+test<- subset(out, model=="M0")
+test$tmp<-1
+#dput(as.data.frame(test),"./sims_out.txt")
+#yyy<-data.table(dget("./sims_out.txt"))
+
+yyy<-test
+plotdat<- yyy[,list(mn_abund=mean(abundance),pr_success=(sum(tmp)/50)),
+	by=list(s,p,n_occ,n_reaches,N,reach_length,model)]
+plotdat$mn_abund<-ifelse(plotdat$mn_abund>8000,8000,plotdat$mn_abund)
+plotdat$n_reaches_per<- plotdat$n_reaches/200*100
+presPlot()
+xyplot(pr_success~n_reaches_per|as.factor(p),plotdat,type='b',group=n_occ,
+	xlab="Percent of river sampled",ylab="More than 10 fish captured")	
+savePlot("./figure-3.1.wmf",type="wmf")	
+dev.off()
+presPlot()
+xyplot(mn_abund~n_reaches_per|as.factor(p),plotdat,type='b',group=n_occ,
+	ylab="Expected abundance",xlab="Percent of river sampled")	
+savePlot("./figure-3.2.wmf",type="wmf")
+dev.off()
+
+# WEIGHT ESTIMATES BY THE INVERSE OF THE PROPORTION OF STREAM SAMPLED
+presPlot()
+plotdat$n_hat<- plotdat$mn_abund/(plotdat$n_reaches_per/100)
+xyplot(n_hat~n_reaches_per|as.factor(p),plotdat,type='b',group=n_occ,
+	ylab="Expected abundance",xlab="Percent of river sampled",ylim=c(0,4000))	
+savePlot("./figure-3.2a.wmf",type="wmf")
+dev.off()
+
+
+	
+### END VERSION 2
 run_analysis<- function(
 	subdir="lower",
 	ncpus=3,
