@@ -106,7 +106,6 @@ for(s in 1:nrow(input))
 			app$s<-s
 			dat<- rbind.fill(dat,app)		
 			}
-
 		}
 	setTxtProgressBar(pb, s)
 	}

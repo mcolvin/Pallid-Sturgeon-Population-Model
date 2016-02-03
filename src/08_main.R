@@ -1,3 +1,8 @@
+# TO DO:
+## [1] MOVE FROM BENDS TO RKMS 
+## [2] MAKE EASY WAY OF MAPPINT RKMS TO BENDS
+## [3]
+
 
 	setwd("C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Population-Model/")
 	source("./src/01_global.R")

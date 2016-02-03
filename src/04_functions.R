@@ -6,7 +6,7 @@
 ## 3. assign bend to rkm
 sim_pop<- function(input)
 	{
-	# PRELINIMARIES
+	# INITIALIZE POPULATION
 	## SET UP SPATIAL MATRIX [FROM, TO, MONTH]
 	sp<- array(0,c(input$n_bends,input$n_bends,12))
 	loc_mat<- matrix(0, input$n_bends,input$n_bends)
@@ -37,8 +37,11 @@ sim_pop<- function(input)
 	# VECTOR OF MONTHS
 	m<- rep(c(6:12,1:5),input$nyears) 	
 	
+	# DISTRIBUTE INVIDUALS ASSUMING EQUILIBRIUM AGE DISTRIBUTION
 	ageDist<- cumprod(rep(input$phi,input$maxage))
 	ageDist<- ageDist/sum(ageDist)
+	
+	# SET UP A SUPER POPULATION OF INDIVIDUALS
 	indData<-data.table(
 		origin=c(rep(1L,input$natural), # 1 natural 
 			rep(2L,input$hatchery), # 2 hatchery
@@ -58,7 +61,8 @@ sim_pop<- function(input)
 		tl=rep(0, input$daug),
 		year=1,
 		month=5)
-	# INITIAL LENGTH
+	
+	# INITIAL LENGTH AT AGE
 	indData[,tl:=(rlnorm(sum(input$daug),
 		log(input$linf*(1-exp(-input$k*(age-input$t0)))),
 		input$vb_er))*live]		
@@ -66,29 +70,40 @@ sim_pop<- function(input)
 		
 	phi_adults<- input$phi^(1/12) # MONTHLY SURVIVAL
 	mov<- array(1, c(input$n_bends,input$n_bends,2))
+	# END INITIALIZATION ##########
 	
 	
-	# MONTHLY DYNAMICS
+	# MONTHLY DYNAMICS ##########
 	for(i in 1:length(m)) # M IS A VECTOR OF MONTHS 1:12, REPEATED FOR NYEARS
 		{
 		# UPDATE TOTAL LENGTH (TO DO: AS A FUNCTION OF GROWTH)
 		indData[,tl:=(rlnorm(sum(input$daug),
 			log(input$linf*(1-exp(-input$k*(age-input$t0)))),
 			input$vb_er))*live]
+	
+		
 		# SEXUAL MATURITY: DOES A FISH BECOME SEXUALLY MATURE AFTER GROWTH?
 		indData[,mature:= rbinom(input$daug,
 			1,
 			1/(1+exp(-input$mat_k*(age-input$age_mat))))] # SEXUALLY MATURE? 0,1
+		
+		
 		# YEARS POST SPAWN
 		indData[,yearsPostSpawn:= sample(c(0:4),input$daug,
 			replace=TRUE,c(1,1,1,1,1))*mature]
+		
+		
 		# SPAWN NEXT YEAR
 		indData[,spawnNextYear:= rbinom(input$daug, 
 			1,(plogis(-12+4.5*yearsPostSpawn)*mature*live))]
-		# NUMBER OF EGGS
+		
+		
+		# NUMBER OF EGGS PRODUCED BY LIVE, FEMALE SPAWNING FISH
 		indData[,eggs:= rpois(input$daug, 
 				exp(log(input$fec_a)+input$fec_b*log(tl)+
 					rnorm(input$daug,0,input$fec_er)))*live*sex*spawnNextYear]
+		
+		
 		
 		# SPAWNING MIGRATION AND AGGREGATION
 		## MOVE UPSTREAM AS A PROBABILITY OF FLOW AND TEMPERATURE
@@ -119,7 +134,7 @@ sim_pop<- function(input)
 	}
 	
 
-
+# FUNCTION TO SIMULATE CAPTURE HISTORIES 
 sim_ch<- function(input,Z, Z_loc)
 	{
 	ch<-data.table(matrix(0L,input$daug,input$nprim*input$nsec))
