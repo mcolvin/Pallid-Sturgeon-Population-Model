@@ -1,58 +1,20 @@
 
 
-
+out<- sim_pop(inputs=input)
 
 ### VERSON 2
 
 # SAMPLING INPUTS
-samling_inputs<- expand.grid(p=c(0.1,0.4),
+sampling_inputs<- expand.grid(p=c(0.1,0.4),
 	nsec=c(2,4,6,8,10),
 	distribution_type=c("uniform","heterogeneous"),
 	n_reaches=c(5,10,15,20,25,30,40, 50,100,150,200),
 	nprim=5)
-	
-input<- list()
-input$n_bends<- 317
-input$rkm<- runif(317,1,5)
-input$den<- 0.2
-input$den_sd<- 0.3
-input$spread<- 0 # SPREAD: 0 IS RANDOM MIXING
-input$ini_adults<- 100
-input$nyears<- 50
-input$daug<- 500000 # DATA AUGMENTATION (SUPER POPULATION)
-input$phi<- 0.92
-input$sample_month<- 8
-input$nprim<- 5
-input$nsec<-4
-input$p<- 0.4 # CAPTURE PROBABILITY
-input$maxage<- 41
-input$natural<- 200
-input$hatchery<- 600
-input$sexratio<- 0.33
-input$age_mat<- 8 # AGE AT 50% MATURITY
-input$mat_k<- 0.7 # HOW FAST CURVE REACHES 1
 
-# SURVIVALS
-input$pr_fert<- 0.01# EGG TO E
-input$phi_1<- 0.001# E TO FE
-input$phi_2<- 0.001# FE TO EFL
-input$phi_3<- 0.001 # EFL TO AGE-0
-input$phi_4<- 0.051 # AGE-0 TO AGE-1
-input$phi_5<- 0.6 # AGE-1 TO AGE-2
-input$phi_6<- 0.92 # AGE-2+
-
-input$k<- 0.3
-input$t0<- 0
-input$linf<- 1400
-input$vb_er<- 0.2
-input$fec_a<- 0.1
-input$fec_b<- 1.1
-input$fec_er<- 0.1 # lognormal error
 
 # SIMULATE CAPTURE HISTORIES
-ppp<- sim_ch(input)
-
-ch<- ppp$ch_out	
+#ppp<- sim_ch(input)
+#ch<- ppp$ch_out	
  
 ## ESTIMATE POPULATION 
 	
@@ -61,7 +23,8 @@ ch<- ppp$ch_out
 # ASSUMES REACH IS CLOSED TO EMIGRATION AND MORTALITY
 # ASSUMES CONSTANT CAPTURE PROBABILITY
 dat<-data.frame()
-pb <- txtProgressBar(min = 1, max = nrow(input), style = 3)
+pb <- txtProgressBar(min = 1, 
+	max = nrow(input), style = 3)
 for(s in 1:nrow(input))
 	{
 	for(r in 1:50)

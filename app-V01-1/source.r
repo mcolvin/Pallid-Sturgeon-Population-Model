@@ -220,7 +220,7 @@ simulate<- function(nyears=100,nreps=50,
     #pop_influx<- 12000
     #allee_rate<- 0.0004
     #S_egg_embryo<-  max_s_egg_embryo/(1+exp(-allee_rate*(pop - pop_influx)))
-    EGGS_age<- 3.48*10^-8 *FL^4.05 #  +110056*log(FL)# EGGS AT LENGTH 
+    EGGS_age<- 3.48*10^-8 *FL^4.05 #  + 110056*log(FL)# EGGS AT LENGTH 
     
     S<- c(S1_ini,rep(S2_ini,maxAge-1))#	
     
@@ -333,3 +333,5 @@ simulate<- function(nyears=100,nreps=50,
   return(list(outp=outp, parms=parms))
 }	
 
+
+simulate()

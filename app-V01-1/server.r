@@ -1,8 +1,4 @@
-library(triangle)
-library(reshape2)
-library(plyr)
-library(lattice)
-library(shiny)
+
 #added outer loop parameteric uncertainty
 # need to modify initialization and sims to account 
 # for the pulling a mean survival from a beta 
@@ -11,21 +7,6 @@ library(shiny)
 #rest of sex:origins, and uncert, pull from beta dist
 
 
-sim_nxt_adults<- function(matured,sexRatio,prev,S,tmax)
-{
-  nxt<-rbinom(tmax,prev,S)
-  nxt<- nxt+round(matured*sexRatio,0)
-  return(c(0,nxt[-tmax]))  
-}
-
-bundleReps<- function(appendTo,append,rep)
-{
-  app<-as.data.frame(append)
-  names(app)<- paste("yr",c(1:ncol(app)))
-  app$rep<-rep
-  out<- rbind(appendTo,app)
-  return(out)
-}
 
 shinyServer(function(input, output) {
 	
@@ -154,7 +135,6 @@ output$plot_03z<- renderPlot({
   Linf=1683
   K=0.036
   t0=-5.9
-  #sigma=93.77
   dat<- data.frame(age=c(1:maxAge))
   dat$FL<-Linf*(1-exp(-K*(dat$age-t0)))
   dat$fec<- ifelse(dat$age>=input$aa,
@@ -170,75 +150,84 @@ output$plot_03z<- renderPlot({
 
 
 xx<- reactive({
-  out<- data.frame()
-  j_n_out<-j_h_out<-a_h_m_out<-a_h_f_out<-a_n_f_out<-a_n_m_out<-data.frame()
-  for(j in 1:input$nreps)
-  {
-  maxAge<- input$maxAge
-  Linf=1683
-  K=0.036
-  t0=-5.9
-  #sigma=93.77
-  FL<-Linf*(1-exp(-K*(c(1:maxAge)-t0)))
-  mat_dat<- maturity()
-  dat<- inits()$inits
-  survival<-inits()$survivals$survival[-1]# drop age-0 survival
-  a_n_f<-a_n_m<-a_h_f<-a_h_m<-j_h<-j_n<- matrix(0,nrow=maxAge,ncol=input$nyears)
-  a_n_f[,1]<- dat$a_n_f
-  a_n_m[,1]<- dat$a_n_m
-  a_h_f[,1]<- dat$a_h_f
-  a_h_m[,1]<- dat$a_h_m
-  j_h[,1]<- dat$j_h
-  j_n[,1]<- dat$j_n  
-  
-  for(i in 2:input$nyears)
-  {
-  stocked<-rpois(1,round(input$fe_stock*0.051+
-                   input$efl_stock*0.051^0.666+
-                   input$juv_stock*0.051^0.333,0))
-  nxt<- rbinom(maxAge,j_h[,i-1],survival)
-  nxt_mat_h<- rbinom(maxAge,nxt,mat_dat$maturity)
-  nxt<- nxt-nxt_mat_h
-  j_h[,i]<-c(stocked,nxt[-maxAge])
-  
-  age0<- sum(a_h_f[,i]*a_n_f[,i])*0.25*2
-  nxt<- rbinom(maxAge,j_n[,i-1],survival)
-  nxt_mat_n<- rbinom(maxAge,nxt,mat_dat$maturity)
-  nxt<- nxt-nxt_mat_n  
-  j_n[,i]<-c(age0,nxt[-maxAge])  
-    
-  # NUMBER OF ADULT NATURAL ORIGIN FEMALES  
-  a_n_f[,i]<-sim_nxt_adults(matured=nxt_mat_n,sexRatio=0.5,
-      prev=a_n_f[,i-1],S=survival,tmax=maxAge)
+	out<- data.frame()
+	j_n_out<-j_h_out<-a_h_m_out<-a_h_f_out<-a_n_f_out<-a_n_m_out<-data.frame()
+	for(j in 1:input$nreps)
+		{
+		maxAge<- input$maxAge
+		Linf=1683
+		K=0.036
+		t0=-5.9
+		FL<-Linf*(1-exp(-K*(c(1:maxAge)-t0))) # CALCULATE FORK LENGTH FOR EACH AGE
+		mat_dat<- maturity()
+		dat<- inits()$inits
+		survival<-inits()$survivals$survival[-1]# drop age-0 survival
+		a_n_f<-a_n_m<-a_h_f<-a_h_m<-j_h<-j_n<- matrix(0,nrow=maxAge,ncol=input$nyears)
+		
+		# SET INITIAL VALUES FOR EACH STAGE AND ORIGIN
+		## COLUMNS INDEX YEAR
+		## ROWS INDEX AGE
+		a_n_f[,1]	<- dat$a_n_f
+		a_n_m[,1]	<- dat$a_n_m
+		a_h_f[,1]	<- dat$a_h_f
+		a_h_m[,1]	<- dat$a_h_m
+		j_h[,1]		<- dat$j_h
+		j_n[,1]		<- dat$j_n  
+		 
+		for(i in 2:input$nyears)
+			{
+			# STOCKED INTO THE SYSTEM.....
+			stocked<-rpois(1,round(input$fe_stock*0.051+
+				input$efl_stock*0.051^0.666+
+				input$juv_stock*0.051^0.333,0))
+			nxt<- rbinom(maxAge,j_h[,i-1],survival)
+			nxt_mat_h<- rbinom(maxAge,nxt,mat_dat$maturity)
+			nxt<- nxt-nxt_mat_h
+			j_h[,i]<-c(stocked,nxt[-maxAge])
+			  
+			  
+			# FECUDNITY
+			eggs<-(input$a_fec*10^-8 * FL^input$b_fec)*(a_h_f[,i]+a_n_f[,i])
+               	
+			  
+			age0<- sum(a_h_f[,i]*a_n_f[,i])*0.25*2
+			nxt<- rbinom(maxAge,j_n[,i-1],survival)
+			nxt_mat_n<- rbinom(maxAge,nxt,mat_dat$maturity)
+			nxt<- nxt-nxt_mat_n  
+			j_n[,i]<-c(age0,nxt[-maxAge])  
+				
+			# NUMBER OF ADULT NATURAL ORIGIN FEMALES  
+			a_n_f[,i]<-sim_nxt_adults(matured=nxt_mat_n,sexRatio=0.5,
+			prev=a_n_f[,i-1],S=survival,tmax=maxAge)
 
-  # NUMBER OF ADULT NATURAL ORIGIN MALES    
-  a_n_m[,i]<-sim_nxt_adults(matured=nxt_mat_n,sexRatio=0.5,
-       prev=a_n_m[,i-1],S=survival,tmax=maxAge)
+			# NUMBER OF ADULT NATURAL ORIGIN MALES    
+			a_n_m[,i]<-sim_nxt_adults(matured=nxt_mat_n,sexRatio=0.5,
+			prev=a_n_m[,i-1],S=survival,tmax=maxAge)
 
-  a_h_f[,i]<-sim_nxt_adults(matured=nxt_mat_h,sexRatio=0.5,
-                            prev=a_h_f[,i-1],S=survival,tmax=maxAge)
-  
-  a_h_m[,i]<-sim_nxt_adults(matured=nxt_mat_h,sexRatio=0.5,
-                            prev=a_h_m[,i-1],S=survival,tmax=maxAge)
-  }
-  
-  a_n_f_out<- bundleReps(appendTo=a_n_f_out,append=a_n_f,rep=j)
-  a_n_m_out<- bundleReps(appendTo=a_n_m_out,append=a_n_m,rep=j)
-  a_h_f_out<- bundleReps(appendTo=a_h_f_out,append=a_h_f,rep=j)  
-  a_h_m_out<- bundleReps(appendTo=a_h_m_out,append=a_h_m,rep=j)
-  j_h_out<- bundleReps(appendTo=j_h_out,append=j_h,rep=j)  
-  j_n_out<- bundleReps(appendTo=j_n_out,append=j_n,rep=j)
-  
-  }# end J (reps)
-  out<- list(age=c(1:maxAge),survival=survival,
-             a_n_f=a_n_f_out,
-             a_n_m=a_n_m_out,
-             a_h_f=a_h_f_out,
-             a_h_m=a_h_m_out,
-             j_h=j_h_out,
-             j_n=j_n_out)
-  return(out)    
-  })
+			a_h_f[,i]<-sim_nxt_adults(matured=nxt_mat_h,sexRatio=0.5,
+			prev=a_h_f[,i-1],S=survival,tmax=maxAge)
+			  
+			a_h_m[,i]<-sim_nxt_adults(matured=nxt_mat_h,sexRatio=0.5,
+			prev=a_h_m[,i-1],S=survival,tmax=maxAge)
+			}
+		  
+		a_n_f_out<- bundleReps(appendTo=a_n_f_out,append=a_n_f,rep=j)
+		a_n_m_out<- bundleReps(appendTo=a_n_m_out,append=a_n_m,rep=j)
+		a_h_f_out<- bundleReps(appendTo=a_h_f_out,append=a_h_f,rep=j)  
+		a_h_m_out<- bundleReps(appendTo=a_h_m_out,append=a_h_m,rep=j)
+		j_h_out<- bundleReps(appendTo=j_h_out,append=j_h,rep=j)  
+		j_n_out<- bundleReps(appendTo=j_n_out,append=j_n,rep=j)
+		  
+		}# end J (reps)
+	out<- list(age=c(1:maxAge),survival=survival,
+		a_n_f=a_n_f_out,
+		a_n_m=a_n_m_out,
+		a_h_f=a_h_f_out,
+		a_h_m=a_h_m_out,
+		j_h=j_h_out,
+		j_n=j_n_out)
+	return(out)    
+	})
   
 
 output$tbl1<- renderTable({
@@ -246,32 +235,32 @@ output$tbl1<- renderTable({
   return(out)
 })
 
-
+## PLOT OF POPULATION VIABILITY TYPE THINGS.  
 output$plot_044<- renderPlot({
-  plot_dat<- rbind(xx()$j_n, xx()$a_n_f,
-                   xx()$a_n_m,xx()$j_h, xx()$a_h_f,
-                   xx()$a_h_m)
-  foo<- c()
-  for(x in 1:max(plot_dat$rep))
-    {
-    dat<- subset(plot_dat, rep==x)
-    total<- unlist(apply(dat[,1:input$nyears],2,sum))
-    foo<- c(foo,total)
-    } 
-  ymax<- max(foo)/1000
-  #trans_grey<- rgb(120,120,120,alpha=10,maxColorValue=255)
-  trans_grey<- rgb(0,0,0,alpha=20,maxColorValue=255)
-  par(mar=c(4,7,1,1))
-  plot(c(1:input$nyears), rep(10000,input$nyears), xlab="Year",
+	plot_dat<- rbind(xx()$j_n, xx()$a_n_f,
+		xx()$a_n_m,xx()$j_h, xx()$a_h_f,
+		xx()$a_h_m)
+	foo<- c()
+	for(x in 1:max(plot_dat$rep))
+		{
+		dat<- subset(plot_dat, rep==x)
+		total<- unlist(apply(dat[,1:input$nyears],2,sum))
+		foo<- c(foo,total)
+		} 
+	ymax<- max(foo)/1000
+	#trans_grey<- rgb(120,120,120,alpha=10,maxColorValue=255)
+	trans_grey<- rgb(0,0,0,alpha=20,maxColorValue=255)
+	par(mar=c(4,7,1,1))
+	plot(c(1:input$nyears), rep(10000,input$nyears), xlab="Year",
        ylab="Population abundance \n (natural and hatchery produced x 1000)",
        las=1,type="n",ylim=c(0,ymax))
- for(x in 1:max(plot_dat$rep))
-    {
-    dat<- subset(plot_dat, rep==x)
-    total<- apply(dat[,1:input$nyears],2,sum)
-    points(c(1:input$nyears),total/1000,col=trans_grey,type='l',
-         lwd=3)
-    } 
+	for(x in 1:max(plot_dat$rep))
+		{
+		dat<- subset(plot_dat, rep==x)
+		total<- apply(dat[,1:input$nyears],2,sum)
+		points(c(1:input$nyears),total/1000,col=trans_grey,type='l',
+		lwd=3)
+		} 
  # out$tmp<- 1
   #out<- subset(out,year==50)
 #  #total<- sum(out$tmp)

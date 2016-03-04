@@ -59,7 +59,8 @@ initialize<- function(inputs)
 		k=runif(input$daug,input$k*0.8,input$k*1.2),# can slide in individual k
 		Linf=rep(input$linf,input$daug),# can slide in individual Linf
 		t0= rep(input$t0,input$daug),# t0 fixed for all fish
-		live=c(rep(1, input$hatchery+input$natural),rep(0L,input$daug-input$hatchery-input$natural)),# ALIVE?
+		live=c(rep(1, input$hatchery+input$natural),
+			rep(0L,input$daug-input$hatchery-input$natural)),# ALIVE?
 		
 		# SPAWNING
 		mature=rep(0L,input$daug),
@@ -84,7 +85,6 @@ initialize<- function(inputs)
 	return(list(indData=indData, mov=mov,phi_adults=phi_adults))
 	}
 
-
 ## PLUGINS
 dLength<- function(k, linf,length1,dT)
 	{
@@ -95,7 +95,8 @@ dLength<- function(k, linf,length1,dT)
 
 dWeight<- function(a=0.0001,b=3,len,er=0.1)
 	{
-	weight<- exp(log(a)+b*log(len)+rnorm(length(len),0,er))
+	weight<- rlnorm(length(len),log(a*len^b),exp(er))
+	return(weight)
 	}
 
 dMaturity<- function(maturity,mat_k,age,age_mat,live)
@@ -114,11 +115,26 @@ spawnNextYear<- function(yps,a=-12,b=4.5,mature,live)
 	}
 fecundity<- function(len,wgt,a,b,er,sex,live,spawnNextYear)
 	{
-	y<- exp(log(a)+b*log(len)+rnorm(input$daug,0,er))
-	eggs<-rpois(length(len),y )*live*sex*spawnNextYear
+	y<-rlnorm(length(len),log(a*len^b),er)*live*sex#*spawnNextYear
+	eggs<-rpois(length(len),y)
 	return(eggs)
 	}
 
+	
+
+Z<-AGE<-LEN<-MAT<-RKM<-YPS<-WGT<-SEX<- matrix(0,input$daug,input$nreps)
+
+a<-matrix(runif(nrows*nyears),nrows,input$nreps)
+
+dL<- function(L){L+4}
+
+out<- c()
+for(i in 1:15)
+	{
+	ptm <- Sys.time()
+	yy<- structure(vapply(a,dL,numeric(1)), dim=dim(a)) # faster to use structure 
+	out<- c(out,Sys.time()-ptm)
+	}
 
 sim_pop<- function(inputs)
 	{
@@ -129,15 +145,20 @@ sim_pop<- function(inputs)
 	mov<- out$mov
 	rm(list=c("out"))# clear list from memory
 	# END INITIALIZATION
-	
+	timing<-c() # for some benchmarking
 	# MONTHLY DYNAMICS ##########
+	m<-rep(1:12,input$nyears)
 	for(i in 1:length(m)) # M IS A VECTOR OF MONTHS 1:12, REPEATED FOR NYEARS
 		{
+		
+		# http://stackoverflow.com/questions/8579257/r-applying-function-over-matrix-and-keeping-matrix-dimensions
+		
+		ptm <- Sys.time()
 		# UPDATE TOTAL LENGTH 
 		indData$tl<-dLength(k=indData$k, linf=indData$Linf,length1=indData$tl,dT=1/12)*indData$live
 		
 		# UPDATE WEIGHT
-		indData$wgt<-dWeight(a=0.0001,b=3,len=indData$tl,er=0.1)
+		indData$wgt<-dWeight(a=0.0001,b=3,len=indData$tl,er=0.1)*indData$live
 		
 		# UPDATE SEXUAL MATURITY: HAS A FISH REACHED SEXUAL MATURITY?
 		## SEXUALLY MATURE: [0=NO,1=YES]
@@ -152,40 +173,41 @@ sim_pop<- function(inputs)
 			mature=indData$mature,live=indData$live)
 		
 		# NUMBER OF EGGS PRODUCED BY LIVE, FEMALE SPAWNING FISH
-		indData$eggs<- fecundity(len=indData$tl,wgt=indData$weight,a=input$fec_a,
-			b=input$fec_b,er=input$fec_er,sex=indData$sex,
-			live=indData$live,spawnNextYear=indData$spawnNextYear)
-		
-		
-		
-		# SPAWNING MIGRATION AND AGGREGATION
-		## MOVE UPSTREAM AS A PROBABILITY OF FLOW AND TEMPERATURE
-		## GO TO A REACH GIVEN SOME PROBABILITY BASED ON HABITAT
-		## SPAWN GIVEN A PROBABILITY BASED ON NUMBERS OF FISH
-		
-		
-		# NUMBER OF SEXUALLY MATURE FISH PER BEND
-		## THIS NEEDS SOME WORK TO MODEL MOVEMENT AND AGGREGATION
-		xxx<- indData[spawnNextYear==1 & sex==1 & live==1, 
-			list(female=sum(sex),eggs=sum(eggs)),by=bend]
-		xxx<- merge(xxx, indData[live==1 & sex==0, 
-			list(male=length(sex)),by=bend],by="bend",all=TRUE)
-		xxx[is.na(xxx)]<- 0
-		# RECRUITMENT PER BEND
-		## EGGS
-		xxx$embryo<-ifelse(xxx$male>0,xxx$eggs*input$pr_fert,0)
-		xxx$free_embryo<-xxx$embryo*input$phi_1 # CAN DO A SPATIAL REASSIGMENT HERE... A DRIFT PROBABLITY VECTOR/MATRIX
-		xxx$efl<- xxx$free_embryo*input$phi_2 
-		xxx$age0<- round(xxx$efl*input$phi_3,0)
+		indData[,eggs:=fecundity(len=tl,wgt=weight,a=input$fec_a,b=input$fec_b,
+			er=input$fec_er,sex=sex,live=live,spawnNextYear=spawnNextYear)]
+		if(m[i]==6 & i>1)
+			{
+			# SPAWNING MIGRATION AND AGGREGATION
+			## MOVE UPSTREAM AS A PROBABILITY OF FLOW AND TEMPERATURE
+			## GO TO A REACH GIVEN SOME PROBABILITY BASED ON HABITAT
+			## SPAWN GIVEN A PROBABILITY BASED ON NUMBERS OF FISH
+			
+			
+			# NUMBER OF SEXUALLY MATURE FISH PER BEND
+			## THIS NEEDS SOME WORK TO MODEL MOVEMENT AND AGGREGATION
+			xxx<- ddply(indData,.(bend),summarize,.drop=FALSE,
+				females=sum(sex*spawnNextYear*live),
+				males= sum((1-sex)*spawnNextYear*live),
+				males_present= ifelse(sum((1-sex)*spawnNextYear*live)>0,1,0),
+				eggs=sum(eggs*spawnNextYear*sex*live))
+			
 
-		if(m[i]==6 & i>1){}# spawning
+			
+			# RECRUITMENT PER BEND
+			## EGGS
+			xxx$embryo<-xxx$eggs*xxx$males_present*input$pr_fert
+			xxx$free_embryo<-xxx$embryo*input$phi_1 # CAN DO A SPATIAL REASSIGMENT HERE... A DRIFT PROBABLITY VECTOR/MATRIX
+			xxx$efl<- xxx$free_embryo*input$phi_2 
+			xxx$age0<- round(xxx$efl*input$phi_3,0)	
+			}# spawning
 		
 		# SUMMARIZE POPULATION 
-		pop_out<- indData[live==1, list(n=sum(live)),by=c("year","month","origin","sex")]
+		#pop_out<- ddply(indData,.(origin,sex),summarize,n=sum(live))
+		timing<-c(timing, Sys.time() - ptm)
 		}
 	return(list(pop_out=pop_out))
 	}
-	
+
 
 # FUNCTION TO SIMULATE CAPTURE HISTORIES 
 sim_ch<- function(input,Z, Z_loc)

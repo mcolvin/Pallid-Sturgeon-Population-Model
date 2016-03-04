@@ -1,6 +1,3 @@
-library(shiny)
-require(markdown)
-library(shinythemes)
 
 
 shinyUI(
@@ -141,7 +138,7 @@ tabPanel("Fecundity",
                 ###############################################################################
                 tabPanel("Viability analysis",
                           fluidRow(
-                            column(12,align="center",plotOutput("plot_044",width="100%",height="auto"),hr()),
+                        column(12,align="center",plotOutput("plot_044",width="100%",height="auto"),hr()),
                            column(4,sliderInput(inputId="fe_stock",
                                                 label="Free embryos stocked",
                                                 min=0, 
@@ -167,7 +164,7 @@ tabPanel("Fecundity",
                                                 value=50,min=20,max=100,step=10))                          
                            )# end fluidRow
                         ),# end tabPanel
-tabPanel("out",column(12,uiOutput("tbl1")))               
+tabPanel("Model Output",column(12,uiOutput("tbl1")))               
 		             )# end tabsetpanel
 		           ) # end main panel
 		         )# end sidbarlayout
