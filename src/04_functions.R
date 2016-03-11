@@ -5,200 +5,222 @@
 ## 2. convert movement to rkm rather than bend to bend
 ## 3. assign bend to rkm
 
-initialize<- function(inputs)
-	{
-	# INITIALIZE POPULATION
-	## SET UP SPATIAL MATRIX [FROM, TO, MONTH]
-	sp<- array(0,c(input$n_bends,input$n_bends,12))
-	loc_mat<- matrix(0, input$n_bends,input$n_bends)
-	for(bend in 1:input$n_bends)
-		{
-		if(input$spread==0)
-			{ # UNIFORM DISTRIBUTION
-			values<- rep(1,input$n_bends)
-			}
-		if(input$spread>0)
-			{# GAUSSIAN	
-			values<-dnorm(input$rkm,
-				input$rkm[bend],input$spread)
-			}
-		loc_mat[bend,]<- values/sum(values)# NORMALIZE TO 1			
-		}
-	for(month in 1:12)
-		{
-		sp[,,month]<-loc_mat# sp:  matrix of monthly movement probabilities
-		}
-	### END SPATIAL
+
+
+	
+#sim_pop<- function(inputs=input)
+#	{
+inputs=input
 
 	# NUMBER OF ADULTS IN EACH BEND GIVEN DENSITY AND BEND LENGTH
-	N_adults<- rpois(input$n_bends, 
-		exp(log(input$den)+rnorm(input$n_bends,0,input$den_sd) + 
-			log(input$rkm))
-			)
-	# VECTOR OF MONTHS
-	m<- rep(c(6:12,1:5),input$nyears) 	
-	
-	# DISTRIBUTE INVIDUALS ASSUMING EQUILIBRIUM AGE DISTRIBUTION
-	ageDist<- cumprod(rep(input$phi,input$maxage))
-	ageDist<- ageDist/sum(ageDist)
-	
-	# SET UP A SUPER POPULATION OF INDIVIDUALS
-	indData<-data.table(
-		origin=c(rep(1L,input$natural), # 1 natural 
-			rep(2L,input$hatchery), # 2 hatchery
-			rep(0L, (input$daug-input$hatchery-input$natural))), # slots to fill
-		age = c(rep(c(1:input$maxage),rmultinom(1,input$natural,ageDist)),# NATURAL ORIGIN FISH
-			rep(c(1:input$maxage),rmultinom(1,input$hatchery,ageDist)),# HATCHERY ORIGIN FISH
-			rep(0L,(input$daug-input$hatchery-input$natural))), # OPEN SLOTS
-		sex = c(rbinom(input$natural,1,input$sexratio),# NATURAL ORIGIN FISH
-			rbinom(input$hatchery,1,input$sexratio), # HATCHERY ORIGIN FISH
-			rep(0L, (input$daug-input$hatchery-input$natural))),
+	N_n<- rmultinom(inputs$nreps,
+		inputs$natural,inputs$rel_density)
+	N_h<- rmultinom(inputs$nreps,
+		inputs$hatchery,inputs$rel_density)	
+		
+	# SET UP MATRICES FOR SIMULATION	
+	Z_H<-AGE_H<-LEN_H<-MAT_H<-RKM_H<-MPS_H<-WGT_H<-SEX_H<- matrix(0,inputs$daug,inputs$nreps)
+	Z_N<-AGE_N<-LEN_N<-MAT_N<-RKM_N<-MPS_N<-WGT_N<-SEX_N<- matrix(0,inputs$daug,inputs$nreps)
 
-		# VBGF
-		#k=rep(input$k,input$daug),# can slide in individual k
-		k=runif(input$daug,input$k*0.8,input$k*1.2),# can slide in individual k
-		Linf=rep(input$linf,input$daug),# can slide in individual Linf
-		t0= rep(input$t0,input$daug),# t0 fixed for all fish
-		live=c(rep(1, input$hatchery+input$natural),
-			rep(0L,input$daug-input$hatchery-input$natural)),# ALIVE?
-		
-		# SPAWNING
-		mature=rep(0L,input$daug),
-		yearsPostSpawn=rep(0L,input$daug),
-		spawnNextYear=rep(0L,input$daug),
-		
-		# SPACE AND TIM
-		bend=rep(0L, input$daug),
-		eggs=rep(0, input$daug),
-		tl=rep(0, input$daug),
-		year=1,
-		month=5)
-	
-	# INITIAL LENGTH AT AGE
-	indData$tl<-(rlnorm(sum(input$daug),
-		log(indData$Linf*(1-exp(-indData$k*(indData$age-input$t0)))),
-		input$vb_er))*indData$live	
-		
-	phi_adults<- input$phi^(1/12) # MONTHLY SURVIVAL
-	mov<- array(1, c(input$n_bends,input$n_bends,2))
+	# FISH ALIVE AT INITIALIZATION 
+	## [Z]
+	Z_H[]<- sapply(1:inputs$nreps, ini_Z,
+		n=inputs$hatchery,
+		fill0=inputs$daug-inputs$hatchery)
+	Z_N[]<- sapply(1:inputs$nreps, ini_Z,
+		n=inputs$natural,
+		fill0=inputs$daug-inputs$natural)
+	AGE_N[]<- sapply(1:inputs$nreps,ini_age,
+		rel_age=inputs$rel_age,
+		maxage=inputs$maxage,
+		n=inputs$natural,
+		fill0=inputs$daug-inputs$natural)
+	AGE_H[]<- sapply(1:inputs$nreps,ini_age,
+		rel_age=inputs$rel_age,
+		maxage=inputs$maxage,
+		n=inputs$hatchery,
+		fill0=inputs$daug-inputs$hatchery)	
+	LEN_H[]<-sapply(1:inputs$nreps, ini_length,
+		linf=inputs$linf ,
+		k=inputs$k,
+		t0=inputs$t0,
+		age=AGE_H,
+		live=Z_H)
+	LEN_N[]<-sapply(1:inputs$nreps, ini_length,
+		linf=inputs$linf ,
+		k=inputs$k,
+		t0=inputs$t0,
+		age=AGE_N,
+		live=Z_N)
+	MAT_H[]<-sapply(1:inputs$nreps, ini_maturity,
+		k=inputs$mat_k,
+		len=LEN_H,
+		age_mat=input$age_mat,
+		live=Z_H)
+	MAT_N<-sapply(1:inputs$nreps, ini_maturity,
+		k=inputs$mat_k,
+		len=LEN_N,
+		age_mat=input$age_mat,
+		live=Z_N)
+	MPS_H[]<-sapply(1:inputs$nreps, ini_mps,
+		n=inputs$daug,
+		mature=MAT_H,
+		live=Z_H)
+	MPS_N[]<-sapply(1:inputs$nreps, ini_mps,
+		n=inputs$daug,
+		mature=MAT_N,
+		live=Z_N)
+	WGT_H[]<-sapply(1:inputs$nreps, ini_wgt,
+		a=inputs$a,
+		b=inputs$b,
+		len=LEN_H,
+		live=Z_H)
+	WGT_N[]<-sapply(1:inputs$nreps, ini_wgt,
+		a=inputs$a,
+		b=inputs$b,
+		len=LEN_N,
+		live=Z_N)
+	# USING FUNCTIONS TO INITIALIZE
+	SEX_H[]<-sapply(1:inputs$nreps,ini_sex,
+		n=inputs$hatchery,
+		ratio=inputs$sexratio,
+		fill0=inputs$daug-inputs$hatchery)
+	SEX_N[]<-sapply(1:inputs$nreps,ini_sex,
+		n=inputs$natural,
+		ratio=inputs$sexratio,
+		fill0=inputs$daug-inputs$natural)
+	RKM_H[]<-sapply(1:inputs$nreps,ini_rkm,
+		n=inputs$hatchery,
+		fill0=inputs$daug-inputs$hatchery)
+	RKM_N[]<-sapply(1:inputs$nreps,ini_rkm,
+		n=inputs$natural,
+		fill0=inputs$daug-inputs$natural)		
 	# END INITIALIZATION ##########
-	return(list(indData=indData, mov=mov,phi_adults=phi_adults))
-	}
-
-## PLUGINS
-dLength<- function(k, linf,length1,dT)
-	{
-	# A VECTORIZED FUNCTION 
-	L2<- (linf-length1)*(1-exp(-k*dT)) + length1 # FABENS MODEL WITH MODFICATION
-	return(L2)
-	}
-
-dWeight<- function(a=0.0001,b=3,len,er=0.1)
-	{
-	weight<- rlnorm(length(len),log(a*len^b),exp(er))
-	return(weight)
-	}
-
-dMaturity<- function(maturity,mat_k,age,age_mat,live)
-	{
-	y<- -mat_k*(age-age_mat)
-	y<- -input$mat_k*(indData$age-input$age_mat)
-	M2<- rbinom(length(y),1,1/(1+exp(y))*live)
-	return(M2)
-	}
-spawnNextYear<- function(yps,a=-12,b=4.5,mature,live)
-	{
-	# yps: years post spawn
-	y<- a+b*yps
-	y<- rbinom(length(yps),1,plogis(y)*mature*live) 
-	return(y)	
-	}
-fecundity<- function(len,wgt,a,b,er,sex,live,spawnNextYear)
-	{
-	y<-rlnorm(length(len),log(a*len^b),er)*live*sex#*spawnNextYear
-	eggs<-rpois(length(len),y)
-	return(eggs)
-	}
-
 	
-
-Z<-AGE<-LEN<-MAT<-RKM<-YPS<-WGT<-SEX<- matrix(0,input$daug,input$nreps)
-
-a<-matrix(runif(nrows*nyears),nrows,input$nreps)
-
-dL<- function(L){L+4}
-
-out<- c()
-for(i in 1:15)
-	{
-	ptm <- Sys.time()
-	yy<- structure(vapply(a,dL,numeric(1)), dim=dim(a)) # faster to use structure 
-	out<- c(out,Sys.time()-ptm)
-	}
-
-sim_pop<- function(inputs)
-	{
-	# BEGIN INITIALIZATION
-	out<- initialize(inputs=input)
-	indData<- out$indData
-	phi_adults<- out$phi_adults
-	mov<- out$mov
-	rm(list=c("out"))# clear list from memory
-	# END INITIALIZATION
-	timing<-c() # for some benchmarking
-	# MONTHLY DYNAMICS ##########
-	m<-rep(1:12,input$nyears)
-	for(i in 1:length(m)) # M IS A VECTOR OF MONTHS 1:12, REPEATED FOR NYEARS
+	
+	# VECTOR OF MONTHS
+	## STARTS IN JANUARY
+	m<- rep(c(1:12),input$nyears) 	
+	# SIMULATE POPULATION DYNAMICS GIVEN INITIAL STATES
+	
+	for(i in m) # M IS A VECTOR OF MONTHS 1:12, REPEATED FOR NYEARS
 		{
-		
-		# http://stackoverflow.com/questions/8579257/r-applying-function-over-matrix-and-keeping-matrix-dimensions
-		
-		ptm <- Sys.time()
+		# UPDATE WHETHER FISH SURVIVED PRIOR TO UPDATING OTHER STUFF
+		Z_N<- sapply(1:inputs$nreps,dSurvival,
+			n=input$daug,
+			phi_age=inputs$phi,# vector of age survivals
+			age=AGE_N,
+			live=Z_N)
+		# UPDATE WHETHER FISH SURVIVED PRIOR TO UPDATING OTHER STUFF
+		Z_H<- sapply(1:inputs$nreps,dSurvival,
+			n=input$daug,
+			phi_age=inputs$phi,# vector of age survivals
+			age=AGE_H,
+			live=Z_H)
 		# UPDATE TOTAL LENGTH 
-		indData$tl<-dLength(k=indData$k, linf=indData$Linf,length1=indData$tl,dT=1/12)*indData$live
-		
-		# UPDATE WEIGHT
-		indData$wgt<-dWeight(a=0.0001,b=3,len=indData$tl,er=0.1)*indData$live
-		
-		# UPDATE SEXUAL MATURITY: HAS A FISH REACHED SEXUAL MATURITY?
-		## SEXUALLY MATURE: [0=NO,1=YES]
-		indData$mature<-dMaturity(maturity=indData$mature,mat_k=input$mat_k,
-			age=indData$age,age_mat=input$age_mat,live=indData$live) 
-			
-		# UPDATE YEARS POST SPAWN
-		indData$yearsPostSpawn<-sample(c(0:4),input$daug,replace=TRUE,c(1,1,1,1,1))*indData$mature
-			
-		# WILL THE FISH SPAWN NEXT YEAR: [0=NO, 1=YES]
-		indData$spawnNextYear<-spawnNextYear(yps=indData$yearsPostSpawn,a=-12,b=4.5,
-			mature=indData$mature,live=indData$live)
-		
-		# NUMBER OF EGGS PRODUCED BY LIVE, FEMALE SPAWNING FISH
-		indData[,eggs:=fecundity(len=tl,wgt=weight,a=input$fec_a,b=input$fec_b,
-			er=input$fec_er,sex=sex,live=live,spawnNextYear=spawnNextYear)]
-		if(m[i]==6 & i>1)
-			{
-			# SPAWNING MIGRATION AND AGGREGATION
-			## MOVE UPSTREAM AS A PROBABILITY OF FLOW AND TEMPERATURE
-			## GO TO A REACH GIVEN SOME PROBABILITY BASED ON HABITAT
-			## SPAWN GIVEN A PROBABILITY BASED ON NUMBERS OF FISH
-			
-			
-			# NUMBER OF SEXUALLY MATURE FISH PER BEND
-			## THIS NEEDS SOME WORK TO MODEL MOVEMENT AND AGGREGATION
-			xxx<- ddply(indData,.(bend),summarize,.drop=FALSE,
-				females=sum(sex*spawnNextYear*live),
-				males= sum((1-sex)*spawnNextYear*live),
-				males_present= ifelse(sum((1-sex)*spawnNextYear*live)>0,1,0),
-				eggs=sum(eggs*spawnNextYear*sex*live))
-			
+		LEN_H<-sapply(1:inputs$nreps,dLength,
+			n=input$daug,
+			k=inputs$k, 
+			linf=inputs$linf,
+			dT=1/12,
+			length1=LEN_H,
+			er=0.2,
+			live=Z_H)
+		LEN_N<-sapply(1:inputs$nreps,dLength,
+			n=input$daug,
+			k=inputs$k, 
+			linf=inputs$linf,
+			dT=1/12,
+			length1=LEN_N,
+			er=0.2,
+			live=Z_N)		
+		# UPDATE WEIGHT 
+		WGT_H<-sapply(1:inputs$nreps,dWeight,
+			n=inputs$daug,
+			a=inputs$a,
+			b=inputs$a,
+			len=LEN_H,
+			er=0.1,
+			live=Z_H)
+		WGT_N<-sapply(1:inputs$nreps,dWeight,
+			n=inputs$daug,
+			a=inputs$a,
+			b=inputs$a,
+			len=LEN_N,
+			er=0.1,
+			live=Z_N)
 
+		# UPDATE SEXUAL MATURITY 
+		if(i==6)
+			{
+			## ASSIGN WHETHER A FISH WILL SPAWN
+			## GIVEN TIME SINCE LAST SPAWN
+			SPN_H<-sapply(1:inputs$nreps,spawn,
+				mps=MPS_H,
+				a=-17.5,
+				b=0.35,
+				mature=MAT_H,
+				live=Z_H) 
+			SPN_N<-sapply(1:inputs$nreps,spawn,
+				mps=MPS_N,
+				a=-17.5,
+				b=0.35,
+				mature=MAT_N,
+				live=Z_N) 	
+			## CALCULATE THE NUMBER OF EGGS PRODUCED
+			## BY FEMALES
+			EGGS_H<- sapply(1:inputs$nreps,fecundity,
+				len=LEN_H,
+				wgt=WGT_H,
+				a=inputs$fec_a,
+				b=inputs$fec_b,
+				er=inputs$fec_er,
+				sex=SEX_H,
+				live=Z_H,
+				spawn=SPN_H)
+			EGGS_N<- sapply(1:inputs$nreps,fecundity,
+				len=LEN_N,
+				wgt=WGT_N,
+				a=inputs$fec_a,
+				b=inputs$fec_b,
+				er=inputs$fec_er,
+				sex=SEX_N,
+				live=Z_N,
+				spawn=SPN_N)
+			## EGGS PER REACH
+			EGGS_BND<- sapply(1:inputs$nreps,function(x){
+				N<-tapply(EGGS_N[,x],
+					factor(bend(RKM_N[,x]),	levels=c(1:300)),
+					sum)
+				N[is.na(N)]<-0
+				H<-tapply(EGGS_H[,x],
+					factor(bend(RKM_H[,x]),	levels=c(1:300)),
+					sum)
+				H[is.na(H)]<-0				
+				return(N+H)})
+			## SET MONTHS POST SPAWN TO -1 
+			## FOR FISH THAT SPAWNED
+			MPS_N[SPN_N==1]<--1
+			MPS_H[SPN_H==1]<--1
+		} # END JUNE SPAWNING
+		
+		# UPDATE MONTHS SINCE SPAWNING
+		MPS_N<- sapply(1:inputs$nreps,dMPS,
+			mps=MPS_N,
+			mature=MAT_N,
+			live=Z_N)
+		MPS_N<- sapply(1:inputs$nreps,dMPS,
+			mps=MPS_N,
+			mature=MAT_N,
+			live=Z_N)		
 			
-			# RECRUITMENT PER BEND
-			## EGGS
-			xxx$embryo<-xxx$eggs*xxx$males_present*input$pr_fert
-			xxx$free_embryo<-xxx$embryo*input$phi_1 # CAN DO A SPATIAL REASSIGMENT HERE... A DRIFT PROBABLITY VECTOR/MATRIX
-			xxx$efl<- xxx$free_embryo*input$phi_2 
-			xxx$age0<- round(xxx$efl*input$phi_3,0)	
+	
+		# RECRUITMENT PER BEND
+		## EGGS
+		xxx$embryo<-xxx$eggs*xxx$males_present*input$pr_fert
+		xxx$free_embryo<-xxx$embryo*input$phi_1 # CAN DO A SPATIAL REASSIGMENT HERE... A DRIFT PROBABLITY VECTOR/MATRIX
+		xxx$efl<- xxx$free_embryo*input$phi_2 
+		xxx$age0<- round(xxx$efl*input$phi_3,0)	
 			}# spawning
 		
 		# SUMMARIZE POPULATION 
@@ -209,140 +231,17 @@ sim_pop<- function(inputs)
 	}
 
 
-# FUNCTION TO SIMULATE CAPTURE HISTORIES 
-sim_ch<- function(input,Z, Z_loc)
-	{
-	ch<-data.table(matrix(0L,input$daug,input$nprim*input$nsec))
-	indx<- sort(rep(c(1:input$nprim),input$nsec)) # index of primary and secondary occasions
-	sample_indx<- which(m==input$sample_month)
-	p<- matrix(input$p,input$n_bends,input$nprim) # matrix of capture probabilities for each segment and occasion 
-	k=0 # counter to index ch matrix columns
-	for(i in 1:input$nprim)
-		{
-		for(j in 1:input$nsec)
-			{
-			k<-k+1 # COUNTER
-			indx<- which(Z[,names(Z)[sample_indx[i]],with=FALSE]==1)
-			captured<- rbinom(length(indx), 1, p[unlist(Z_loc[indx,names(Z_loc)[sample_indx],with=FALSE]), i])
-			ch[indx,names(ch)[k]:=captured]
-			} 
-		}
-	# Full capture-recapture matrix
-	# Remove individuals never captured
-	cap.sum <- rowSums(ch)
-	ch <- ch[-which(cap.sum == 0),]
-	xx<- expand.grid(nprim=paste("X",sample_indx,sep=""),nsec=c(1:input$nsec))
-	xx<- xx[order(xx$nprim,xx$nsec),]
-	setnames(ch, names(ch),apply(xx,1, paste, collapse="_"))
-
-	Nt <- colSums(Z)    # Actual population size
-	Nt_bend<- lapply(sample_indx,function(x) table(Z_loc[,names(Z_loc)[x],with=FALSE]))
-	ch_loc<- Z_loc[,sample_indx, with=FALSE]
-	setnames(ch_loc, names(ch_loc),paste("X",sample_indx,sep=""))
-	return(list(ch=ch,ch_loc=ch_loc, N=Nt))
-	}
-
-	### START CAPTURE HISTORY FUNCTION
-sim_ch<- function(input=input)
-	{
-	# SET UP MATRICES
-	b<- c(input$b*3, rep(input$b, input$nprim-1))
-	PHI<-  matrix(rep(input$phi,(input$nprim-1)*N),ncol=input$nprim-1, nrow=input$N, byrow=TRUE)
-	P<- matrix(rep(input$p,input$nprim*input$N),ncol=input$nprim, nrow=input$N, byrow=TRUE)
-	B <- rmultinom(1, input$N, b[1:input$nprim]) # Generate no. of entering ind. per occasion
-	Z<-matrix(0,input$N,input$nprim)
-	# Define a vector with the occasion of entering the population
-	ent.occ <- numeric()
-	for (t in 1:input$nprim)
-		{
-		ent.occ <- c(ent.occ, rep(t, B[t]))
-		}
-	# Write 1 when ind. enters the pop.
-	for (i in 1:input$N)
-		{
-		Z[i, ent.occ[i]] <- 1   
-		}
-	# SURVIVAL POST RECRUITMENT
-	for(i in 1:input$N)
-		{
-		if(ent.occ[i]<input$nprim)
-			{
-			for(k in ent.occ[i]:(input$nprim-1))
-				{
-				Z[i,k+1]<- rbinom(1, 1, PHI[i,k]*Z[i,k])
-				}		
-			}
-		}
-	ch<-matrix(0,input$N,input$nprim*input$nsec)
-	indx<- sort(rep(c(1:input$nprim),input$nsec))
-	# Simulating capture
-	for (i in 1:input$N)
-		{
-		for(j in 1:(input$nsec*input$nprim))
-			{
-			ch[i,j]<-rbinom(1, 1, P[i,indx[j]]*Z[i,indx[j]])
-			} 
-		}
-		
-		
-	# INITIAL SPATIAL DYNAMICS
-	loc<-matrix(0,input$N,input$nprim)
-	if(input$distribution_type=="uniform")
-		{
-		loc[,1]<-sample( c(1:input$nsegs),input$N,replace=TRUE,prob=rep(1,input$nsegs))	
-		}
-	if(input$distribution_type=="heterogeneous")
-		{
-		loc[,1]<-sample( c(1:input$nsegs),input$N,replace=TRUE,prob=runif(input$nsegs))	
-		}
-
-	# MIXING TYPE AMONG YEARS
-	if(input$mixing=="none")
-		{
-		for(a in 2:input$nprim){loc[,a]<-loc[,1]}
-		}
-	if(input$mixing=="complete")
-		{
-		for(a in 2:input$nprim){loc[,a]<-sample(c(1:input$nsegs),input$N,replace=TRUE,prob=runif(input$nsegs))}
-		}
-	
-	# SAMPLING REACHES	
-	id<- c(1:input$N)
-	sampleReaches<- sample(c(1:input$nsegs), input$n_reaches,	replace=FALSE)
-	indx<- sort(rep(1:input$nprim,input$nsec))
-	ch_out<- list()
-	for(i in sampleReaches)
-		{
-		id<- which(Z[,1]==1 & loc[,1]==i)
-		if(length(id)==0){out<- data.frame(seg=i,id=0,  ch=matrix(0,nrow=1, ncol=input$nsec))}
-		if(length(id)==1){out<- data.frame(seg=i,id=id, ch=matrix(ch[id,which(indx==1)],nrow=1,ncol=input$nsec))}
-		if(length(id)>1){out<- data.frame(seg=i,id=id, ch=ch[id,which(indx==1)])}
-		names(out)[-c(1,2)]<- paste("ch", 1,c(1:input$nsec),sep="_")
-			for(j in 2:input$nprim)
-				{
-				id<- which(Z[,j]==1 & loc[,j]==i)
-				if(length(id)==0){tmpp<- data.frame(seg=i,id=0,  ch=matrix(0,nrow=1, ncol=input$nsec))}
-				if(length(id)==1){tmpp<- data.frame(seg=i,id=id, ch=matrix(ch[id,which(indx==j)],nrow=1,ncol=input$nsec))}
-				if(length(id)>1){tmpp<- data.frame(seg=i,id=id, ch=ch[id,which(indx==j)])}
-				names(tmpp)[-c(1,2)]<- paste("ch", j,c(1:input$nsec),sep="_")
-				out<- merge(out, tmpp,by=c("seg","id"), all=TRUE)
-				}
-				out[is.na(out)]<-0
-				ch_out[[length(ch_out)+1]]<- out
-		}
-	
-	return(list(Z=Z,ch=ch, loc=loc, ch_out=ch_out))
-	}
-### END CAPTURE HISTORY FUNCTION	
 	
 	
-
-### END VERSION 2
-
-
 	
 	
-
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
