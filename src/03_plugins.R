@@ -2,12 +2,13 @@
 ### HELPER FUNCTIONS
 
 #### FUNCTIONS TO ASSIGN RKM TO BENDS FOR UPPER AND LOWER
-rkm_start<-seq(1,1000,length=300)
-bend<- c(1:300)
-bend<- approxfun(rkm_start,bend,method='constant')
+rkm_start<-seq(1,1000,length=317)
+bend<- c(1:317)
+rkm2bend<- approxfun(rkm_start,bend,method='constant')
+bend2rkm<- approxfun(bend,rkm_start,method='constant')
 
 
-### INITIALIZATION PLUGINS
+## INITIALIZATION PLUGINS
 ini_mps<- function(x,n,mature,live)
 	{# months since spawning
 	sample(c(1:4),size=n,replace=TRUE)*mature[,x]*live[,x]*12
@@ -40,11 +41,36 @@ ini_maturity<- function(x,k,len,age_mat,live)
 	}
 ini_rkm<- function(x,n,fill0)
 	{
+	# FUNCTION TO INITIALIZE RIVER KILOMETER FOR 
+	# INVIDUAL FISH
 	c(runif(n,1,1000),rep(0,fill0))
 	}
 	
 	
-## PLUGINS
+	
+## DYNAMICS PLUGINS
+	### THESE PLUGINS ACCEPT MATRICES AND AN
+	### INDEX [x], INDEXING INDVIDUAL REPLICATES
+	### THESE ARE INTENDED TO BE FLEXIBLE AND THE 
+	### ACTUAL FUNCTIONS CAN BE SWAPPED OR MODIFIED
+	### BY USERS
+dFreeEmbryoDrift<- function(x,nbends,loc,prob)
+	{
+	# EMBRYO DRIFT 
+	indx<-x
+	ppp<-sapply(1:nbends, function(x)
+		{
+		ppp<-rmultinom(1, loc[x,indx],prob[x,])
+		})
+	ppp<-rowSums(ppp)
+	}
+	
+dFEtoEFL<- function(x,n,total,phi)
+	{
+	tmp<-rbinom(n,total[,x],phi)
+	return(tmp)
+	}	
+	
 dSurvival<- function(x,n,phi_age,age,live)
 	{
 	phi<- c(0,phi_age)^(1/12)
@@ -55,18 +81,10 @@ dLength<- function(x,n, k, linf,length1,dT,er,live)
 	rlnorm(n,log((linf-length1[,x]*(1-exp(-k*dT))+ length1[,x]) ),er)*live[,x] # rlnorm is slow AF here
 	#(linf-length1[,x]*(1-exp(-k*dT))+ length1[,x]) *live[,x]
 	}
-# FAST IN VAPPLY
-dLength_v<- function(k,linf,x,dT,er)
-	{# FABENS MODEL WITH MODFICATION
-	rlnorm(1,log(linf-x*(1-exp(-k*dT))),er)
-	}
 dMPS<- function(x,mps,mature,live) 
 	{
 	(mps[,x]+1)*mature[,x]*live[,x]
 	}
-	
-	
-	
 dWeight<- function(x,n,len,a=0.0001,b=3,er=0.1,live)
 	{
 	rlnorm(n,log(a*len[,x]^b),er)*live[,x]
@@ -94,3 +112,13 @@ fecundity<- function(x,len,wgt,a,b,er,sex,live,spawn)
 	eggs<-rpois(length(len[,x]),y)
 	return(eggs)
 	}
+dRKM<- function(x, n,loc,live,er)
+	{
+	# FUNCTION TO SIMULATE MOVEMENT 
+	# FROM ONE MONTH TO THE NEXT
+	# LOC AND LIVE ARE MATRICES [NINDS,NREPS]
+	# INPUTS IS A VECTOR OF INDVIDUALS APPLIED OVER REPS
+	# X IS THE COLUMN INDEX FOR EACH REPLICATE
+	(loc[,x]+rnorm(n,loc[,x],er))*live[,x]
+	}	
+	

@@ -12,11 +12,24 @@ input$rel_density<-pp/sum(pp)  # A VECTOR OF RELATIVE DENSITIES FOR EACH BEND
 ## INITIAL ABUNDANCES
 input$natural<- 200 # NUMBER OF NATURAL FISH
 input$hatchery<- 600 # NUMBER OF HATCHERY FISH
+input$natural_age0<- 200 # NUMBER OF NATURAL FISH
+pp<- runif(input$n_bends)
+input$natural_age0_rel_dens<-  pp/sum(pp)
+input$hatchery_age0<- 600 # NUMBER OF HATCHERY FISH
+pp<- runif(input$n_bends)
+input$hatchery_age0_rel_dens<- pp/sum(pp)
 
-#input$den<- 0.2
-#input$den_sd<- 0.3
-#input$spread<- 0 # SPREAD: 0 IS RANDOM MIXING
-#input$ini_adults<- 100
+## MOVEMENT
+input$spread<- 10 # SPREAD OF MOVEMENT
+
+# prob = matrix of 300 x 300 
+input$prob<- matrix(runif(300*300),nrow=300,ncol=300)
+input$prob[upper.tri(input$prob)]<-0
+input$prob<- input$prob/apply(input$prob,1,sum)
+
+input$recruit_mean_length<-200
+input$recruit_length_sd<-30
+
 
 input$phi<- 0.92
 input$sample_month<- 8
@@ -51,6 +64,7 @@ input$vb_er<- 0.2
 # LENGTH-WEIGHT
 input$a<- 0.000001
 input$b<- 3
+input$lw_er<-0.2
 
 # FECUDNITY
 input$fec_a<- 0.1
