@@ -138,14 +138,14 @@ inputs=input
 		WGT_H<-sapply(1:inputs$nreps,dWeight,
 			n=inputs$daug,
 			a=inputs$a,
-			b=inputs$a,
+			b=inputs$b,
 			len=LEN_H,
 			er=0.1,
 			live=Z_H)
 		WGT_N<-sapply(1:inputs$nreps,dWeight,
 			n=inputs$daug,
 			a=inputs$a,
-			b=inputs$a,
+			b=inputs$b,
 			len=LEN_N,
 			er=0.1,
 			live=Z_N)
@@ -188,7 +188,7 @@ inputs=input
 				live=Z_N,
 				spawn=SPN_N)
 			## EGGS PER REACH
-			EGGS_BND<- sapply(1:inputs$nreps,function(x){
+			AGE_0_BND<- sapply(1:inputs$nreps,function(x){
 				N<-tapply(EGGS_N[,x],
 					factor(bend(RKM_N[,x]),	levels=c(1:300)),
 					sum)
@@ -198,11 +198,59 @@ inputs=input
 					sum)
 				H[is.na(H)]<-0				
 				return(N+H)})
+			## FERTILIZATION
+			### HOW MANY FEMALES IN EACH BEND
+			FEM_BND<- sapply(1:inputs$nreps,function(x){
+				N<-tapply(Z_H[,x]*SEX_H[,x],
+					factor(bend(RKM_N[,x]),	levels=c(1:300)),
+					sum)
+				N[is.na(N)]<-0
+				H<-tapply(Z_N[,x]*SEX_N[,x],
+					factor(bend(RKM_H[,x]),	levels=c(1:300)),
+					sum)
+				H[is.na(H)]<-0				
+				return(N+H)})	
+			### HOW MANY MALES IN EACH BEND
+			MAL_BND<- sapply(1:inputs$nreps,function(x){
+				N<-tapply(Z_H[,x]*(1-SEX_H[,x])*MAT_H[,x],
+					factor(bend(RKM_N[,x]),	levels=c(1:300)),
+					sum)
+				N[is.na(N)]<-0
+				H<-tapply(Z_N[,x]*(1-SEX_N[,x])*MAT_N[,x],
+					factor(bend(RKM_H[,x]),	levels=c(1:300)),
+					sum)
+				H[is.na(H)]<-0				
+				return(N+H)})			
 			## SET MONTHS POST SPAWN TO -1 
 			## FOR FISH THAT SPAWNED
-			MPS_N[SPN_N==1]<--1
-			MPS_H[SPN_H==1]<--1
-		} # END JUNE SPAWNING
+			MPS_N[SPN_N==1]<- -1
+			MPS_H[SPN_H==1]<- -1
+			
+			## EMBRYOS 
+			### FERTILIZATON OF EGGS TO EMBRYOS
+			AGE_0_BND<- sapply(1:inputs$nreps,function(x)
+				{
+				a<- -3
+				b<- 0.5
+				tmp<-rbinom(nrow(AGE_0_BND),AGE_0_BND[,x],plogis(a+b*MAL_BND[,x]))
+				return(tmp)
+				})
+			## EMBRYOS TO FREE EMBRYOS
+			AGE_0_BND<- sapply(1:inputs$nreps,function(x)
+				{
+				tmp<-rbinom(nrow(AGE_0_BND),AGE_0_BND[,x],inputs$phi_1)
+				return(tmp)
+				})			
+			## DOWNSTREAM DRIFT
+			
+			
+			
+			## FREE EMBRYOS TO EXO. FEEDING LARVAE
+
+			
+			
+			
+			} # END JUNE SPAWNING
 		
 		# UPDATE MONTHS SINCE SPAWNING
 		MPS_N<- sapply(1:inputs$nreps,dMPS,
@@ -213,21 +261,11 @@ inputs=input
 			mps=MPS_N,
 			mature=MAT_N,
 			live=Z_N)		
+
 			
-	
-		# RECRUITMENT PER BEND
-		## EGGS
-		xxx$embryo<-xxx$eggs*xxx$males_present*input$pr_fert
-		xxx$free_embryo<-xxx$embryo*input$phi_1 # CAN DO A SPATIAL REASSIGMENT HERE... A DRIFT PROBABLITY VECTOR/MATRIX
-		xxx$efl<- xxx$free_embryo*input$phi_2 
-		xxx$age0<- round(xxx$efl*input$phi_3,0)	
-			}# spawning
+			
 		
-		# SUMMARIZE POPULATION 
-		#pop_out<- ddply(indData,.(origin,sex),summarize,n=sum(live))
-		timing<-c(timing, Sys.time() - ptm)
 		}
-	return(list(pop_out=pop_out))
 	}
 
 
