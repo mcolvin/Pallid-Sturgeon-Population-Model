@@ -7,10 +7,10 @@ The objectives of the current model version is to provide a generic working temp
 This repository contains source code for effects analysis of Missouri River hydro operations on Pallid Sturgeon population dynamics.  
 
 ## Spatial extent and grain
-The current model simulates a hypothetical population of Missouri River Pallid sturgeon  
+The current model simulates a hypothetical population of Missouri River Pallid sturgeon as an invidual based model.  
 	
 ## Temporal resolution
-The model simulates population dynamics on an annual time stepover a user specified time horizon..
+The model simulates population dynamics on a monthly time step over a user specified time horizon.
 
 ## Pallid sturgeon life history and stages included in the model
 1. Gametes and developing embryos
