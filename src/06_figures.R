@@ -1,5 +1,10 @@
 figures<- function(n)
 	{
+	if(n==99){	
+matplot(N_N_SUM,type='l')
+matplot(N_H_SUM,type='l')
+	
+}
 	if(n==1)
 		{
 		plot(total~year,total_pop,type='n')

@@ -1,6 +1,20 @@
 
-
+# to do
+# 1. add stocking component
+#    figure out how to assign bend and rkm
+#    need to add a hatchery age 0 module, with link for size, weight, hatchery...
+#    maybe as a vector of each, but with a vector for reps???
+# RUN A MODEL
 out<- sim_pop(inputs=input)
+ matplot(out$hatchery,type='l')
+ matplot(out$natural,type='l')
+
+
+
+
+
+
+
 
 ### VERSON 2
 
