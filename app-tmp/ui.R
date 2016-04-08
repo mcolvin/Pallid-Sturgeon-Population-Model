@@ -12,7 +12,8 @@ shinyUI(pageWithSidebar(
 			"7. Survival",
 			"8. Initial age and spatial structure",
 			"9. Stocking amounts",
-			"10. Run"),selected="1. Default")
+			"10. Run"),selected="1. Default"),
+			width=3
 		),# END SIDEBAR PANEL
 	
 
@@ -41,6 +42,7 @@ shinyUI(pageWithSidebar(
 			(
 			condition = "input.parmgroups == '3. Weight-length'",
 			plotOutput("lw_module"),
+      includeMarkdown("length-weight.md"),
 			numericInput('a', "Weight-length parameter (a'; a'=ln(a))", -13.83994,-20, 0),
 			numericInput('b', "Weight-length b parameter", 3.2, 2.8,3.5),
 			numericInput('lw_er', "Weight-length uncertainty", 0.15,0.00001,0.5)
@@ -73,7 +75,7 @@ shinyUI(pageWithSidebar(
 			condition = "input.parmgroups == '6. Sexual Maturity and return to spawning'",
 				numericInput('age_mat','Age at 50% maturity',8,1,75),
 				numericInput('mat_k','How fast curve reaches 100%',0.2,0,1),
-					numericInput('spn_a','Spawning intercept',-17.5,-23,23),
+				numericInput('spn_a','Spawning intercept',-17.5,-23,23),
 				numericInput('spn_b','Spawning beta',0.35,0,1)
 			),			
 		# END
@@ -95,6 +97,7 @@ shinyUI(pageWithSidebar(
 		conditionalPanel
 			(
 			condition = "input.parmgroups == '8. Initial age and spatial structure'",
+			plotOutput("initialization_plot1"),
 			selectInput('agestructure',"Initial age structure",list("Approximate equilibrium","Uniform","Random"),
 				selected="Approximate equilibrium"),
 			selectInput('adult_spatial_structure',"Initial adult spatial structure",
@@ -102,7 +105,8 @@ shinyUI(pageWithSidebar(
 			selectInput('age0_n_spatial_structure',"Initial age-0 natural origin spatial structure",
 				list("Uniform","Random"),selected="Random"),	
 			selectInput('age0_h_spatial_structure',"Initial age-0 hatchery origin spatial structure",
-				list("Uniform","Random"),selected="Random")				
+				list("Uniform","Random"),selected="Random"),
+			includeMarkdown("notes_initialization.md")
 			),# end conditionaPanel
 		
 		# STOCKING

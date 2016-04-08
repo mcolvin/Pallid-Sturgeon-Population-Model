@@ -2,7 +2,7 @@
 
 shinyServer(function(input, output) {
 
-# MAKE A VECTOR OF SURVIVALS
+## 1. MAKE A VECTOR OF SURVIVALS
 modelInputs<- reactive({
 	tmp<-list(
 		# POPULATION CHARACTERISTICS
@@ -126,6 +126,33 @@ modelInputs<- reactive({
 	return(tmp)
 	})
 
+## 2. 	
+output$initialization_plot1<- renderPlot({
+	xx<-modelInputs()
+	
+	bend_meta<- subset(bend_meta, basin==input$basin)
+	bend_meta$mid<-bend_meta$UPPER_RIVER_MILE*0.5+bend_meta$LOWER_RIVER_MILE*0.5	
+	
+	
+	bend_meta$natural<- xx$rel_density*xx$natural
+	bend_meta$hatchery<- xx$rel_density*xx$hatchery
+	
+	bend_meta$dist_natural_age0<- xx$natural_age0_rel_dens*xx$natural_age0
+	bend_meta$dist_hatchery_age0<- xx$hatchery_age0_rel_dens*xx$hatchery_age0
+	
+	par(mfrow=c(2,2),mar=c(2,3,2,1),oma=c(3,3,2,1))
+	plot(natural~mid,bend_meta,xlab="",ylab="",type='h',las=1,main="Natural origin adults")
+	plot(hatchery~mid,bend_meta,xlab="",ylab="",type='h',las=1,main="Hatchery origin adults")
+	plot(dist_natural_age0~mid,bend_meta,xlab="",ylab="",type='h',las=1,main="Natural origin age-0")
+	plot(dist_hatchery_age0~mid,bend_meta,xlab="",ylab="",type='h',las=1,main="Hatchery origin age-0")
+	mtext(side=2,"Expected abundance",outer=TRUE,line=0)
+	mtext(side=1,"Bend midpoint (km)",outer=TRUE,line=1)
+	mtext(side=3, paste("Expected Pallid Sturgeon Distribution within the ",xx$basin," Missouri River Basin", sep=""),outer=TRUE, line=0,cex=1.3)
+	
+	})
+	
+	
+	
 ## 3. Weight-length MODULE
 output$lw_module<- renderPlot({
 	a<- exp(input$a)
