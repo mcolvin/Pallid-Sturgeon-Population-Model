@@ -15,7 +15,7 @@ modelInputs<- reactive({
 		hatchery_age0=input$hatchery_age0,
 		
 		## LENGTH-WEIGHT
-		a= exp(input$a),
+		a= exp(input$a_prime),
 		b= input$b,
 		lw_er=input$lw_er,
 		
@@ -57,7 +57,7 @@ modelInputs<- reactive({
 		nyears=input$nyears,
 		daug=input$daug
 		)
-	
+	tmp$basin_inp=ifelse(input$basin=="Lower",0,1)
 	# BEND DATA & META
 	tmp$bend_meta<- subset(bend_meta,basin==tmp$basin)
 	tmp$n_bends<- nrow(tmp$bend_meta)	
@@ -125,7 +125,79 @@ modelInputs<- reactive({
 		}			
 	return(tmp)
 	})
+	
+## 1.2. DYNAMIC UI GIVEN INPUTS
+### 1.2.1. LENGTH-FECUNDITY BASIN-SPECIFIC PARAMETERS
+output$fecundity_ui_a<- renderUI({
+	if(input$basin=="Lower"){val<-10.77  } 
+	if(input$basin=="Upper"){val<-11.26 }
+	numericInput('fec_a', "Fecundity-length a parameter", val, -1000000,1000000)
+	})
+output$fecundity_ui_b<- renderUI({
+	if(input$basin=="Lower"){val<- 0.62} 
+	if(input$basin=="Upper"){val<- 0.57}
+	numericInput('fec_b', "Fecundity-length b parameter", val, -1000000,1000000)
+	})
+output$fecundity_ui_c<- renderUI({
+	if(input$basin=="Lower"){val<- 0.30} 
+	if(input$basin=="Upper"){val<- 0.39}
+	numericInput('fec_er', "Fecundity-length uncertainty", val, -1000000,1000000)
+	})	
 
+### 1.2.2. LENGTH-FECUNDITY BASIN-SPECIFIC PARAMETERS
+output$fecundity_ui_lw_a<- renderUI({
+	if(input$basin=="Lower"){val<- -13.84  } 
+	if(input$basin=="Upper"){val<- -14.09 }
+	numericInput('a_prime', "Fecundity-length a' parameter", val, -1000000,1000000)
+	})
+output$fecundity_ui_lw_b<- renderUI({
+	if(input$basin=="Lower"){val<- 3.188} 
+	if(input$basin=="Upper"){val<- 3.24}
+	numericInput('b', "Fecundity-length b parameter", val, -1000000,1000000)
+	})
+output$fecundity_ui_lw_c<- renderUI({
+	if(input$basin=="Lower"){val<- 0.1371} 
+	if(input$basin=="Upper"){val<- 0.165}
+	numericInput('lw_er', "Fecundity-length uncertainty", val, -1000000,1000000)
+	})		
+	
+### 1.2.3 SURVIVAL BASIN-SPECIFIC
+output$fecundity_ui_phi_age0<- renderUI({# AGE-0 SURVIVAL
+	if(input$basin=="Lower"){val<- -9.2} 
+	if(input$basin=="Upper"){val<- -9.2}
+	numericInput('phi_age0_mean', "Mean age-0 Survival", val, -1000000,1000000)
+	})
+output$fecundity_ui_phi_age0_er<- renderUI({# AGE-0 SURVIVAL
+	if(input$basin=="Lower"){val<- -13.84  } 
+	if(input$basin=="Upper"){val<- -14.09 }
+	numericInput('phi_age0_er', "Age-0 Survival uncertainty", val, -1000000,1000000)
+	})	
+output$fecundity_ui_phi_age1<- renderUI({# AGE-0 SURVIVAL
+	if(input$basin=="Lower"){val<- 0.75} 
+	if(input$basin=="Upper"){val<- 0.75}
+	numericInput('phi_age1_mean', "Mean age-1 Survival", val, -1000000,1000000)
+	})
+output$fecundity_ui_phi_age1_er<- renderUI({# AGE-0 SURVIVAL
+	if(input$basin=="Lower"){val<- -13.84  } 
+	if(input$basin=="Upper"){val<- -14.09 }
+	numericInput('phi_age1_er', "Age-1 survival uncertainty", val, -1000000,1000000)
+	})	
+
+output$fecundity_ui_phi_age2<- renderUI({# AGE-0 SURVIVAL
+	if(input$basin=="Lower"){val<- 2.44} 
+	if(input$basin=="Upper"){val<- 2.44}
+	numericInput('phi_age2_mean', "Mean age-2 Survival", val, -1000000,1000000)
+	})
+output$fecundity_ui_phi_age2_er<- renderUI({# AGE-2+ SURVIVAL
+	if(input$basin=="Lower"){val<- 1} ### FIXME ### FOR UPPER
+	if(input$basin=="Upper"){val<- 1}
+	numericInput('phi_age2_er', "Age-2+ survival uncertainty", val, -1000000,1000000)
+	})		
+	
+	
+	
+	
+	
 ## 2. 	
 output$initialization_plot1<- renderPlot({
 	xx<-modelInputs()
@@ -149,13 +221,12 @@ output$initialization_plot1<- renderPlot({
 	mtext(side=1,"Bend midpoint (km)",outer=TRUE,line=1)
 	mtext(side=3, paste("Expected Pallid Sturgeon Distribution within the ",xx$basin," Missouri River Basin", sep=""),outer=TRUE, line=0,cex=1.3)
 	
-	})
+	})	
 	
-	
-	
-## 3. Weight-length MODULE
-output$lw_module<- renderPlot({
-	a<- exp(input$a)
+## 3. LENGTH-WEIGHT MODULE
+output$lw_module<- renderPlot({			
+	###fixme### contrain weigths for lower and upper basin to realistic values
+	a<- exp(input$a_prime)
 	b<-input$b
 	er<-input$lw_er	
 	L<-seq(1,2000,1)
@@ -172,7 +243,44 @@ output$lw_module<- renderPlot({
 	points(L,W/1000,type='l')
 	})
 	
-	
+## 4. LENGTH-FECUNDITY MODULE
+output$lf_module<-renderPlot({
+
+	inputs<- modelInputs()
+	if(is.null(input$fec_a)){return()}
+	fl<-matrix(runif(5000,1,1650),ncol=1)
+	Eggs<-fecundity(x=1,
+		fl=fl,
+		a=inputs$fec_a,
+		b=inputs$fec_b,
+		er=inputs$fec_er,
+		sex=matrix(rep(1,nrow(fl)),ncol=1),
+		live=matrix(rep(1,nrow(fl)),ncol=1),
+		spawn=matrix(rep(1,nrow(fl)),ncol=1))	
+	plot(fl,Eggs/1000,type='p',
+		xlab="Fork length (mm)",
+		ylab="Fecundity (x1000)",las=1)
+	})
+
+## 5. GROWTH MODULE
+output$growth_module<-renderPlot({
+	t0<-input$t0
+	linf<- input$linf
+	k<- input$k
+	er<-input$vb_er	
+	age<- seq(1,input$maxage,0.1)
+	L<-linf*(1-exp(-k*(age-t0)))
+	lower<-qlnorm(0.025,log(L),er)
+	upper<-qlnorm(0.975,log(L),er)
+	plot(age,L,ylim=c(0,max(upper)),type='n',
+		xlab="Age",
+		ylab="Length (mm)",las=1)
+	polygon(x=c(age,rev(age)),
+		y=c(lower,rev(upper)),
+		col='lightgrey',
+		border='lightgrey')
+	points(age,L,type='l')
+	})
 ## EXECUTE MODEL
 sim_dat<- eventReactive(input$go, {
 	out<- sim(inputs=modelInputs())
@@ -188,6 +296,7 @@ output$plot1<-renderPlot({
 	matplot(dat$hatchery,type='l',xlab="Months",ylab="",
 		las=1,cex.lab=1.5,cex.axis=1.3)	
 	mtext(side=2,"Abundance",outer=TRUE,line=1,cex=1.5)
+	mtext(side=1,"Months",outer=TRUE,line=1,cex=1.5)
 	})
     
 })

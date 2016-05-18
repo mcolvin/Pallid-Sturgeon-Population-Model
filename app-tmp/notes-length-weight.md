@@ -1,0 +1,1 @@
+This module specifies the weight-length relationship and associated uncertainty.  The weight-length model assumes the functional form $Weight = a\cdot Length ^{b}$. The solid line above the expected functional relationship of length and weight.  The grey area denotes the uncertainty around the expected values. 

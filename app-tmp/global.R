@@ -847,11 +847,21 @@ dSurvival<- function(x,n,phi_age,age,live)
 	phi<- c(0,phi_age)^(1/12)
 	rbinom(n,1,phi[age[,x]+1])*live[,x]
 	}
-dLength<- function(x,n, k, linf,length1,dT,er,live)
-	{# FABENS MODEL WITH MODFICATION
-	rlnorm(n,log((linf-length1[,x]*(1-exp(-k*dT))+ length1[,x]) ),er)*live[,x] # rlnorm is slow AF here
-	#(linf-length1[,x]*(1-exp(-k*dT))+ length1[,x]) *live[,x]
+dLength<- function(x, n, k, linf,length1,dT,live)
+	{# FABENS MODEL WITH MODFICATION	
+	# x    number of replicates, column index used by sapply 
+	# n    number in super population
+	# k    growth coefficient
+	# linf    length at infinity
+	# length1    length at t-dt
+	# dT    change in time
+	# live    is the fish alive or dead?
+
+	length2<-(linf[,x]-length1[,x]*(1-exp(-k[,x]*dT))+ 
+		length1[,x]) * live[,x]
+	return(length2)# return the predicted length
 	}
+
 dMPS<- function(x,mps,mature,live) 
 	{
 	(mps[,x]+1)*mature[,x]*live[,x]
@@ -876,11 +886,11 @@ spawn<- function(x,mps,a=-17.5,b=0.35,mature,live)
 	y<- rbinom(length(mps[,x]),1,plogis(a+b*mps[,x]))*mature[,x]*live[,x] 
 	return(y)	
 	}
-fecundity<- function(x,len,wgt,a,b,er,sex,live,spawn)
+fecundity<- function(x,fl,a,b,er,sex,live,spawn)
 	{
-	y<-rlnorm(length(len[,x]),log(a*len[,x]^b),er)*spawn[,x]*sex[,x]
-	eggs<-rpois(length(len[,x]),y)
-	return(eggs)
+	y<- exp(a + b * ((fl - 1260.167)/277.404)+rnorm(nrow(fl),0,er))
+	eggs<- rpois(nrow(fl),y)*spawn[,x]*sex[,x]
+	return(eggs) 
 	}
 dRKM<- function(x, n,loc,live,er)
 	{
@@ -894,7 +904,7 @@ dRKM<- function(x, n,loc,live,er)
 
 sim<- function(inputs)
 	{
-		# NUMBER OF ADULTS IN EACH BEND GIVEN DENSITY AND BEND LENGTH
+	# NUMBER OF ADULTS IN EACH BEND GIVEN DENSITY AND BEND LENGTH
 	N_n<- rmultinom(inputs$nreps,
 		inputs$natural,inputs$rel_density)
 	N_h<- rmultinom(inputs$nreps,
@@ -1143,8 +1153,7 @@ sim<- function(inputs)
 				
 			## CALCULATE THE NUMBER OF EGGS PRODUCED
 			EGGS_H<- sapply(1:inputs$nreps,fecundity,
-				len=LEN_H,
-				wgt=WGT_H,
+				fl=LEN_H,
 				a=inputs$fec_a,
 				b=inputs$fec_b,
 				er=inputs$fec_er,
@@ -1152,8 +1161,7 @@ sim<- function(inputs)
 				live=Z_H,
 				spawn=SPN_H)	
 			EGGS_N<- sapply(1:inputs$nreps,fecundity,
-				len=LEN_N,
-				wgt=WGT_N,
+				fl=LEN_N,
 				a=inputs$fec_a,
 				b=inputs$fec_b,
 				er=inputs$fec_er,

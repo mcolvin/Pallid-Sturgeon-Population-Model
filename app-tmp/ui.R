@@ -24,37 +24,49 @@ shinyUI(pageWithSidebar(
 			condition = "input.parmgroups == '1. Default'",
 			includeMarkdown("default.md")
 			),
+			
+		selectInput("basin", "Select basin", list("Upper", "Lower")),	
+		
 		# POPULATION CHARACTERISTICS
 		conditionalPanel
 			(
-			condition = "input.parmgroups == '2. Population characteristics'",
-			selectInput("basin", "Select basin", list("Upper", "Lower")),
-			numericInput('maxage', "Maximum age", 41, 1,100),
-			numericInput('sexratio', "Sex ratio", 0.33,0,1),			
+			condition = "input.parmgroups == '2. Population characteristics'",			
+			column(4,
+				numericInput('maxage', "Maximum age", 41, 1,100),
+				numericInput('sexratio', "Sex ratio", 0.33,0,1)),			
+			column(4,
 			numericInput('natural','Number of natural origin fish (Age-1+)',200,0,10000) ,
-			numericInput('hatchery','Number of hatchery origin fish (Age-1+)',200,0,10000),
+			numericInput('hatchery','Number of hatchery origin fish (Age-1+)',200,0,10000)),
+			column(4,
 			numericInput('natural_age0','Number of age-0 hatchery origin fish',200,0,10000), 
-			numericInput('hatchery_age0','Number of age-0  hatchery origin fish',200,0,10000) 
+			numericInput('hatchery_age0','Number of age-0  hatchery origin fish',200,0,10000)) 
 			),
 
 		# WEIGHT-LENGTH
 		conditionalPanel
 			(
 			condition = "input.parmgroups == '3. Weight-length'",
-			plotOutput("lw_module"),
-      includeMarkdown("length-weight.md"),
-			numericInput('a', "Weight-length parameter (a'; a'=ln(a))", -13.83994,-20, 0),
-			numericInput('b', "Weight-length b parameter", 3.2, 2.8,3.5),
-			numericInput('lw_er', "Weight-length uncertainty", 0.15,0.00001,0.5)
+			h2("Weight-Length Module"),
+			column(4,			
+				uiOutput("fecundity_ui_lw_a"),
+				uiOutput("fecundity_ui_lw_b"),
+				uiOutput("fecundity_ui_lw_c"),
+				includeMarkdown("notes-length-weight.md")),
+			column(8,plotOutput("lw_module"))
 			),	
 			
 		# FECUNITY-LENGTH
 		conditionalPanel
 			(
 			condition = "input.parmgroups == '4. Fecundity-length'",
-			numericInput('fec_a', "Fecundity-length a parameter", 0, 0.000001,1),
-			numericInput('fec_b', "Fecundity-length b parameter", 1.1, 0,3.5),
-			numericInput('fec_er', "Fecundity-length uncertainty", 0.2,0.0001,0.5)
+			h2("Fecundity module"),
+			column(4,
+				# DEFAULTS FOR FEC_A AND FEC_B ARE FROM 
+				uiOutput("fecundity_ui_a"),
+				uiOutput("fecundity_ui_b"),
+				uiOutput("fecundity_ui_c"),
+				includeMarkdown("notes-length-fecundity.md")),
+			column(8,plotOutput("lf_module"))
 			),		
 		
 		
@@ -62,10 +74,14 @@ shinyUI(pageWithSidebar(
 		conditionalPanel
 			(
 			condition = "input.parmgroups == '5. Growth'",
-				numericInput('k','Growth coefficient (1.year;k)',0.3,0.0001,0.5),
-				numericInput('t0','Age when length is 0 (years; t0)',0,-1,1),
-				numericInput('linf','Length at infinity (mm; L_inf)',1400,400,2000),
-				numericInput('vb_er','Error; lognormal distribution',0.2,0.001,0.5)
+				h2("Growth module"),
+				column(4,
+					numericInput('k','Growth coefficient (1.year;k)',0.3,0.0001,0.5),
+					numericInput('t0','Age when length is 0 (years; t0)',0,-1,1),
+					numericInput('linf','Length at infinity (mm; L_inf)',1400,400,2000),
+					numericInput('vb_er','Error; lognormal distribution',0.2,0.001,0.5),
+					includeMarkdown("notes-growth.md")),
+				column(8,plotOutput("growth_module"))
 			),
 
 			
@@ -85,11 +101,12 @@ shinyUI(pageWithSidebar(
 		conditionalPanel
 			(
 			condition = "input.parmgroups == '7. Survival'",
-				numericInput('phi_e2fe',"Survival (Embryo to free embryo)" , 0.001,0,0.1),
-				numericInput('phi_fe2efl',"Survival (free embryo to EFL)" , 0.001,0,0.1),
-				numericInput('phi_efl2age1',"Survival (EFL to Age-1)" , 0.05,0,0.6),
-				numericInput('phi1', "Survival (Age-1)", 0.6 ,0,1),
-				numericInput('phi2', "Survival (Age-2)", 0.92,0,1)
+				uiOutput("fecundity_ui_phi_age0"),
+				uiOutput("fecundity_ui_phi_age0_er"),
+				uiOutput("fecundity_ui_phi_age1"),
+				uiOutput("fecundity_ui_phi_age1_er"),
+				uiOutput("fecundity_ui_phi_age2"),
+				uiOutput("fecundity_ui_phi_age2_er")
 			),	
 		# MOVEMENT
 		

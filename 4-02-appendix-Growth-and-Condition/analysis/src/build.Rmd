@@ -1,0 +1,59 @@
+---
+output:
+  knitrBootstrap::bootstrap_document:
+    title: "Test file"
+    theme: simplex
+    highlight: "Brown Paper"
+    theme.chooser: FALSE
+    highlight.chooser: FALSE
+    menu: FALSE
+---
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+knitr::opts_knit$set(root.dir="C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/PSPAP-Growth-and-Condition/analysis")#$ # hack to fix pink  text	
+	# knitr assumes that folder where file is located is the 'working directory'
+	source(paste(getwd(),"/1_global.R",sep=""))         
+	source(paste(getwd(),"/2_functions.R",sep=""))         
+	invisible(source(paste(getwd(),"/3_load.R",sep=""))         )
+	source(paste(getwd(),"/4_clean.R",sep=""))         
+	source(paste(getwd(),"/5_tables.R",sep=""))        
+	source(paste(getwd(),"/6_figures.R",sep=""))    
+ 
+```
+
+
+## Individual growth
+
+### Overview
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
