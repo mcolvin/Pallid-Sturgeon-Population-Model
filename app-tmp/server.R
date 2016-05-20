@@ -145,17 +145,17 @@ output$fecundity_ui_c<- renderUI({
 	})	
 
 ### 1.2.2. LENGTH-FECUNDITY BASIN-SPECIFIC PARAMETERS
-output$fecundity_ui_lw_a<- renderUI({
+output$ui_lw_a<- renderUI({
 	if(input$basin=="Lower"){val<- -13.84  } 
 	if(input$basin=="Upper"){val<- -14.09 }
 	numericInput('a_prime', "Fecundity-length a' parameter", val, -1000000,1000000)
 	})
-output$fecundity_ui_lw_b<- renderUI({
+output$ui_lw_b<- renderUI({
 	if(input$basin=="Lower"){val<- 3.188} 
 	if(input$basin=="Upper"){val<- 3.24}
 	numericInput('b', "Fecundity-length b parameter", val, -1000000,1000000)
 	})
-output$fecundity_ui_lw_c<- renderUI({
+output$ui_lw_c<- renderUI({
 	if(input$basin=="Lower"){val<- 0.1371} 
 	if(input$basin=="Upper"){val<- 0.165}
 	numericInput('lw_er', "Fecundity-length uncertainty", val, -1000000,1000000)
@@ -167,23 +167,23 @@ output$fecundity_ui_phi_age0<- renderUI({# AGE-0 SURVIVAL
 	if(input$basin=="Upper"){val<- -9.2}
 	numericInput('phi_age0_mean', "Mean age-0 Survival", val, -1000000,1000000)
 	})
-output$fecundity_ui_phi_age0_er<- renderUI({# AGE-0 SURVIVAL
+output$ui_phi_age0_er<- renderUI({# AGE-0 SURVIVAL
 	if(input$basin=="Lower"){val<- -13.84  } 
 	if(input$basin=="Upper"){val<- -14.09 }
 	numericInput('phi_age0_er', "Age-0 Survival uncertainty", val, -1000000,1000000)
 	})	
-output$fecundity_ui_phi_age1<- renderUI({# AGE-0 SURVIVAL
+output$ui_phi_age1<- renderUI({# AGE-0 SURVIVAL
 	if(input$basin=="Lower"){val<- 0.75} 
 	if(input$basin=="Upper"){val<- 0.75}
 	numericInput('phi_age1_mean', "Mean age-1 Survival", val, -1000000,1000000)
 	})
-output$fecundity_ui_phi_age1_er<- renderUI({# AGE-0 SURVIVAL
+output$ui_phi_age1_er<- renderUI({# AGE-0 SURVIVAL
 	if(input$basin=="Lower"){val<- -13.84  } 
 	if(input$basin=="Upper"){val<- -14.09 }
 	numericInput('phi_age1_er', "Age-1 survival uncertainty", val, -1000000,1000000)
 	})	
 
-output$fecundity_ui_phi_age2<- renderUI({# AGE-0 SURVIVAL
+output$ui_phi_age2<- renderUI({# AGE-2 SURVIVAL
 	if(input$basin=="Lower"){val<- 2.44} 
 	if(input$basin=="Upper"){val<- 2.44}
 	numericInput('phi_age2_mean', "Mean age-2 Survival", val, -1000000,1000000)

@@ -1,16 +1,5 @@
-#library(triangle)
-#library(reshape2)
-#library(plyr)
-#library(reshape2)
-#library(lattice)
-#library(data.table)
-#library(xlsx)
-#library(snow)
-#library(snowfall)
-#library(Rcapture)
-
-
-library(microbenchmark)
-
+library(shiny)
+library(markdown)
+library(MASS)
 
 

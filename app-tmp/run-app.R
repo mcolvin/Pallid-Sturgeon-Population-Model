@@ -8,7 +8,3 @@ setwd("C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturg
 source("global.R")
 
 shiny::runApp('./')
-
-
-
-shiny::deployApp('./')

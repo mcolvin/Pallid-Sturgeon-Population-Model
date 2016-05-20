@@ -48,9 +48,9 @@ shinyUI(pageWithSidebar(
 			condition = "input.parmgroups == '3. Weight-length'",
 			h2("Weight-Length Module"),
 			column(4,			
-				uiOutput("fecundity_ui_lw_a"),
-				uiOutput("fecundity_ui_lw_b"),
-				uiOutput("fecundity_ui_lw_c"),
+				uiOutput("ui_lw_a"),
+				uiOutput("ui_lw_b"),
+				uiOutput("ui_lw_c"),
 				includeMarkdown("notes-length-weight.md")),
 			column(8,plotOutput("lw_module"))
 			),	
@@ -94,19 +94,18 @@ shinyUI(pageWithSidebar(
 				numericInput('spn_a','Spawning intercept',-17.5,-23,23),
 				numericInput('spn_b','Spawning beta',0.35,0,1)
 			),			
-		# END
-		
+		# END		
 		
 		# SURVIVAL
 		conditionalPanel
 			(
 			condition = "input.parmgroups == '7. Survival'",
-				uiOutput("fecundity_ui_phi_age0"),
-				uiOutput("fecundity_ui_phi_age0_er"),
-				uiOutput("fecundity_ui_phi_age1"),
-				uiOutput("fecundity_ui_phi_age1_er"),
-				uiOutput("fecundity_ui_phi_age2"),
-				uiOutput("fecundity_ui_phi_age2_er")
+				uiOutput("ui_phi_age0"),
+				uiOutput("ui_phi_age0_er"),
+				uiOutput("ui_phi_age1"),
+				uiOutput("ui_phi_age1_er"),
+				uiOutput("ui_phi_age2"),
+				uiOutput("ui_phi_age2_er")
 			),	
 		# MOVEMENT
 		
@@ -136,6 +135,7 @@ shinyUI(pageWithSidebar(
 			numericInput('recruit_length_sd','Std. Deviation of stocking length',30,0,100) ,			
 			numericInput('stocking_bend',"Stocking Bend",1,1,317)# MAKE UI RENDER GIVEN UPPER/LOWER
 			),# end conditionaPanel
+
 		# RUN THE MODEL	
 		conditionalPanel
 			(
