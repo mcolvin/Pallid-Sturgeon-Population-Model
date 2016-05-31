@@ -37,13 +37,24 @@ input$phi_age1_mean<-c(0.68,0.68)
 input$phi_age1_er<-c(0.1,0.1)
 input$phi_age2_mean<-c(0.92,0.92)
 input$phi_age2_er<-c(0.01,0.01)
+input$recruitment<- FALSE
+input$spatial<- FALSE
 
 ## STOCKING
-input$stocking_amount<-c(200)
-input$stocking_month<-c(5)
-input$recruit_mean_length<-c(30)
-input$recruit_length_sd<-c(0.1)
-input$stocking_bend<-c(50)
+### FINGERLINGS
+input$fingerling<-c(200)
+input$fingerling_month<-c(5)
+#input$fingerling_mn<-c(30)
+#input$fingerling_sd<-c(0.1)
+input$fingerling_stocking_rkm<-c(50)
+### YEARLINGS
+input$yearling<- 200
+input$yearling_month<- 9
+input$yearling_mn<- 100
+input$yearling_sd<- 15
+input$yearling_age<- 15 # months
+input$yearling_stocking_rkm<- 50
+
 
 ## SIMULATION INPUTS
 input$nreps<- 10
@@ -52,8 +63,8 @@ input$daug<- 30000
 
 input$agestructure<-"Approximate equilibrium"
 input$adult_spatial_structure<- "Uniform" # "Emperical"
-input$age0_n_spatial_structure<- "Random"# "Emperical"
-input$age0_h_spatial_structure<- "Random"# "Emperical"
+input$age0_n_spatial_structure<- "Uniform"# "Emperical"
+input$age0_h_spatial_structure<- "Uniform"# "Emperical"
 
 # SPAWNING HOTSPOTS
 

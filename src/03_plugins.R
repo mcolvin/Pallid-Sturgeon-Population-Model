@@ -16,58 +16,64 @@ bend2rkm<- approxfun(bend,rkm_start,method='constant')
 
 
 ## INITIALIZATION PLUGINS
-ini_mps<- function(x,n,mature,live)
+ini_mps<- function(n,mature)
 	{# months since spawning
-	sample(c(1:4),size=n,replace=TRUE)*mature[,x]*live[,x]*12
-	}
-ini_wgt<- function(x,a,b,len,live)
-	{
-	(a*len[,x]^b)*live[,x]
-	}
-ini_sex<- function(x,n,ratio,fill0){
-	c(rbinom(n,1,ratio),rep(0,fill0))
-	}
-ini_Z<- function(x,n,fill0)
-	{
-	c(rep(1,n),rep(0,fill0))
+	out<-sample(c(1:4),size=n,replace=TRUE)*mature*12
+	return(out)
 	}
 	
-ini_age<- function(x,n,len,linf,k,sizeAtHatch=7,maxAge,fill0)
+	
+ini_wgt<- function(a,b,len,er)
 	{
-	length2<- len[1:n,x]
-	length1<-rep(sizeAtHatch,n)
-	linf<- linf[1:n,x]
-	k<- k[1:n,x]
-	age<-sapply(1:n,function(x)
+	rlnorm(length(len),log(a*len^b),er)
+	}
+	
+	
+ini_sex<- function(n,ratio)
+	{
+	out<-rbinom(n,1,ratio)
+	return(out)
+	}
+
+	
+ini_age<- function(len,linf,k,sizeAtHatch=7,maxAge)
+	{
+	length2<- len
+	length1<-rep(sizeAtHatch,length(len))
+	age<-sapply(1:length(len),function(x)
 		{solve(-k[x],log(1-((length2[x]-length1[x])/(linf[x]-length1[x]))))})
-	age<- ifelse(age>maxAge,maxAge,age)
-	return(c(age,rep(0,fill0)))	
+	out<- ifelse(age>maxAge,maxAge,age)
+	return(out*12)	
 	}
-	
-ini_length<-function(x,n,linf,fill0,basin)
+
+
+# FUNCTION TO INIITIALIZE LENGTH OF FISH	
+ini_length<-function(linf,basin)
 	{
 	if(basin=="Lower")
 		{
-		tmp<-lower_len_init(runif(n))
+		tmp<-lower_len_init(runif(length(linf)))
 		}
 	if(basin=="Upper")
 		{
-		tmp<-upper_len_init(runif(n))
+		tmp<-upper_len_init(runif(length(linf)))
 		}
-	tmp<- ifelse(tmp> linf[1:n,x],0.9*linf[1:n,x],tmp)
-	return(c(tmp,rep(0,fill0)))
+	tmp<- ifelse(tmp> linf,0.9*linf,tmp)
+	return(tmp)
 	}
+	
+
 # INITIALIZE HOW MANY FISH ARE MATURE
-ini_maturity<- function(x,k,len,age_mat,live)
+ini_maturity<- function(k,len,age_mat)
 	{
 	# IS A FISH SEXUALLY MATURE; CONDITIONAL ON BEING ALIVE
-	p<- (1/(1+exp(-k*(len[,x]-age_mat))))*live[,x]
-	M2<- rbinom(length(p),1,p)		
+	p<- (1/(1+exp(-k*len-age_mat*12))) ####fixme####
+	M2<- rbinom(length(len),1,p)	
 	return(M2)				
 	}
 	
 # INITIALIZE RIVER LOCATION
-ini_rkm<- function(x,n,type,spots,bend_lengths,fill0)
+ini_rkm<- function(n,type,bend_lengths)
 	{
 	# FUNCTION TO INITIALIZE RIVER 
 	# KILOMETER FOR INVIDUAL FISH
@@ -85,7 +91,7 @@ ini_rkm<- function(x,n,type,spots,bend_lengths,fill0)
 		y<- cumsum(y)/sum(y)
 		cumdist<- approxfun(y,c(1:nbends),rule=2)
 		}
-	x<-c(cumdist(runif(n)),rep(0,fill0))
+	x<-cumdist(runif(n))
 	return(x)
 	}
 	
@@ -106,6 +112,11 @@ ini_growth<- function(x,n,basin)
 		}
 	return(list(linf=matrix(tmp[,1],n,x),k=matrix(tmp[,2],n,x)))
 	}
+
+## STOCKING FUNCTIONS
+
+
+
 	
 	
 ## DYNAMICS PLUGINS
@@ -131,26 +142,23 @@ dFEtoEFL<- function(x,n,total,phi)
 	return(tmp)
 	}	
 	
-dSurvival<- function(x,n,phi_age,age,live)
+dSurvival<- function(phi_age,age)
 	{
+	# phi_age: vector of age specific survival
+	# age: vector of age in months for live individuals
 	phi<- phi_age^(1/12)# convert annual to monthly
-	indx<- which(live[,x]==1)
-	a<- floor(age[indx,x])
-	live[indx,x]<- rbinom(length(indx),1,phi[a])
-	return(live[,x])
+	a<- floor(age/12)
+	out<- rbinom(length(a),1,phi[a])
+	return(out)
 	}
 	
-dLength<- function(x, n, k, linf,length1,dT,live)
+dLength<- function(k, linf,length1,dT)
 	{# FABENS MODEL WITH MODFICATION	
-	# x    number of replicates, column index used by sapply 
-	# n    number in super population
 	# k    growth coefficient
 	# linf    length at infinity
 	# length1    length at t-dt
 	# dT    change in time
-	# live    is the fish alive or dead?
-	length2<-((linf[,x]-length1[,x])*(1-exp(-k[,x]*dT))+ 
-		length1[,x]) * live[,x]
+	length2<-((linf-length1)*(1-exp(-k*dT))+ length1) 
 	return(length2)# return the predicted length
 	}
 
@@ -159,10 +167,10 @@ dMPS<- function(x,mps,mature,live)
 	(mps[,x]+1)*mature[,x]*live[,x]
 	}
 	
-dWeight<- function(x,n,len,a=0.0001,b=3,er=0.1,live)
+dWeight<- function(len,a=0.0001,b=3,er=0.1)
 	{
-	indx<- which(live[,x]==1)
-	len[indx,x]<- rlnorm(length(indx),log(a*len[indx,x]^b),er)
+	out<-rlnorm(length(len),log(a*len^b),er)
+	return(out)
 	}
 	
 dWeight_v<- function(x,a=0.0001,b=3,er=0.1)
@@ -176,10 +184,13 @@ dMaturity<- function(maturity,mat_k,age,age_mat,live)
 	return(M2)
 	}
 	
-spawn<- function(x,mps,a=-17.5,b=0.35,mature,live)
+spawn<- function(mps,a=-17.5,b=0.35,mature)
 	{
-	y<- rbinom(length(mps[,x]),1,plogis(a+b*mps[,x]))*mature[,x]*live[,x] 
-	return(y)	
+	# FUNCTION RETURNING A 1 IF A FISH SPAWNS IN THE 
+	# NEXT YEAR
+	pr<- plogis(a+b*mps)*mature
+	out<- rbinom(length(mps),1, pr)
+	return(out)	
 	}
 fecundity<- function(x,fl,a,b,er,sex,live,spawn)
 	{
