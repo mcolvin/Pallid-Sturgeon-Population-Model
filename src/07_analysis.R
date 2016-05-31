@@ -3,13 +3,13 @@
 ## INPUTS
 input<-list()
 
-input$basin<-"Lower"
-input$maxage<-41
+input$basin<-"Upper"
+input$maxage<-c(41,41)
 input$sexratio<-c(0.33,0.5)
 input$natural<- c(200,200)
 input$hatchery<- c(200,200)
-input$natural_age0<- c(200,200)
-input$hatchery_age0<- c(200,200)
+input$natural_age0<- c(200,0)
+input$hatchery_age0<- c(200,0)
 
 # WEIGHT-LENGTH
 input$a_prime<-c(-13.84,-14.09)
@@ -42,13 +42,13 @@ input$spatial<- FALSE
 
 ## STOCKING
 ### FINGERLINGS
-input$fingerling<-c(200)
+input$fingerling<-c(0)
 input$fingerling_month<-c(5)
 #input$fingerling_mn<-c(30)
 #input$fingerling_sd<-c(0.1)
 input$fingerling_stocking_rkm<-c(50)
 ### YEARLINGS
-input$yearling<- 200
+input$yearling<- 0
 input$yearling_month<- 9
 input$yearling_mn<- 100
 input$yearling_sd<- 15
@@ -69,7 +69,7 @@ input$age0_h_spatial_structure<- "Uniform"# "Emperical"
 # SPAWNING HOTSPOTS
 
 
-
+input$size_indices<-TRUE
 
 # PROCESS INPUTS FOR INITIALIZATON AND SIMULATION
 inputs<-modelInputs(input=input)
