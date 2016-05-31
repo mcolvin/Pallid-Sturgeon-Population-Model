@@ -1,8 +1,8 @@
 
 ### PROCESS INPUTS TO INITILIZE AND SIMULATE POPULATION	
-modelInputs<- function(){#reactive({
+modelInputs<- function(input){#reactive({
 	tmp<-list()
-	if(input$basin=="lower"){indx<-1}else{indx<-2}
+	if(input$basin=="Lower"){indx<-1}else{indx<-2}
 	
 	# POPULATION CHARACTERISTICS
 	tmp$basin= input$basin[indx]
@@ -39,7 +39,7 @@ modelInputs<- function(){#reactive({
 	tmp$phi0=input$phi_age0_mean[indx] 
 	tmp$phi1=input$phi_age1_mean[indx]
 	tmp$phi2=input$phi_age2_mean[indx]
-	tmp$phi=c(input$phi1,rep(input$phi2,input$maxage-1))
+	tmp$phi=c(tmp$phi1,rep(tmp$phi2,tmp$maxage-1))
 	
 	# MOVEMENT [NOT ON UI YET]
 	tmp$spread=10 #input$spread<- 10
@@ -60,7 +60,10 @@ modelInputs<- function(){#reactive({
 	# BEND DATA & META
 	tmp$bend_meta<- subset(bend_meta,basin==tmp$basin)
 	tmp$n_bends<- nrow(tmp$bend_meta)	
-
+	tmp$bend_lengths<- diff(c(0,bend_meta[which(bend_meta$basin==input$basin),]$bend_start_rkm))
+	
+	
+	
 	## MOVEMENT MATRIX
 	# BEND_NUM Length.RKM
 	
@@ -88,40 +91,22 @@ modelInputs<- function(){#reactive({
 
 
 
-	## SPATIAL STRUCTURE
+	## SPATIAL STRUCTURE ADULTS
+	tmp$adult_spatial_structure<-input$adult_spatial_structure
 	
-	if(input$adult_spatial_structure=="Uniform")
-		{
-		pp<- rep(1,tmp$n_bends)
-		tmp$rel_density<-pp/sum(pp) 
-		}
-	if(input$adult_spatial_structure=="Random")
-		{
-		pp<- runif(tmp$n_bends)
-		tmp$rel_density<-pp/sum(pp)		
-		}
-		
+	## SPATIAL STRUCTURE AGE-0
 	if(input$age0_n_spatial_structure=="Uniform")
 		{
-		pp<- rep(1,tmp$n_bends)
-		tmp$natural_age0_rel_dens<-pp/sum(pp) 
-		}
-	if(input$age0_n_spatial_structure=="Random")
-		{
 		pp<- runif(tmp$n_bends)
-		tmp$natural_age0_rel_dens<-pp/sum(pp)		
+		tmp$natural_age0_rel_dens<- pp/sum(pp)
 		}	
-		
 	if(input$age0_h_spatial_structure=="Uniform")
 		{
-		pp<- rep(1,tmp$n_bends)
-		tmp$hatchery_age0_rel_dens<-pp/sum(pp) 
-		}
-	if(input$age0_h_spatial_structure=="Random")
-		{
 		pp<- runif(tmp$n_bends)
-		tmp$hatchery_age0_rel_dens<-pp/sum(pp)		
-		}			
+		tmp$hatchery_age0_rel_dens<- pp/sum(pp)
+		}	
+	
+	
 	return(tmp)
 	} #})
 
@@ -129,17 +114,15 @@ modelInputs<- function(){#reactive({
 ### CORE FUNCTION TO DO SIMULATIONS	
 sim<- function(inputs)
 	{
-	# NUMBER OF ADULTS IN EACH BEND GIVEN DENSITY AND BEND LENGTH
-####fixme####
-	N_n<- rmultinom(inputs$nreps,
-		inputs$natural,inputs$rel_density)
-	N_h<- rmultinom(inputs$nreps,
-		inputs$hatchery,inputs$rel_density)	
-		
-	# SET UP MATRICES FOR SIMULATION	
-	k_H<-Linf_H<-Z_H<-AGE_H<-LEN_H<-MAT_H<-RKM_H<-MPS_H<-WGT_H<-SEX_H<- matrix(0,inputs$daug,inputs$nreps)
-	k_N<-Linf_N<-Z_N<-AGE_N<-LEN_N<-MAT_N<-RKM_N<-MPS_N<-WGT_N<-SEX_N<- matrix(0,inputs$daug,inputs$nreps)
 	
+	# SET UP MATRICES FOR SIMULATION	
+	## HATCHERY ORIGIN FISH
+	k_H<-Linf_H<-LEN_H<-RKM_H<-WGT_H<- matrix(0,inputs$daug,inputs$nreps)# float
+	Z_H<-AGE_H<-MAT_H<-MPS_H<-SEX_H<- matrix(0L,inputs$daug,inputs$nreps)# integer
+	## NATURAL ORIGIN FISH
+	k_N<-Linf_N<-LEN_N<-RKM_N<-WGT_N<- matrix(0,inputs$daug,inputs$nreps)# float
+	Z_N<-AGE_N<-MAT_N<-MPS_N<-SEX_N<- matrix(0L,inputs$daug,inputs$nreps)# integer
+
 	
 	# FISH ALIVE AT INITIALIZATION [Z]
 	Z_H[]<- sapply(1:inputs$nreps, ini_Z,
@@ -174,6 +157,19 @@ sim<- function(inputs)
 		linf= Linf_N,
 		fill0=inputs$daug-inputs$hatchery,
 		basin=inputs$basin)	
+
+	# INITIALIZE WEIGHT GIVEN LENGTH
+	WGT_H[]<-sapply(1:inputs$nreps, ini_wgt,
+		a=inputs$a,
+		b=inputs$b,
+		len=LEN_H,
+		live=Z_H)
+	WGT_N[]<-sapply(1:inputs$nreps, ini_wgt,
+		a=inputs$a,
+		b=inputs$b,
+		len=LEN_N,
+		live=Z_N)
+
 		
 	# INITIALIZE AGE  
 	AGE_N[]<- sapply(1:inputs$nreps,ini_age,
@@ -181,17 +177,19 @@ sim<- function(inputs)
 		len=LEN_N,
 		linf=Linf_N,
 		k=k_N,
-		sizeAtHatch=5,
+		sizeAtHatch=7,
+		maxAge=inputs$maxage,
 		fill0=inputs$daug-inputs$natural)
 	AGE_H[]<- sapply(1:inputs$nreps,ini_age,
 		n=inputs$hatchery,
 		len=LEN_H,
 		linf=Linf_H,
 		k=k_H,
-		sizeAtHatch=5,
+		sizeAtHatch=7,
+		maxAge=inputs$maxage,
 		fill0=inputs$daug-inputs$hatchery)		
 
-	# INITIALIZE MATURITY
+	# INITIALIZE MATURITY													
 	MAT_H[]<-sapply(1:inputs$nreps, ini_maturity,
 		k=inputs$mat_k,
 		len=LEN_H,
@@ -213,24 +211,7 @@ sim<- function(inputs)
 		mature=MAT_N,
 		live=Z_N)			
 
-
-
-	
-	
-	# INITIALIZE WEIGHT GIVEN LENGTH
-	WGT_H[]<-sapply(1:inputs$nreps, ini_wgt,
-		a=inputs$a,
-		b=inputs$b,
-		len=LEN_H,
-		live=Z_H)
-	WGT_N[]<-sapply(1:inputs$nreps, ini_wgt,
-		a=inputs$a,
-		b=inputs$b,
-		len=LEN_N,
-		live=Z_N)
-
-
-	# USING FUNCTIONS TO INITIALIZE
+	# INITIALIZE SEX OF FISH
 	SEX_H[]<-sapply(1:inputs$nreps,ini_sex,
 		n=inputs$hatchery,
 		ratio=inputs$sexratio,
@@ -242,20 +223,24 @@ sim<- function(inputs)
 
 
 	# INITIALIZE LOCATION OF ADULTS
-#	RKM_H[]<-sapply(1:inputs$nreps,ini_rkm,
-#		n=inputs$hatchery,
-#		fill0=inputs$daug-inputs$hatchery)
-#	RKM_N[]<-sapply(1:inputs$nreps,ini_rkm,
-#		n=inputs$natural,
-#		fill0=inputs$daug-inputs$natural)	
+	RKM_H[]<-sapply(1:inputs$nreps,ini_rkm,
+		n=inputs$hatchery,
+		type=inputs$adult_spatial_structure,
+		bend_lengths=inputs$bend_lengths,
+		fill0=inputs$daug-inputs$hatchery)
+	RKM_N[]<-sapply(1:inputs$nreps,ini_rkm,
+		n=inputs$natural,
+		type=inputs$adult_spatial_structure,
+		bend_lengths=inputs$bend_lengths,
+		fill0=inputs$daug-inputs$natural)	
 		
 	# INITIALIZE AGE-0 IN EACH BEND
-#	AGE_0_N_BND<-rmultinom(inputs$nreps,
-#		inputs$natural_age0,
-#		inputs$natural_age0_rel_dens)
-#	AGE_0_H_BND<-rmultinom(inputs$nreps,
-#		inputs$hatchery_age0,
-#		inputs$hatchery_age0_rel_dens)
+	AGE_0_N_BND<-rmultinom(inputs$nreps,
+		inputs$natural_age0,
+		inputs$natural_age0_rel_dens)
+	AGE_0_H_BND<-rmultinom(inputs$nreps,
+		inputs$hatchery_age0,
+		inputs$hatchery_age0_rel_dens)
 	# END INITIALIZATION ##########	
 		
 		
@@ -275,33 +260,40 @@ sim<- function(inputs)
 	# PROGRESS BAR
 	#withProgress(message = 'Executing model ',value = 0, {	
 	#k=0	
+	pb<-txtProgressBar(min=1,max=length(m),initial=0,char="*",style=3)
+	
+	for(i in 1:length(m))
+		{
+		x<-runif(100000)
+		
+	}
 	
 	
 	# SIMULATE POPULATION DYNAMICS GIVEN INITIAL STATES
-	for(i in m) # M IS A VECTOR OF MONTHS 1:12, REPEATED FOR NYEARS
+	for(i in 1:length(m)) # M IS A VECTOR OF MONTHS 1:12, REPEATED FOR NYEARS
 		{
 		#k=k+1
 		#incProgress(1/length(m))
-		
+		setTxtProgressBar(pb, i)
 		
 		# STOCKING 
-		if(i==inputs$stocking_month)
+		if(m[i]==inputs$stocking_month)
 			{
 			# ADD NUMBER OF FISH STOCKED IN A BEND
 			AGE_0_H_BND[inputs$stocking_bend,]<- AGE_0_H_BND[inputs$stocking_bend,]+inputs$stocking_amount
 			}
 			# END STOCKING
 		
-		# UPDATE WHETHER FISH SURVIVED PRIOR TO UPDATING OTHER STUFF
+		# UPDATE WHETHER FISH SURVIVED PRIOR TO UPDATING OTHER STUFF  ####fixme####
 		Z_N<- sapply(1:inputs$nreps,dSurvival,
 			n=inputs$daug,
-			phi_age=inputs$phi^(1/12),# vector of age survivals
+			phi_age=inputs$phi,# vector of annual survivals converted to monthly in function
 			age=AGE_N,
-			live=Z_N)
-		# UPDATE WHETHER FISH SURVIVED PRIOR TO UPDATING OTHER STUFF
+			live=Z_N) 
+		# UPDATE WHETHER FISH SURVIVED PRIOR TO UPDATING OTHER STUFF ####fixme####
 		Z_H<- sapply(1:inputs$nreps,dSurvival,
 			n=inputs$daug,
-			phi_age=inputs$phi^(1/12),# vector of age survivals
+			phi_age=inputs$phi,# vector of annual survivals converted to monthly in function
 			age=AGE_H,
 			live=Z_H)
 
@@ -327,16 +319,19 @@ sim<- function(inputs)
 			a=inputs$a,
 			b=inputs$b,
 			len=LEN_H,
-			er=0.1,
+			er=inputs$lw_er,
 			live=Z_H)
 		WGT_N<-sapply(1:inputs$nreps,dWeight,
 			n=inputs$daug,
 			a=inputs$a,
 			b=inputs$b,
 			len=LEN_N,
-			er=0.1,
+			er=inputs$lw_er,
 			live=Z_N)
-		if(i==6)
+			
+			
+			
+		if(m[i]==6)
 			{
 			##MOVE AGE-0 FISH INTO MATRICES
 			
@@ -450,30 +445,7 @@ sim<- function(inputs)
 					sum)
 				H[is.na(H)]<-0				
 				return(N+H)})			
-			
-			
-			## SET MONTHS POST SPAWN TO -1 
-			## FOR FISH THAT SPAWNED
-			MPS_N[SPN_N==1]<- -1
-			MPS_H[SPN_H==1]<- -1
-
-			## EMBRYOS 
-			### FERTILIZATON OF EGGS TO EMBRYOS
-			AGE_0_N_BND<- sapply(1:inputs$nreps,function(x)
-				{
-				a<- -3
-				b<- 0.5
-				tmp<-rbinom(nrow(AGE_0_N_BND),AGE_0_BND[,x],plogis(a+b*MAL_BND[,x]))
-				return(tmp)
-				})			
-			
-
-			## EMBRYOS SURVIVING TO FREE EMBRYOS
-			AGE_0_N_BND<- sapply(1:inputs$nreps,function(x)
-				{
-				tmp<-rbinom(nrow(AGE_0_N_BND),AGE_0_BND[,x],inputs$phi1)
-				return(tmp)
-				})	
+  
 
 				
 

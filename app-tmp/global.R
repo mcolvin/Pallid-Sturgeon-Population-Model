@@ -168,9 +168,14 @@ sim<- function(inputs)
 	N_h<- rmultinom(inputs$nreps,
 		inputs$hatchery,inputs$rel_density)	
 		
+
 	# SET UP MATRICES FOR SIMULATION	
-	k_H<-Linf_H<-Z_H<-AGE_H<-LEN_H<-MAT_H<-RKM_H<-MPS_H<-WGT_H<-SEX_H<- matrix(0,inputs$daug,inputs$nreps)
-	k_N<-Linf_N<-Z_N<-AGE_N<-LEN_N<-MAT_N<-RKM_N<-MPS_N<-WGT_N<-SEX_N<- matrix(0,inputs$daug,inputs$nreps)
+	## HATCHERY ORIGIN FISH
+	k_H<-Linf_H<-LEN_H<-RKM_H<-WGT_H<- matrix(0,inputs$daug,inputs$nreps)# float
+	Z_H<-AGE_H<-MAT_H<-MPS_H<-SEX_H<- matrix(0L,inputs$daug,inputs$nreps)# integer
+	## NATURAL ORIGIN FISH
+	k_N<-Linf_N<-LEN_N<-RKM_N<-WGT_N<- matrix(0,inputs$daug,inputs$nreps)# float
+	Z_N<-AGE_N<-MAT_N<-MPS_N<-SEX_N<- matrix(0L,inputs$daug,inputs$nreps)# integer
 
 	
 	
@@ -2387,5 +2392,5 @@ len_init<- structure(list(x = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
 
 	lower_len_init<- approxfun(len_init[len_init$basin=="lower",]$x,len_init[len_init$basin=="lower",]$len)
-	upper_len_init<- approxfun(len_init[len_init$basin=="upper",]$x,len_init[len_init$basin=="upper",]$len)
+	upper_len_init<- approxfun(len_init[len_init$basin=="upper",]$x,len_init[len_init$basin=="upper",]$len)g
 	

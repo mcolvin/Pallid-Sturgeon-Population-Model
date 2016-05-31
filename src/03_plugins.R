@@ -32,7 +32,7 @@ ini_Z<- function(x,n,fill0)
 	c(rep(1,n),rep(0,fill0))
 	}
 	
-ini_age<- function(x,n,len,linf,k,sizeAtHatch=5,fill0)
+ini_age<- function(x,n,len,linf,k,sizeAtHatch=7,maxAge,fill0)
 	{
 	length2<- len[1:n,x]
 	length1<-rep(sizeAtHatch,n)
@@ -40,34 +40,56 @@ ini_age<- function(x,n,len,linf,k,sizeAtHatch=5,fill0)
 	k<- k[1:n,x]
 	age<-sapply(1:n,function(x)
 		{solve(-k[x],log(1-((length2[x]-length1[x])/(linf[x]-length1[x]))))})
+	age<- ifelse(age>maxAge,maxAge,age)
 	return(c(age,rep(0,fill0)))	
 	}
 	
 ini_length<-function(x,n,linf,fill0,basin)
 	{
-	if(basin=="lower")
+	if(basin=="Lower")
 		{
 		tmp<-lower_len_init(runif(n))
 		}
-	if(basin=="upper")
+	if(basin=="Upper")
 		{
 		tmp<-upper_len_init(runif(n))
 		}
 	tmp<- ifelse(tmp> linf[1:n,x],0.9*linf[1:n,x],tmp)
 	return(c(tmp,rep(0,fill0)))
 	}
+# INITIALIZE HOW MANY FISH ARE MATURE
 ini_maturity<- function(x,k,len,age_mat,live)
 	{
+	# IS A FISH SEXUALLY MATURE; CONDITIONAL ON BEING ALIVE
 	p<- (1/(1+exp(-k*(len[,x]-age_mat))))*live[,x]
 	M2<- rbinom(length(p),1,p)		
 	return(M2)				
 	}
-ini_rkm<- function(x,n,fill0)
+	
+# INITIALIZE RIVER LOCATION
+ini_rkm<- function(x,n,type,spots,bend_lengths,fill0)
 	{
-	# FUNCTION TO INITIALIZE RIVER KILOMETER FOR 
-	# INVIDUAL FISH
-	c(runif(n,1,1000),rep(0,fill0))
+	# FUNCTION TO INITIALIZE RIVER 
+	# KILOMETER FOR INVIDUAL FISH
+	nbends<- length(bend_lengths)
+	# BUILD INVERSE DISTRIBUTATION TO SAMPLE FROM
+	if(type=="Uniform")
+		{
+		y<- rep(1, nbends)*bend_lengths
+		y<- cumsum(y)/sum(y)
+		cumdist<- approxfun(y,c(1:nbends),rule=2)
+		}
+	if(type=="Emperical")  ####fixme####
+		{
+		y<- rep(1, nbends)*bend_lengths
+		y<- cumsum(y)/sum(y)
+		cumdist<- approxfun(y,c(1:nbends),rule=2)
+		}
+	x<-c(cumdist(runif(n)),rep(0,fill0))
+	return(x)
 	}
+	
+# INITIALIZE GROWTH PARAMETERS (L_INF, K)	
 ini_growth<- function(x,n,basin)
 	{
 	if(basin=="lower")
@@ -111,9 +133,13 @@ dFEtoEFL<- function(x,n,total,phi)
 	
 dSurvival<- function(x,n,phi_age,age,live)
 	{
-	phi<- c(0,phi_age)^(1/12)
-	rbinom(n,1,phi[age[,x]+1])*live[,x]
+	phi<- phi_age^(1/12)# convert annual to monthly
+	indx<- which(live[,x]==1)
+	a<- floor(age[indx,x])
+	live[indx,x]<- rbinom(length(indx),1,phi[a])
+	return(live[,x])
 	}
+	
 dLength<- function(x, n, k, linf,length1,dT,live)
 	{# FABENS MODEL WITH MODFICATION	
 	# x    number of replicates, column index used by sapply 
@@ -132,10 +158,13 @@ dMPS<- function(x,mps,mature,live)
 	{
 	(mps[,x]+1)*mature[,x]*live[,x]
 	}
+	
 dWeight<- function(x,n,len,a=0.0001,b=3,er=0.1,live)
 	{
-	rlnorm(n,log(a*len[,x]^b),er)*live[,x]
+	indx<- which(live[,x]==1)
+	len[indx,x]<- rlnorm(length(indx),log(a*len[indx,x]^b),er)
 	}
+	
 dWeight_v<- function(x,a=0.0001,b=3,er=0.1)
 	{
 	rlnorm(1,log(a*x^b),er) ####fixme####
