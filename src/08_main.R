@@ -34,6 +34,4 @@ setwd("C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturg
 
 
 
-	
-
 

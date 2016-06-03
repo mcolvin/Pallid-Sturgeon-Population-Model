@@ -33,9 +33,9 @@ input$spn_B<- c(0.35,0.35)
 ## SURVIVAL
 input$phi_age0_mean<-c(0.001,0.001)
 input$phi_age0_er<-c(0.01,0.001)
-input$phi_age1_mean<-c(0.68,0.68)
+input$phi_age1_mean<-c(0.68,0.95)
 input$phi_age1_er<-c(0.1,0.1)
-input$phi_age2_mean<-c(0.92,0.92)
+input$phi_age2_mean<-c(0.92,0.95)
 input$phi_age2_er<-c(0.01,0.01)
 input$recruitment<- FALSE
 
@@ -69,7 +69,7 @@ input$age0_h_spatial_structure<- "Uniform"# "Emperical"
 
 
 ## SIMULATION INPUTS
-input$nreps<- 10
+input$nreps<- 50
 input$nyears<- 50
 input$daug<- 30000
 input$size_indices<-TRUE
@@ -81,18 +81,32 @@ inputs<-modelInputs(input=input)
 # RUN MODEL
 out<- sim(inputs=inputs)
 
+
+dput(out,"./output/20160603-krentz-psd/20160603-output.txt")
+dput(inputs,"./output/20160603-krentz-psd/20160603-inputs.txt")
+
 indx<-which(rowSums(out$qp)>1)
-out<-data.frame(sq=apply(out$sq[indx,],1,mean),
- qp=apply(out$qp[indx,],1,mean),
- pm=apply(out$pm[indx,],1,mean),
- mt=apply(out$mt[indx,],1,mean),
- tr=apply(out$tr[indx,],1,mean))
+tmp<-data.frame(year=c(2015+0:49),
+	sq=apply(out$sq[indx,],1,mean),
+	qp=apply(out$qp[indx,],1,mean),
+	pm=apply(out$pm[indx,],1,mean),
+	mt=apply(out$mt[indx,],1,mean),
+	tr=apply(out$tr[indx,],1,mean))
 
 
-matplot(c(2015+1:50),out,type='l',las=1,ylab="Incrimental PSD value",
+matplot(tmp$year,tmp[,-1],type='l',las=1,ylab="Incrimental PSD value",
 	xlab="Year",lwd=2)
-	text(2015+45,out[nrow(out),],c("PSD-SQ","PSD-QP","PSD-PM","PSD-MT","PSD-T"),
+	text(2015+45,tmp[nrow(tmp),],c("PSD-SQ","PSD-QP","PSD-PM","PSD-MT","PSD-T"),
 		pos=3)
+savePlot("./output/20160603-krentz-psd/figure-01.wmf",type='wmf') 
+ 
+# PSD TABLE FOR VARYING YEARS
+tbl1<-data.frame(PSD=c("PSD-SQ","PSD-QP","PSD-PM","PSD-MT","PSD-T"),
+	yr2015=unlist(tmp[tmp$year==2015,-1]),
+	yr2025=unlist(tmp[tmp$year==2025,-1]),
+	yr2050=unlist(tmp[tmp$year==2050,-1]),
+	yrLast=unlist(tmp[tmp$year==max(tmp$year),-1]))
+write.csv(tbl1,"./output/20160603-krentz-psd/table-01.csv")
  
  
 # WORKS...
