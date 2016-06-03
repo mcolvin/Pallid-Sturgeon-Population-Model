@@ -162,10 +162,10 @@ dLength<- function(k, linf,length1,dT)
 	return(length2)# return the predicted length
 	}
 
-dMPS<- function(x,mps,mature,live) 
-	{
-	(mps[,x]+1)*mature[,x]*live[,x]
-	}
+#dMPS<- function(x,mps,mature,live) 
+#	{
+#	(mps[,x]+1)*mature[,x]*live[,x]
+#	}
 	
 dWeight<- function(len,a=0.0001,b=3,er=0.1)
 	{
@@ -192,20 +192,18 @@ spawn<- function(mps,a=-17.5,b=0.35,mature)
 	out<- rbinom(length(mps),1, pr)
 	return(out)	
 	}
-fecundity<- function(x,fl,a,b,er,sex,live,spawn)
+fecundity<- function(fl,a,b,er,sex,spawn)
 	{
 	y<- exp(a + b * ((fl - 1260.167)/277.404)+rnorm(nrow(fl),0,er))
-	eggs<- rpois(nrow(fl),y)*spawn[,x]*sex[,x]
+	eggs<- rpois(nrow(fl),y)*spawn*sex
 	return(eggs) 
 	}
-dRKM<- function(x, n,loc,live,er)
+loc2<- function(loc1,er,month)
 	{
-	# FUNCTION TO SIMULATE MOVEMENT 
-	# FROM ONE MONTH TO THE NEXT
-	# LOC AND LIVE ARE MATRICES [NINDS,NREPS]
-	# INPUTS IS A VECTOR OF INDVIDUALS APPLIED OVER REPS
-	# X IS THE COLUMN INDEX FOR EACH REPLICATE
-	(loc[,x]+rnorm(n,loc[,x],er))*live[,x]
+	# FUNCTION TO SIMULATE MOVEMENT FROM ONE MONTH TO THE NEXT
+	## LOC1 IS LOCATIONS OF INDIVIDUALS
+	out<- rnorm(length(loc1),loc1,er)
+	return(out)
 	}	
 
 	
