@@ -206,7 +206,7 @@ sim<- function(inputs)
 	indx<- lapply(1:inputs$nreps,function(x){out<- which(AGE_N[,x]>0 & AGE_N[,x]<24)}) 		
 	recruits<- matrix(sapply(1:inputs$nreps,function(x) length(indx[[x]])),nrow=1)
 	sq<-qp<-pm<-mt<-tr<-matrix(0,ncol=input$nreps,nrow=length(m))# MATRIX
-	
+	biomass<- matrix(0,nrow=length(m),ncol=inputs$nreps)
 	# PROGRESS BAR
 	pb<-txtProgressBar(min=1,max=length(m),initial=0,char="*",style=3)
 
@@ -445,6 +445,7 @@ sim<- function(inputs)
 		## AGE-1 RECRUITS; NATURAL ORIGIN
 		indx<- lapply(1:inputs$nreps,function(x){out<- which(AGE_N[,x]>0 & AGE_N[,x]<24)}) 		
 		recruits<- rbind(recruits,sapply(1:inputs$nreps,function(x) length(indx[[x]])))
+		biomass[i,]<- colSums(WGT_N)+colSums(WGT_H)
 		# END SUMMARIES #################################################################
 		
 		}# end i    		##})# end shiny progress bar
