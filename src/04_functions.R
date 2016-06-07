@@ -67,7 +67,7 @@ modelInputs<- function(input){#reactive({
 	tmp$nreps=input$nreps
 	tmp$nyears=input$nyears
 	tmp$daug=input$daug
-	
+	tmp$startYear<-input$startYear
 	
 
 
@@ -206,7 +206,7 @@ sim<- function(inputs)
 	indx<- lapply(1:inputs$nreps,function(x){out<- which(AGE_N[,x]>0 & AGE_N[,x]<24)}) 		
 	recruits<- matrix(sapply(1:inputs$nreps,function(x) length(indx[[x]])),nrow=1)
 	sq<-qp<-pm<-mt<-tr<-matrix(0,ncol=input$nreps,nrow=length(m))# MATRIX
-	biomass<- matrix(0,nrow=length(m),ncol=inputs$nreps)
+	mn_wght<-biomass<- matrix(0,nrow=length(m),ncol=inputs$nreps)
 	# PROGRESS BAR
 	pb<-txtProgressBar(min=1,max=length(m),initial=0,char="*",style=3)
 
@@ -235,14 +235,20 @@ sim<- function(inputs)
 	
 		### UPDATE WEIGHT 
 		WGT_H[indx_h]<-dWeight(len=LEN_H[indx_h],a=inputs$a,b=inputs$b,er=inputs$lw_er)
-		WGT_N[indx_n]<-dWeight(len=LEN_H[indx_n],a=inputs$a,b=inputs$b,er=inputs$lw_er)
-
+		WGT_N[indx_n]<-dWeight(len=LEN_N[indx_n],a=inputs$a,b=inputs$b,er=inputs$lw_er)
+	
 		
+		#WGT_H[]<-vapply(1:ncol(WGT_H),dWeight,
+		#	len=LEN_H[,x]*Z_H[,x],
+		#	a=inputs$a,
+		#	b=inputs$b,
+		#	er=inputs$lw_er)
+
 		
 		# RECRUITMENT AND SPAWNING SUBMODEL
 		if(inputs$recruit==TRUE) ####fixme####
 			{
-			# EXPAND AGE-0 COHORTS TO INDIVIDUALS			
+			# [1] EXPAND AGE-0 COHORTS TO INDIVIDUALS			
 			## INDEX OF OPEN SLOTS TO PUT AGE-0 FISH TRANSITIONING
 			## TO AGE-1.... HAPPY BIRTHDAY LITTLE FIDDIES
 			if(sum(colSums(AGE_0_H_BND))>0)
@@ -382,7 +388,7 @@ sim<- function(inputs)
 
 		# UPDATE MONTHS SINCE SPAWNING
 		MPS_N[indx_n]<-MPS_N[indx_n]+1 
-		MPS_N[indx_h]<-MPS_N[indx_n]+1	
+		MPS_H[indx_h]<-MPS_H[indx_h]+1	
 		
 		
 		# PALLID STURGEON STOCKING ###############################################################################
@@ -445,21 +451,43 @@ sim<- function(inputs)
 		## AGE-1 RECRUITS; NATURAL ORIGIN
 		indx<- lapply(1:inputs$nreps,function(x){out<- which(AGE_N[,x]>0 & AGE_N[,x]<24)}) 		
 		recruits<- rbind(recruits,sapply(1:inputs$nreps,function(x) length(indx[[x]])))
-		biomass[i,]<- colSums(WGT_N)+colSums(WGT_H)
+		biomass[i,]<- (colSums(WGT_N)+colSums(WGT_H))
+		mn_wght[i,]<- (colSums(WGT_N)+colSums(WGT_H))/(colSums(Z_H)+colSums(Z_N))
+		
+		
 		# END SUMMARIES #################################################################
+		
+		# SENESCENCE
+		if(length(which(AGE_N>=input$max_age*12))>0)
+			{
+			sensescence<- lapply(1:inputs$nreps,function(x){out<- which(AGE_N[,x]>=41*12)}) 		
+			sensescence<- cbind(sensescence,sapply(1:inputs$nreps,function(x) length(sensescence[[x]])))
+			Z_N[sensescence]<- 0
+			}
+		# SENESCENCE
+		if(length(which(AGE_H>=inputs$maxage*12))>0)
+			{
+			sensescence<- lapply(1:inputs$nreps,function(x){out<- which(AGE_H[,x]>=41*12)}) 		
+			sensescence<- cbind(unlist(sensescence),rep(1:inputs$nreps,sapply(1:inputs$nreps,function(x) length(sensescence[[x]]))))
+			Z_H[sensescence]<-0		
+			}
 		
 		}# end i    		##})# end shiny progress bar
 		# END LOOP ######################################################################
 
-
-
-
 	len_init<-len_init[tolower(len_init$basin)==tolower(inputs$basin),]
 	len_init$rel_freq<- c(0,diff(len_init$x))
 	
-	return(list(natural=N_N_SUM, hatchery=N_H_SUM,
+	x<- sort(rep(inputs$startYear:(inputs$startYear+inputs$nyears-1),12))+
+	rep(1:12/12,inputs$nyears)
+	
+	return(list(natural=N_N_SUM, 
+		hatchery=N_H_SUM,
+		years=x,
 		sq=sq,qp=qp,pm=pm,mt=mt,tr=tr,
-		len_init=len_init))	
+		len_init=len_init,
+		biomass=biomass,
+		mn_wght=mn_wght))	
 	}
 
 	

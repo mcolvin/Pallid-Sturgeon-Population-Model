@@ -6,8 +6,8 @@ input<-list()
 input$basin<-"Upper"
 input$maxage<-c(41,41)
 input$sexratio<-c(0.33,0.5)
-input$natural<- c(200,200)
-input$hatchery<- c(200,200)
+input$natural<- c(0,12)
+input$hatchery<- c(0,43000)
 input$natural_age0<- c(200,0)
 input$hatchery_age0<- c(200,0)
 
@@ -69,9 +69,10 @@ input$age0_h_spatial_structure<- "Uniform"# "Emperical"
 
 
 ## SIMULATION INPUTS
-input$nreps<- 50
+input$nreps<- 100
+input$startYear<- 2015
 input$nyears<- 50
-input$daug<- 30000
+input$daug<- 45000
 input$size_indices<-TRUE
 
 
@@ -81,7 +82,7 @@ inputs<-modelInputs(input=input)
 # RUN MODEL
 out<- sim(inputs=inputs)
 
-
+ 
 dput(out,"./output/20160603-krentz-psd/20160603-output.txt")
 dput(inputs,"./output/20160603-krentz-psd/20160603-inputs.txt")
 
@@ -106,11 +107,36 @@ tbl1<-data.frame(PSD=c("PSD-SQ","PSD-QP","PSD-PM","PSD-MT","PSD-T"),
 	yr2025=unlist(tmp[tmp$year==2025,-1]),
 	yr2050=unlist(tmp[tmp$year==2050,-1]),
 	yrLast=unlist(tmp[tmp$year==max(tmp$year),-1]))
-write.csv(tbl1,"./output/20160603-krentz-psd/table-01.csv")
+write.csv(format(tbl1,digits=0),"./output/20160603-krentz-psd/table-01.csv")
+
+
+# BIOMASS
+y<-(apply(out$biomass,1,mean)/(1000*1000))
+yup<-(apply(out$biomass,1,max)/(1000*1000))
+ylo<-(apply(out$biomass,1,min)/(1000*1000))
+plot(x,y,ylab="Biomass (kg; x1000)",
+	xlab="Year",las=1,type='l')
+polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
+points(x,y,type='l')
+savePlot("./output/20160603-krentz-psd/figure-02.wmf",type='wmf')
  
  
-# WORKS...
-library(compiler)
-enableJIT(3)
-fo_compiled <- cmpfun(sim)
-out<- fo_compiled(inputs=inputs)
+# TOTAL ABUNDANCE 
+y<-(apply((out$hatchery+out$natural)[-1,],1,mean))/1000
+yup<-(apply((out$hatchery+out$natural)[-1,],1,max))/1000
+ylo<-(apply((out$hatchery+out$natural)[-1,],1,min))/1000
+plot(out$years,y,ylab="Total abundance (x1000)",
+	xlab="Year",las=1,type='l')
+polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
+points(x,y,type='l')
+savePlot("./output/20160603-krentz-psd/figure-03.wmf",type='wmf')
+
+# MEAN WEIGHT 
+y<-(apply(out$mn_wght,1,mean))/1000
+yup<-(apply(out$mn_wght,1,max))/1000
+ylo<-(apply(out$mn_wght,1,min))/1000
+plot(out$years,y,ylab="Mean weight (kg)",
+	xlab="Year",las=1,type='l')
+polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
+points(x,y,type='l')
+savePlot("./output/20160603-krentz-psd/figure-04.wmf",type='wmf')
