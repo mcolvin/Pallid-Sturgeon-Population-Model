@@ -19,7 +19,7 @@ figures<- function(n)
 		yup<-(apply(out$mn_wght,1,max))/1000
 		ylo<-(apply(out$mn_wght,1,min))/1000
 		plot(out$years,y,ylab="Mean weight (kg)",
-			xlab="Year",las=1,type='l')
+			xlab="Year",las=1,type='l',ylim=c(0,max(yup)))
 		polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
 		points(x,y,type='l')
 		#savePlot("./output/2016-001/figure-04.wmf",type='wmf')

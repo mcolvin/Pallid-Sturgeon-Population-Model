@@ -67,7 +67,7 @@ input$age0_h_spatial_structure<- "Uniform"# "Emperical"
 
 
 ## SIMULATION INPUTS
-input$nreps<- 10
+input$nreps<- 100
 input$startYear<- 2015
 input$nyears<- 50
 input$daug<- 45000
