@@ -1,4 +1,7 @@
 
+
+
+
 ### PROCESS INPUTS TO INITILIZE AND SIMULATE POPULATION	
 modelInputs<- function(input){#reactive({
 	tmp<-list()
@@ -71,7 +74,8 @@ modelInputs<- function(input){#reactive({
 	
 
 
-	
+	tmp$commit<-input$commit
+	tmp$output_name<- input$output_name	
 	
 	# SPATIAL
 	## BEND DATA & META
@@ -98,6 +102,7 @@ modelInputs<- function(input){#reactive({
 		}	
 	tmp$size_indices<-input$size_indices
 	## END SPATIAL 
+
 
 	return(tmp)
 	} #})
@@ -145,7 +150,7 @@ sim<- function(inputs)
 	WGT_H[indx_h]<-ini_wgt(a=inputs$a,b=inputs$b,len=LEN_H[indx_h],er=inputs$lw_er)
 	WGT_N[indx_n]<-ini_wgt(a=inputs$a,b=inputs$b,len=LEN_N[indx_n],er=inputs$lw_er)
 
-
+	
 	## INITIALIZE SEX OF FISH
 	SEX_H[indx_h]<-ini_sex(n=nrow(indx_h),ratio=inputs$sexratio)
 	SEX_N[indx_n]<-ini_sex(n=nrow(indx_n),ratio=inputs$sexratio)
@@ -237,6 +242,8 @@ sim<- function(inputs)
 		WGT_H[indx_h]<-dWeight(len=LEN_H[indx_h],a=inputs$a,b=inputs$b,er=inputs$lw_er)
 		WGT_N[indx_n]<-dWeight(len=LEN_N[indx_n],a=inputs$a,b=inputs$b,er=inputs$lw_er)
 	
+	
+
 		
 		#WGT_H[]<-vapply(1:ncol(WGT_H),dWeight,
 		#	len=LEN_H[,x]*Z_H[,x],
@@ -472,6 +479,15 @@ sim<- function(inputs)
 			Z_H[sensescence]<-0		
 			}
 		
+		# ZERO OUT LENGTH AND WEIGHTS FOR DEAD FISH
+		LEN_N<- LEN_N*Z_N
+		WGT_N<- WGT_N*Z_N
+		
+		LEN_H<- LEN_H*Z_H
+		WGT_H<- WGT_H*Z_H	
+		
+		
+		
 		}# end i    		##})# end shiny progress bar
 		# END LOOP ######################################################################
 
@@ -481,13 +497,26 @@ sim<- function(inputs)
 	x<- sort(rep(inputs$startYear:(inputs$startYear+inputs$nyears-1),12))+
 	rep(1:12/12,inputs$nyears)
 	
-	return(list(natural=N_N_SUM, 
+	
+	out<-list(natural=N_N_SUM, 
 		hatchery=N_H_SUM,
 		years=x,
 		sq=sq,qp=qp,pm=pm,mt=mt,tr=tr,
 		len_init=len_init,
+		LEN_H=LEN_H,
+		LEN_N=LEN_N,
+		WGT_N=WGT_N,
+		WGT_H=WGT_H,
 		biomass=biomass,
-		mn_wght=mn_wght))	
+		mn_wght=mn_wght)
+		
+	fn<-paste0("./output/",inputs$output_name,"/",inputs$output_name,"-output.txt")
+	dput(out,fn)
+	fn<-paste0("./output/",inputs$output_name,"/",inputs$output_name,"-input.txt")
+	dput(inputs,fn)
+	fn<-paste0("./output/",inputs$output_name,"/",inputs$output_name,".Rdata")
+	save(out,inputs, file=fn)
+	return(out)	
 	}
 
 	

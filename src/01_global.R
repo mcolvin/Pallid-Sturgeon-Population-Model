@@ -2,4 +2,20 @@ library(shiny)
 library(markdown)
 library(MASS)
 library(utils)
+library(knitr)
 
+run_source<-function(commit="Missing",output_name="Missing")
+	{
+	source("./src/01_global.R")
+	source("./src/02_load.R")
+	source("./src/03_clean.R")
+	source("./src/03_plugins.R")	
+	source("./src/04_functions.R")
+	source("./src/05_tables.R")
+	source("./src/06_figures.R")
+	input<<-list()
+	input$commit<<-commit
+	input$output_name<<- output_name	
+	source("./src/07_analysis.R")
+	return(inputs)	
+	}
