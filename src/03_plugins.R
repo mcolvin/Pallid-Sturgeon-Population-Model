@@ -39,13 +39,12 @@ ini_sex<- function(n,ratio)
 ini_age<- function(len,linf,k,sizeAtHatch=7,maxAge)
 	{
 	length2<- len
-	length1<-rep(sizeAtHatch,length(len))
 	age<-sapply(1:length(len),function(x)
-		{solve(-k[x],log(1-((length2[x]-length1[x])/(linf[x]-length1[x]))))})
+		{solve(-k[x],log(1-((length2[x]-sizeAtHatch)/(linf[x]-sizeAtHatch))))})
 	out<- ifelse(age>maxAge,maxAge,age)
 	return(out*12)	
 	}
-
+	
 
 # FUNCTION TO INIITIALIZE LENGTH OF FISH	
 ini_length<-function(linf,basin)
@@ -98,13 +97,13 @@ ini_rkm<- function(n,type,bend_lengths)
 # INITIALIZE GROWTH PARAMETERS (L_INF, K)	
 ini_growth<- function(x,n,basin)
 	{
-	if(basin=="lower")
+	if(basin %in% c("Lower","lower"))
 		{
 		tmp<-mvrnorm(x*n,c(6.982160, -2.382711),
 			matrix(c(0.0894,-0.1327,-0.1327,0.3179),2,2,byrow=TRUE))
 		tmp<- exp(tmp)
 		}
-	if(basin=="upper")
+	if(basin %in% c("Upper","upper"))
 		{
 		tmp<-mvrnorm(x*n,c(7.136028770, -3.003764445),
 			matrix(c(0.2768,-0.364,-0.364,0.6342),2,2,byrow=TRUE))

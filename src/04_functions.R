@@ -113,62 +113,57 @@ sim<- function(inputs)
 	{
 	
 	# SET UP MATRICES FOR SIMULATION	
-	## HATCHERY ORIGIN FISH
-	k_H<-Linf_H<-LEN_H<-WGT_H<- matrix(0,inputs$daug,inputs$nreps)# float
-	Z_H<-AGE_H<-MAT_H<-MPS_H<-SEX_H<-SPN_H<- matrix(0L,inputs$daug,inputs$nreps)# integer
-	## NATURAL ORIGIN FISH
-	k_N<-Linf_N<-LEN_N<-WGT_N<- matrix(0,inputs$daug,inputs$nreps)# float
-	Z_N<-AGE_N<-MAT_N<-MPS_N<-SEX_N<-SPN_H<- matrix(0L,inputs$daug,inputs$nreps)# integer
-
+	k<-Linf<-LEN<-WGT<- matrix(0,inputs$daug,inputs$nreps)# float
+	Z<-AGE<-MAT<-MPS<-SEX<-SPN<-ORIGIN<- matrix(0L,inputs$daug,inputs$nreps)# integer
 	
 	# INITIALIZATION
-	indx_h<- cbind(rep(1:inputs$hatchery,inputs$nreps),sort(rep(1:inputs$nreps,inputs$hatchery)))
-	indx_n<- cbind(rep(1:inputs$natural,inputs$nreps),sort(rep(1:inputs$nreps,inputs$natural)))
-	
-	
+
+	indx<- cbind(rep(1:(inputs$natural+inputs$hatchery),inputs$nreps),
+		sort(rep(1:inputs$nreps,(inputs$natural+inputs$hatchery))))
+	## ASSIGN HATCHERY FISH AS A 1
+	ORIGIN[cbind(rep(1:inputs$hatchery,inputs$nreps),
+		sort(rep(1:inputs$nreps,inputs$hatchery)))]<- 1
 	## FISH ALIVE AT INITIALIZATION [Z]
-	Z_H[indx_h]<- 1
-	Z_N[indx_n]<- 1
+	Z[indx]<- 1
+
 
 	
 	## INIITIALIZE GROWTH COEFFICIENTS
 	## ASSUMES THAT GROWTH IS NOT HERITABLE
-	tmp<- ini_growth(x=inputs$nreps,n=nrow(Linf_H),	basin="lower") 	
-	Linf_H[]<- tmp$linf
-	k_H[]<- tmp$k
-	tmp<- ini_growth(x=inputs$nreps,n=nrow(Linf_N),	basin="lower") 	
-	Linf_N[]<- tmp$linf
-	k_N[]<- tmp$k			
+	tmp<- ini_growth(x=inputs$nreps,n=nrow(Linf),basin=tolower(inputs$basin)) 	
+	Linf[]<- tmp$linf
+	k[]<- tmp$k
+	
+	
 
 	
 	## INITIALIZE LENGTH
-	LEN_H[indx_h]<-ini_length(linf= Linf_H[indx_h],	basin=inputs$basin)
-	LEN_N[indx_n]<-ini_length(linf= Linf_N[indx_n],	basin=inputs$basin)	
-
+	LEN[indx]<-ini_length(linf= Linf[indx],	basin=inputs$basin)
+	
 	
 	## INITIALIZE WEIGHT GIVEN LENGTH
-	WGT_H[indx_h]<-ini_wgt(a=inputs$a,b=inputs$b,len=LEN_H[indx_h],er=inputs$lw_er)
-	WGT_N[indx_n]<-ini_wgt(a=inputs$a,b=inputs$b,len=LEN_N[indx_n],er=inputs$lw_er)
+	WGT[indx]<-ini_wgt(a=inputs$a,b=inputs$b,len=LEN[indx],er=inputs$lw_er)
+
 
 	
 	## INITIALIZE SEX OF FISH
-	SEX_H[indx_h]<-ini_sex(n=nrow(indx_h),ratio=inputs$sexratio)
-	SEX_N[indx_n]<-ini_sex(n=nrow(indx_n),ratio=inputs$sexratio)
+	SEX[indx]<-ini_sex(n=nrow(indx),ratio=inputs$sexratio)
 
 	
-	## INITIALIZE AGE IN MONTHS
-	AGE_N[indx_n]<- ini_age(len=LEN_N[indx_n],linf=Linf_N[indx_n],k=k_N[indx_n],sizeAtHatch=7,maxAge=inputs$maxage)
-	AGE_H[indx_h]<- ini_age(len=LEN_H[indx_h],linf=Linf_H[indx_h],k=k_H[indx_h],sizeAtHatch=7,maxAge=inputs$maxage)
+	## INITIALIZE AGE IN MONTHS [THIS IS SUPER SLOW]
+	AGE[indx]<- ini_age(len=LEN[indx],linf=Linf[indx],k=k[indx],sizeAtHatch=7,maxAge=inputs$maxage)
 	
+	# DO K AS A MATRIX OF DIAG(K) RATHER THAN FOR LOOP
+	#x<- indx[1:2,]
+	#solve(diag(-k[x]),log(1-((LEN[x]-7)/(Linf[x]-7))))
 
 	## INITIALIZE WHETHER A FISH IS SEXUALLY MATURE									
-	MAT_H[indx_h]<-ini_maturity(k=inputs$mat_k,	len=LEN_H[indx_h],age_mat=inputs$age_mat)
-	MAT_N[indx_n]<-ini_maturity(k=inputs$mat_k,	len=LEN_N[indx_n],age_mat=inputs$age_mat)
-		
+	MAT[indx]<-ini_maturity(k=inputs$mat_k,	len=LEN[indx],age_mat=inputs$age_mat)
+
 
 	## INITIALIZE TIME SINCE SPAWNING
-	MPS_H[indx_h]<-ini_mps(n=inputs$hatchery,mature=MAT_H[indx_h])
-	MPS_N[indx_n]<-ini_mps(n=inputs$natural,mature=MAT_N[indx_n])		
+	MPS[indx]<-ini_mps(n=(inputs$hatchery+inputs$natural),mature=MAT[indx])
+	
 	
 	## INITIALIZE IF A FISH WILL SPAWN ONCE CONDITIIONS ARE MET
 	# SPN_H
@@ -182,12 +177,13 @@ sim<- function(inputs)
 		}
 	if(inputs$spatial==TRUE)
 		{
-		RKM_N<-RKM_H<- matrix(0,inputs$daug,inputs$nreps)# float
+		RKM<- matrix(0,inputs$daug,inputs$nreps)# float
 		
 		# INITIALIZE LOCATION OF ADULTS
-		RKM_H[indx_h]<-ini_rkm(n=inputs$hatchery,type=inputs$adult_spatial_structure,bend_lengths=inputs$bend_lengths)
-		RKM_N[indx_n]<-ini_rkm(n=inputs$natural,type=inputs$adult_spatial_structure,bend_lengths=inputs$bend_lengths)
-		
+		RKM[indx]<-ini_rkm(n=inputs$hatchery+inputs$natural,
+			type=inputs$adult_spatial_structure,
+			bend_lengths=inputs$bend_lengths)
+	
 		# INITIALIZE AGE-0 IN EACH BEND
 		AGE_0_N_BND<-rmultinom(inputs$nreps,inputs$natural_age0,inputs$natural_age0_rel_dens)
 		AGE_0_H_BND<-rmultinom(inputs$nreps,inputs$hatchery_age0,inputs$hatchery_age0_rel_dens)
@@ -205,13 +201,17 @@ sim<- function(inputs)
 	
 	# SUMMARIES
 	## ABUNDANCE (AGE-1+)
-	N_N_SUM<-colSums(Z_N)
-	N_H_SUM<-colSums(Z_H)
+	N_SUM<-colSums(Z)
+
 	## AGE-1 RECRUITS; NATURAL ORIGIN
-	indx<- lapply(1:inputs$nreps,function(x){out<- which(AGE_N[,x]>0 & AGE_N[,x]<24)}) 		
+	indx<- lapply(1:inputs$nreps,function(x){out<- which(AGE[,x]>0 & AGE[,x]<24 & Z[,x]==1 & ORIGIN[,x]==0)}) 
+
+	
 	recruits<- matrix(sapply(1:inputs$nreps,function(x) length(indx[[x]])),nrow=1)
 	sq<-qp<-pm<-mt<-tr<-matrix(0,ncol=input$nreps,nrow=length(m))# MATRIX
 	mn_wght<-biomass<- matrix(0,nrow=length(m),ncol=inputs$nreps)
+	
+	
 	# PROGRESS BAR
 	pb<-txtProgressBar(min=1,max=length(m),initial=0,char="*",style=3)
 
@@ -222,25 +222,20 @@ sim<- function(inputs)
 		#incProgress(1/length(m))
 		setTxtProgressBar(pb, i)
 
-		indx_h<- lapply(1:inputs$nreps,function(x){which(Z_H[,x]==1)}) 
-		tmp<- unlist(lapply(1:inputs$nreps,function(x) length(indx_h[[x]])))
-		indx_h<- cbind(unlist(indx_h),sort(rep(1:inputs$nreps,tmp)))
-		
-		indx_n<- lapply(1:inputs$nreps,function(x){which(Z_N[,x]==1)}) 
-		tmp<- unlist(lapply(1:inputs$nreps,function(x) length(indx_n[[x]])))
-		indx_n<- cbind(unlist(indx_n),sort(rep(1:inputs$nreps,tmp)))			
+		indx<- lapply(1:inputs$nreps,function(x){which(Z[,x]==1)}) 
+		tmp<- unlist(lapply(1:inputs$nreps,function(x) length(indx[[x]])))
+		indx<- cbind(unlist(indx),sort(rep(1:inputs$nreps,tmp)))
 	
 		### UPDATE WHETHER FISH SURVIVED PRIOR TO UPDATING OTHER STUFF  
-		Z_N[indx_n]<- dSurvival(phi_age=inputs$phi,	age=AGE_N[indx_n]) 
-		Z_H[indx_h]<- dSurvival(phi_age=inputs$phi,	age=AGE_H[indx_h]) 
+		Z[indx]<- dSurvival(phi_age=inputs$phi,	age=AGE[indx])   # slow
+
 		
 		### UPDATE TOTAL LENGTH 
-		LEN_H[indx_h]<-dLength(k=k_H[indx_h],linf=Linf_H[indx_h],dT=1/12,length1=LEN_H[indx_h])
-		LEN_N[indx_n]<-dLength(k=k_N[indx_n],linf=Linf_N[indx_n],dT=1/12,length1=LEN_N[indx_n])
+		LEN[indx]<-dLength(k=k[indx],linf=Linf[indx],dT=1/12,length1=LEN[indx])
 	
-		### UPDATE WEIGHT 
-		WGT_H[indx_h]<-dWeight(len=LEN_H[indx_h],a=inputs$a,b=inputs$b,er=inputs$lw_er)
-		WGT_N[indx_n]<-dWeight(len=LEN_N[indx_n],a=inputs$a,b=inputs$b,er=inputs$lw_er)
+		### UPDATE WEIGHT # slow
+		WGT[indx]<-dWeight(len=LEN[indx],a=inputs$a,b=inputs$b,er=inputs$lw_er)
+
 	
 	
 
@@ -384,8 +379,7 @@ sim<- function(inputs)
 			# UPDATE MOVEMENT
 			
 			## ADULT MOVEMENT
-			RKM_H[indx_h]<-loc2(loc1=RKM_H[indx_h],er=10,month=m[i])
-			RKM_N[indx_n]<-loc2(loc1=RKM_N[indx_n],er-10,month=m[i])
+			RKM[indx]<-loc2(loc1=RKM[indx],er=10,month=m[i])
 	
 
 			## UPDATE ANY AGE-0 MOVEMENT #########################################################################
@@ -394,8 +388,8 @@ sim<- function(inputs)
 			} # END SPATIAL
 
 		# UPDATE MONTHS SINCE SPAWNING
-		MPS_N[indx_n]<-MPS_N[indx_n]+1 
-		MPS_H[indx_h]<-MPS_H[indx_h]+1	
+		MPS[indx]<-MPS[indx]+1 
+
 		
 		
 		# PALLID STURGEON STOCKING ###############################################################################
@@ -421,7 +415,8 @@ sim<- function(inputs)
 			MAT_H[indx]<- 0	# ASSIGN MATURITY
 			RKM_H[indx]<- inputs$yearling_stocking_rkm# ASSIGN LOCATION OF STOCKED INDIVIDUALS
 			MAT_H[indx]<- 0# ASSIGN MATURATION STATUS OF NEW RECRUITS
-			SEX_H[indx]<-rbinom(length(indx[,1]),1,0.5)# ASSIGN SEX TO RECRUITS			
+			SEX_H[indx]<-rbinom(length(indx[,1]),1,0.5)# ASSIGN SEX TO RECRUITS	
+			ORIGIN #xxxx
 			}
 		# END STOCKING ##################################################################	
 
@@ -432,11 +427,11 @@ sim<- function(inputs)
 			{
 			PSD<- sapply(1:input$nreps,function(x){
 				out<-c(
-				length(c(which(LEN_H[,x]>=330 & LEN_H[,x]<629),which(LEN_N[,x]>=330 & LEN_N[,x]<629))),# STOCK
-				length(c(which(LEN_H[,x]>=630 & LEN_H[,x]<839),which(LEN_N[,x]>=630 & LEN_N[,x]<839))),# QUALITY
-				length(c(which(LEN_H[,x]>=840 & LEN_H[,x]<1039),which(LEN_N[,x]>=840 & LEN_N[,x]<1039))),# PREFERRED
-				length(c(which(LEN_H[,x]>=1040 & LEN_H[,x]<1269),which(LEN_N[,x]>=1040 & LEN_N[,x]<1269))),# MEMORABLE
-				length(c(which(LEN_H[,x]>=1270),which(LEN_N[,x]>=1270))))# TROPHY
+				length(c(which(LEN[,x]>=330 & LEN[,x]<629))),# STOCK
+				length(c(which(LEN[,x]>=630 & LEN[,x]<839))),# QUALITY
+				length(c(which(LEN[,x]>=840 & LEN[,x]<1039))),# PREFERRED
+				length(c(which(LEN[,x]>=1040 & LEN[,x]<1269))),# MEMORABLE
+				length(c(which(LEN[,x]>=1270))))# TROPHY
 				out<-trunc(out/sum(out)*100)
 			return(out) 
 			})
@@ -453,40 +448,31 @@ sim<- function(inputs)
 	
 		# SUMMARIES #####################################################################
 		## ABUNDANCE
-		N_N_SUM<-rbind(N_N_SUM,colSums(Z_N))  # TOTAL AGE-1+ ABUNDANCE
-		N_H_SUM<-rbind(N_H_SUM,colSums(Z_H))  # TOTAL AGE-1+ ABUNDANCE
+		N_SUM<-rbind(N_SUM,colSums(Z))  # TOTAL AGE-1+ ABUNDANCE
+		
 		## AGE-1 RECRUITS; NATURAL ORIGIN
-		indx<- lapply(1:inputs$nreps,function(x){out<- which(AGE_N[,x]>0 & AGE_N[,x]<24)}) 		
+		indx<- lapply(1:inputs$nreps,function(x){out<- which(AGE[,x]>0 & AGE[,x]<24 & ORIGIN[,x]==0 & Z[,x]==1)}) 		
 		recruits<- rbind(recruits,sapply(1:inputs$nreps,function(x) length(indx[[x]])))
-		biomass[i,]<- (colSums(WGT_N)+colSums(WGT_H))
-		mn_wght[i,]<- (colSums(WGT_N)+colSums(WGT_H))/(colSums(Z_H)+colSums(Z_N))
+		biomass[i,]<- colSums(WGT)
+		mn_wght[i,]<- colSums(WGT)/colSums(Z)
 		
 		
 		# END SUMMARIES #################################################################
 		
 		# SENESCENCE
-		if(length(which(AGE_N>=input$max_age*12))>0)
+		if(length(which(AGE>=inputs$maxage*12))>0)
 			{
-			sensescence<- lapply(1:inputs$nreps,function(x){out<- which(AGE_N[,x]>=41*12)}) 		
-			sensescence<- cbind(sensescence,sapply(1:inputs$nreps,function(x) length(sensescence[[x]])))
-			Z_N[sensescence]<- 0
+			Z[AGE>=inputs$maxage*12]<- 0
 			}
-		# SENESCENCE
-		if(length(which(AGE_H>=inputs$maxage*12))>0)
-			{
-			sensescence<- lapply(1:inputs$nreps,function(x){out<- which(AGE_H[,x]>=41*12)}) 		
-			sensescence<- cbind(unlist(sensescence),rep(1:inputs$nreps,sapply(1:inputs$nreps,function(x) length(sensescence[[x]]))))
-			Z_H[sensescence]<-0		
-			}
+		
+		
 		
 		# ZERO OUT LENGTH AND WEIGHTS FOR DEAD FISH
-		LEN_N<- LEN_N*Z_N
-		WGT_N<- WGT_N*Z_N
+		LEN<- LEN*Z
+		WGT<- WGT*Z
+
 		
-		LEN_H<- LEN_H*Z_H
-		WGT_H<- WGT_H*Z_H	
-		
-		
+		# need to draw new linf and k for new fish...
 		
 		}# end i    		##})# end shiny progress bar
 		# END LOOP ######################################################################
@@ -494,19 +480,13 @@ sim<- function(inputs)
 	len_init<-len_init[tolower(len_init$basin)==tolower(inputs$basin),]
 	len_init$rel_freq<- c(0,diff(len_init$x))
 	
-	x<- sort(rep(inputs$startYear:(inputs$startYear+inputs$nyears-1),12))+
-	rep(1:12/12,inputs$nyears)
+	x<- sort(rep(inputs$startYear:(inputs$startYear+inputs$nyears-1),12))+rep(1:12/12,inputs$nyears)
 	
 	
-	out<-list(natural=N_N_SUM, 
-		hatchery=N_H_SUM,
+	out<-list(total=N_SUM, 
 		years=x,
 		sq=sq,qp=qp,pm=pm,mt=mt,tr=tr,
 		len_init=len_init,
-		LEN_H=LEN_H,
-		LEN_N=LEN_N,
-		WGT_N=WGT_N,
-		WGT_H=WGT_H,
 		biomass=biomass,
 		mn_wght=mn_wght)
 		

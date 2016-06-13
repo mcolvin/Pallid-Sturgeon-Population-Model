@@ -3,10 +3,10 @@ figures<- function(n)
 	if(n==1)
 		{# TOTAL ABUNDANCE 
 		x<-out$years
-		y<-(apply((out$hatchery+out$natural)[-1,],1,mean))/1000
-		yup<-(apply((out$hatchery+out$natural)[-1,],1,max))/1000
-		ylo<-(apply((out$hatchery+out$natural)[-1,],1,min))/1000
-		plot(out$years,y,ylab="Total abundance (x1000)",
+		y<-(apply(out$total[-1,],1,mean))/1000 
+		yup<-(apply(out$total[-1,],1,max))/1000
+		ylo<-(apply(out$total[-1,],1,min))/1000
+		plot(x,y,ylab="Total abundance (x1000)",
 			xlab="Year",las=1,type='l')
 		polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
 		points(x,y,type='l')
