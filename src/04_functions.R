@@ -112,81 +112,87 @@ modelInputs<- function(input){#reactive({
 sim<- function(inputs)
 	{
 	
-	# SET UP MATRICES FOR SIMULATION	
-	k<-Linf<-LEN<-WGT<- matrix(0,inputs$daug,inputs$nreps)# float
-	Z<-AGE<-MAT<-MPS<-SEX<-SPN<-ORIGIN<- matrix(0L,inputs$daug,inputs$nreps)# integer
+	# SET UP LIST FOR SIMULATION	
+	dyn<- list(
+		k= matrix(0,inputs$daug,inputs$nreps),
+		Linf= matrix(0,inputs$daug,inputs$nreps),
+		LEN= matrix(0,inputs$daug,inputs$nreps),
+		WGT= matrix(0,inputs$daug,inputs$nreps),
+		Z= matrix(0L,inputs$daug,inputs$nreps),
+		AGE= matrix(0L,inputs$daug,inputs$nreps),
+		MAT= matrix(0L,inputs$daug,inputs$nreps),
+		MPS= matrix(0L,inputs$daug,inputs$nreps),
+		SEX= matrix(0L,inputs$daug,inputs$nreps),
+		SPN= matrix(0L,inputs$daug,inputs$nreps),
+		ORIGIN= matrix(0L,inputs$daug,inputs$nreps))
 	
 	# INITIALIZATION
 
 	indx<- cbind(rep(1:(inputs$natural+inputs$hatchery),inputs$nreps),
 		sort(rep(1:inputs$nreps,(inputs$natural+inputs$hatchery))))
 	## ASSIGN HATCHERY FISH AS A 1
-	ORIGIN[cbind(rep(1:inputs$hatchery,inputs$nreps),
+	dyn$ORIGIN[cbind(rep(1:inputs$hatchery,inputs$nreps),
 		sort(rep(1:inputs$nreps,inputs$hatchery)))]<- 1
 	## FISH ALIVE AT INITIALIZATION [Z]
-	Z[indx]<- 1
+	dyn$Z[indx]<- 1
 
 
 	
 	## INIITIALIZE GROWTH COEFFICIENTS
 	## ASSUMES THAT GROWTH IS NOT HERITABLE
 	tmp<- ini_growth(x=inputs$nreps,n=nrow(Linf),basin=tolower(inputs$basin)) 	
-	Linf[]<- tmp$linf
-	k[]<- tmp$k
+	dyn$Linf[]<- tmp$linf
+	dyn$k[]<- tmp$k
 	
 	
 
 	
 	## INITIALIZE LENGTH
-	LEN[indx]<-ini_length(linf= Linf[indx],	basin=inputs$basin)
+	dyn$LEN[indx]<-ini_length(linf= dyn$Linf[indx],	basin=inputs$basin)
 	
 	
 	## INITIALIZE WEIGHT GIVEN LENGTH
-	WGT[indx]<-ini_wgt(a=inputs$a,b=inputs$b,len=LEN[indx],er=inputs$lw_er)
+	dyn$WGT[indx]<-ini_wgt(a=inputs$a,b=inputs$b,len=dyn$LEN[indx],er=inputs$lw_er)
 
 
 	
 	## INITIALIZE SEX OF FISH
-	SEX[indx]<-ini_sex(n=nrow(indx),ratio=inputs$sexratio)
+	dyn$SEX[indx]<-ini_sex(n=nrow(indx),ratio=inputs$sexratio)
 
 	
-	## INITIALIZE AGE IN MONTHS [THIS IS SUPER SLOW]
-	AGE[indx]<- ini_age(len=LEN[indx],linf=Linf[indx],k=k[indx],sizeAtHatch=7,maxAge=inputs$maxage)
+	## INITIALIZE AGE IN MONTHS 
+	dyn$AGE[indx]<- ini_age(len=dyn$LEN[indx],linf=dyn$Linf[indx],k=dyn$k[indx],sizeAtHatch=7,maxAge=inputs$maxage)
 	
-	# DO K AS A MATRIX OF DIAG(K) RATHER THAN FOR LOOP
-	#x<- indx[1:2,]
-	#solve(diag(-k[x]),log(1-((LEN[x]-7)/(Linf[x]-7))))
-
 	## INITIALIZE WHETHER A FISH IS SEXUALLY MATURE									
-	MAT[indx]<-ini_maturity(k=inputs$mat_k,	len=LEN[indx],age_mat=inputs$age_mat)
+	dyn$MAT[indx]<-ini_maturity(k=inputs$mat_k,	len=dyn$LEN[indx],age_mat=inputs$age_mat)
 
 
 	## INITIALIZE TIME SINCE SPAWNING
-	MPS[indx]<-ini_mps(n=(inputs$hatchery+inputs$natural),mature=MAT[indx])
+	dyn$MPS[indx]<-ini_mps(n=(inputs$hatchery+inputs$natural),mature=dyn$MAT[indx])
 	
 	
 	## INITIALIZE IF A FISH WILL SPAWN ONCE CONDITIIONS ARE MET
-	# SPN_H
+	# SPN_H  ####fixme####
 	
 
 	## INITIALIZE SPATIAL
 	if(inputs$spatial==FALSE)
 		{
-		AGE_0_N_BND<-matrix(inputs$natural_age0,nrow=1,ncol=inputs$nreps)
-		AGE_0_H_BND<-matrix(inputs$hatchery_age0,nrow=1,ncol=inputs$nreps)
+		dyn$AGE_0_N_BND<-matrix(inputs$natural_age0,nrow=1,ncol=inputs$nreps)
+		dyn$AGE_0_H_BND<-matrix(inputs$hatchery_age0,nrow=1,ncol=inputs$nreps)
 		}
 	if(inputs$spatial==TRUE)
 		{
-		RKM<- matrix(0,inputs$daug,inputs$nreps)# float
+		dyn$RKM<- matrix(0,inputs$daug,inputs$nreps)# float
 		
 		# INITIALIZE LOCATION OF ADULTS
-		RKM[indx]<-ini_rkm(n=inputs$hatchery+inputs$natural,
+		dyn$RKM[indx]<-ini_rkm(n=inputs$hatchery+inputs$natural,
 			type=inputs$adult_spatial_structure,
 			bend_lengths=inputs$bend_lengths)
 	
 		# INITIALIZE AGE-0 IN EACH BEND
-		AGE_0_N_BND<-rmultinom(inputs$nreps,inputs$natural_age0,inputs$natural_age0_rel_dens)
-		AGE_0_H_BND<-rmultinom(inputs$nreps,inputs$hatchery_age0,inputs$hatchery_age0_rel_dens)
+		dyn$AGE_0_N_BND<-rmultinom(inputs$nreps,inputs$natural_age0,inputs$natural_age0_rel_dens)
+		dyn$AGE_0_H_BND<-rmultinom(inputs$nreps,inputs$hatchery_age0,inputs$hatchery_age0_rel_dens)
 		}
 	# END INITIALIZATION ##########	
 		
@@ -222,88 +228,97 @@ sim<- function(inputs)
 		#incProgress(1/length(m))
 		setTxtProgressBar(pb, i)
 
-		indx<- lapply(1:inputs$nreps,function(x){which(Z[,x]==1)}) 
+		indx<- lapply(1:inputs$nreps,function(x){which(dyn$Z[,x]==1)}) 
 		tmp<- unlist(lapply(1:inputs$nreps,function(x) length(indx[[x]])))
 		indx<- cbind(unlist(indx),sort(rep(1:inputs$nreps,tmp)))
 	
 		### UPDATE WHETHER FISH SURVIVED PRIOR TO UPDATING OTHER STUFF  
-		Z[indx]<- dSurvival(phi_age=inputs$phi,	age=AGE[indx])   # slow
+		dyn$Z[indx]<- dSurvival(phi_age=inputs$phi,	age=AGE[indx])   # slow
 
 		
 		### UPDATE TOTAL LENGTH 
-		LEN[indx]<-dLength(k=k[indx],linf=Linf[indx],dT=1/12,length1=LEN[indx])
+		dyn$LEN[indx]<-dLength(k=k[indx],linf=Linf[indx],dT=1/12,length1=dyn$LEN[indx])
 	
 		### UPDATE WEIGHT # slow
-		WGT[indx]<-dWeight(len=LEN[indx],a=inputs$a,b=inputs$b,er=inputs$lw_er)
+		dyn$WGT[indx]<-dWeight(len=dyn$LEN[indx],a=inputs$a,b=inputs$b,er=inputs$lw_er)
 
 	
+
 	
-
-		
-		#WGT_H[]<-vapply(1:ncol(WGT_H),dWeight,
-		#	len=LEN_H[,x]*Z_H[,x],
-		#	a=inputs$a,
-		#	b=inputs$b,
-		#	er=inputs$lw_er)
-
-		
-		# RECRUITMENT AND SPAWNING SUBMODEL
+		# RECRUITMENT & SPAWNING MODELULE
 		if(inputs$recruit==TRUE) ####fixme####
 			{
+			
+			
 			# [1] EXPAND AGE-0 COHORTS TO INDIVIDUALS			
 			## INDEX OF OPEN SLOTS TO PUT AGE-0 FISH TRANSITIONING
 			## TO AGE-1.... HAPPY BIRTHDAY LITTLE FIDDIES
-			if(sum(colSums(AGE_0_H_BND))>0)
+			
+			# RECRUIT HATCHERY FISH TO SUPER POPULATION
+			if(sum(dyn$AGE_0_H_BND)>0)
 				{
-				indx_h<- unlist(sapply(1:inputs$nreps,function(x) which(Z_H[,x]==0)[1:sum(AGE_0_H_BND[,x])]))		
-				indx_h<- cbind(c(indx_h),sort(rep(1:inputs$nreps,colSums(AGE_0_H_BND))))
-				Z_H[indx_h]<-1    # ADD NEW 1 YEAR OLD RECRUITS
-				AGE_H[indx_h]<-12 # UPDATE AGE OF RECRUITS		
-				LEN_H[indx_h]<-rnorm(length(indx_h[,1]),inputs$recruit_mean_length,inputs$recruit_length_sd)				
-				WGT_H[indx_h]<-rlnorm(length(indx_h[,1]),log(inputs$a*LEN_H[indx_h]^inputs$b),inputs$lw_er)					
-				if(inputs$spatial==TRUE){
-					RKM_H[indx_h]<- bend2rkm(c(unlist(sapply(1:inputs$nreps,# ASSIGN LOCATION OF RECRUITS
-						function(x){rep(1:inputs$n_bends,AGE_0_H_BND[,x])}))))
-					}		
-				MAT_H[indx_h]<-0# ASSIGN MATURATION STATUS OF NEW RECRUITS
-				SEX_H[indx_h]<-rbinom(length(indx_h[,1]),1,0.5)# ASSIGN SEX TO RECRUITS
-				} # END IF RECRUITS > 0
-					
-			if(sum(colSums(AGE_0_N_BND))>0)
-				{
-				indx_n<- unlist(sapply(1:inputs$nreps,function(x) which(Z_N[,x]==0)[1:sum(AGE_0_N_BND[,x])]))		
-				indx_n<- cbind(c(indx_n),sort(rep(1:inputs$nreps,colSums(AGE_0_N_BND))))
-				Z_N[indx_n]<-1## ADD NEW 1 YEAR OLD RECRUITS						
-				AGE_N[indx_n]<-1# UPDATE AGE OF RECRUITS
-				LEN_N[indx_n]<-rnorm(length(indx_n[,1]),inputs$recruit_mean_length,inputs$recruit_length_sd)		
-				WGT_N[indx_n]<-rlnorm(length(indx_n[,1]),log(inputs$a*LEN_N[indx_n]^inputs$b),inputs$lw_er)		
-		
-				MAT_N[indx_n]<-0# ASSIGN MATURATION STATUS OF NEW RECRUITS			
-				SEX_N[indx_n]<-rbinom(length(indx_n[,1]),1,0.5)# ASSIGN SEX TO RECRUITS
-				if(input$spatial==TRUE)
+				indx<- unlist(sapply(1:inputs$nreps,function(x)
 					{
-					RKM_N[indx_n]<- bend2rkm(c(unlist(sapply(1:inputs$nreps,# ASSIGN LOCATION OF RECRUITS
-						function(x)	{rep(1:inputs$n_bends,AGE_0_N_BND[,x])}))))}				
-				}  # END IF RECRUITS > 0
-			AGE_0_N_BND[]<-0 # ZERO OUT AGE 0 AFTER THEY MOVE TO AGE-1
-			AGE_0_H_BND[]<-0 # ZERO OUT AGE 0 AFTER THEY MOVE TO AGE-1	
+					which(dyn$Z[,x]==0)[1:sum(dyn$AGE_0_H_BND[,x])]
+					}))		
+				indx<- cbind(c(indx),sort(rep(1:inputs$nreps,colSums(dyn$AGE_0_H_BND))))
+				dyn$Z[indx]<-1    # ADD NEW 1 YEAR OLD RECRUITS
+				dyn$AGE[indx]<-12 # UPDATE AGE OF RECRUITS		
+				dyn$LEN[indx]<-rnorm(length(indx[,1]),inputs$recruit_mean_length,inputs$recruit_length_sd)				
+				dyn$WGT[indx]<-rlnorm(length(indx[,1]),log(inputs$a*dyn$LEN[indx_h]^inputs$b),inputs$lw_er)	
+				dyn$ORIGIN[indx]<- 1
+				dyn$MAT[indx]<-0# ASSIGN MATURATION STATUS OF NEW RECRUITS
+				dyn$SEX[indx]<-rbinom(length(indx[,1]),1,0.5)# ASSIGN SEX TO RECRUITS				
+				if(inputs$spatial==TRUE)
+					{
+					dyn$RKM[indx]<- bend2rkm(c(unlist(sapply(1:inputs$nreps,# ASSIGN LOCATION OF RECRUITS
+						function(x){rep(1:inputs$n_bends,AGE_0_H_BND[,x])}))))
+					}	
+				}
+			# RECRUIT NATURAL FISH TO SUPER POPULATION
+			if(sum(AGE_0_N_BND)>0)
+				{
+				indx<- unlist(sapply(1:inputs$nreps,function(x)
+					{
+					which(Z[,x]==0)[1:sum(AGE_0_N_BND[,x])]
+					}))		
+				indx<- cbind(c(indx),sort(rep(1:inputs$nreps,colSums(AGE_0_H_BND))))
+				dyn$Z[indx]<-1    # ADD NEW 1 YEAR OLD RECRUITS
+				dyn$AGE[indx]<-12 # UPDATE AGE OF RECRUITS		
+				dyn$LEN[indx]<-rnorm(length(indx[,1]),inputs$recruit_mean_length,inputs$recruit_length_sd)				
+				dyn$WGT[indx]<-rlnorm(length(indx[,1]),log(inputs$a*dyn$LEN[indx_h]^inputs$b),inputs$lw_er)	
+				dyn$ORIGIN[indx]<- 1
+				dyn$MAT[indx]<-0# ASSIGN MATURATION STATUS OF NEW RECRUITS
+				dyn$SEX[indx]<-rbinom(length(indx[,1]),1,0.5)# ASSIGN SEX TO RECRUITS				
+				if(inputs$spatial==TRUE)
+					{
+					RKM[indx]<- bend2rkm(c(unlist(sapply(1:inputs$nreps,# ASSIGN LOCATION OF RECRUITS
+						function(x){rep(1:inputs$n_bends,AGE_0_N_BND[,x])}))))
+					}				
+				}
+			dyn$AGE_0_N_BND[]<-0 # ZERO OUT AGE 0 AFTER THEY MOVE TO AGE-1
+			dyn$AGE_0_H_BND[]<-0 # ZERO OUT AGE 0 AFTER THEY MOVE TO AGE-1	
+			
+			
+			
 			## ASSIGN WHETHER A FISH WILL SPAWN
 			## GIVEN TIME SINCE LAST SPAWN
-			SPN_H[indx_h]<-spawn(mps=MPS_H[indx_h],a=inputs$spn_a,
-				b=inputs$spn_b,mature=MAT_H[indx_h])
-			SPN_N[indx_n]<-spawn(mps=MPS_N,a=inputs$spn_a,
-				b=inputs$spn_b,mature=MAT_N[indx_n]) 	
+			dyn$SPN[indx]<-spawn(mps=dyn$MPS[indx],a=inputs$spn_a,
+				b=inputs$spn_b,mature=dyn$MAT[indx])
+				
 			## CALCULATE THE NUMBER OF EGGS PRODUCED
-			EGGS_H[indx_h]<-fecundity(fl=LEN_H[indx_h],a=inputs$fec_a,
+			dyn$EGGS[indx]<-fecundity(fl=LEN_H[indx],a=inputs$fec_a,
 				b=inputs$fec_b,	er=inputs$fec_er,
-				sex=SEX_H[indx_h],spawn=SPN_H[indx_h])	
-			EGGS_N[indx_n]<- fecundity(fl=LEN_N[indx_n],
-				a=inputs$fec_a,	b=inputs$fec_b,
-				er=inputs$fec_er,sex=SEX_N[indx_n],spawn=SPN_N[indx_n])
+				sex=dyn$SEX[indx],spawn=dyn$SPN[indx])	
+			
 			if(inputs$spatial==FALSE)
 				{
-				AGE_0_N_BND<- colSums(EGGS_H)+colSums(EGGS_N)
+				dyn$AGE_0_N_BND<- colSums(EGGS)
 				}
+				
+				
+				
+				
 			} # END RECRUITMENT
 
 			
@@ -313,29 +328,23 @@ sim<- function(inputs)
 			{				
 			## EGGS PER REACH
 			AGE_0_BND<- sapply(1:inputs$nreps,function(x){
-				N<-tapply(EGGS_N[,x],
+				E<-tapply(EGGS[,x],
+					factor(rkm2bend(RKM[,x]),	levels=c(1:inputs$n_bends)),
+					sum)
+				E[is.na(E)]<-0
+				return(E)})	
+			## FERTILIZATION
+			### HOW MANY FEMALES IN EACH BEND
+			FEM_BND<- sapply(1:inputs$nreps,function(x){
+				N<-tapply(Z_H[,x]*SEX_H[,x],
 					factor(rkm2bend(RKM_N[,x]),	levels=c(1:inputs$n_bends)),
 					sum)
 				N[is.na(N)]<-0
-				H<-tapply(EGGS_H[,x],
+				H<-tapply(Z_N[,x]*SEX_N[,x],
 					factor(rkm2bend(RKM_H[,x]),	levels=c(1:inputs$n_bends)),
 					sum)
 				H[is.na(H)]<-0				
-				return(N+H)})	
-
-
-				## FERTILIZATION
-				### HOW MANY FEMALES IN EACH BEND
-				FEM_BND<- sapply(1:inputs$nreps,function(x){
-					N<-tapply(Z_H[,x]*SEX_H[,x],
-						factor(rkm2bend(RKM_N[,x]),	levels=c(1:inputs$n_bends)),
-						sum)
-					N[is.na(N)]<-0
-					H<-tapply(Z_N[,x]*SEX_N[,x],
-						factor(rkm2bend(RKM_H[,x]),	levels=c(1:inputs$n_bends)),
-						sum)
-					H[is.na(H)]<-0				
-					return(N+H)})
+				return(N+H)})
 			
 					
 				### HOW MANY MALES IN EACH BEND
@@ -406,17 +415,17 @@ sim<- function(inputs)
 		if(inputs$yearling>0 & inputs$yearling_month==m[i])
 			{
 			### GET INDEXES OF OPEN SLOTS TO STICK STOCKED INDIVIDUALS
-			indx<- lapply(1:inputs$nreps,function(x){out<- which(Z_H[,x]==0)[1:inputs$yearling]}) 
+			indx<- lapply(1:inputs$nreps,function(x){out<- which(Z[,x]==0)[1:inputs$yearling]}) 
 			indx<- cbind(unlist(indx),sort(rep(1:inputs$nreps,inputs$yearling)))
-			Z_H[indx]<- 1### ADD NEWLY STOCKED INDIVIDUALS TO Z_H
-			LEN_H[indx]<- rnorm(inputs$yearling*inputs$nreps,inputs$yearling_mn,inputs$yearling_sd)# UPDATE LENGTH
-			WGT_H[indx]<- rlnorm(length(indx[,1]),log(inputs$a*LEN_H[indx]^inputs$b),inputs$lw_er)	# UPDATE WEIGHT
-			AGE_H[indx]<- inputs$yearling_age # ASSIGN AGE
-			MAT_H[indx]<- 0	# ASSIGN MATURITY
-			RKM_H[indx]<- inputs$yearling_stocking_rkm# ASSIGN LOCATION OF STOCKED INDIVIDUALS
-			MAT_H[indx]<- 0# ASSIGN MATURATION STATUS OF NEW RECRUITS
-			SEX_H[indx]<-rbinom(length(indx[,1]),1,0.5)# ASSIGN SEX TO RECRUITS	
-			ORIGIN #xxxx
+			Z[indx]<- 1### ADD NEWLY STOCKED INDIVIDUALS TO Z_H
+			LEN[indx]<- rnorm(inputs$yearling*inputs$nreps,inputs$yearling_mn,inputs$yearling_sd)# UPDATE LENGTH
+			WGT[indx]<- rlnorm(length(indx[,1]),log(inputs$a*LEN[indx]^inputs$b),inputs$lw_er)	# UPDATE WEIGHT
+			AGE[indx]<- inputs$yearling_age # ASSIGN AGE
+			MAT[indx]<- 0	# ASSIGN MATURITY
+			RKM[indx]<- inputs$yearling_stocking_rkm# ASSIGN LOCATION OF STOCKED INDIVIDUALS
+			MAT[indx]<- 0  # ASSIGN MATURATION STATUS OF NEW RECRUITS
+			SEX[indx]<-rbinom(length(indx[,1]),1,0.5)# ASSIGN SEX TO RECRUITS	
+			ORIGIN[indx]<-1
 			}
 		# END STOCKING ##################################################################	
 
