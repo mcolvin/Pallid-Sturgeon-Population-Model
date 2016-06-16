@@ -42,6 +42,9 @@ modelInputs<- function(input){#reactive({
 	tmp$spn_b=input$spn_b[indx]
 
 	# SURVIVALS
+	tmp$pr_embryo<-input$pr_embryo[indx] 
+	tmp$phi_embryo<-input$phi_embryo[indx] 
+	tmp$phi_free_embryo<-input$phi_free_embryo[indx] 
 	tmp$phi0=input$phi_age0_mean[indx] 
 	tmp$phi1=input$phi_age1_mean[indx]
 	tmp$phi2=input$phi_age2_mean[indx]
@@ -124,7 +127,8 @@ sim<- function(inputs)
 		MPS= matrix(0L,inputs$daug,inputs$nreps),
 		SEX= matrix(0L,inputs$daug,inputs$nreps),
 		SPN= matrix(0L,inputs$daug,inputs$nreps),
-		ORIGIN= matrix(0L,inputs$daug,inputs$nreps))
+		ORIGIN= matrix(0L,inputs$daug,inputs$nreps),
+		EGGS= matrix(0L,inputs$daug,inputs$nreps))
 	
 	# INITIALIZATION
 
@@ -136,15 +140,12 @@ sim<- function(inputs)
 	## FISH ALIVE AT INITIALIZATION [Z]
 	dyn$Z[indx]<- 1
 
-
 	
 	## INIITIALIZE GROWTH COEFFICIENTS
 	## ASSUMES THAT GROWTH IS NOT HERITABLE
-	tmp<- ini_growth(x=inputs$nreps,n=nrow(Linf),basin=tolower(inputs$basin)) 	
+	tmp<- ini_growth(x=inputs$nreps,n=inputs$daug,basin=tolower(inputs$basin)) 	
 	dyn$Linf[]<- tmp$linf
 	dyn$k[]<- tmp$k
-	
-	
 
 	
 	## INITIALIZE LENGTH
@@ -153,7 +154,6 @@ sim<- function(inputs)
 	
 	## INITIALIZE WEIGHT GIVEN LENGTH
 	dyn$WGT[indx]<-ini_wgt(a=inputs$a,b=inputs$b,len=dyn$LEN[indx],er=inputs$lw_er)
-
 
 	
 	## INITIALIZE SEX OF FISH
@@ -207,10 +207,11 @@ sim<- function(inputs)
 	
 	# SUMMARIES
 	## ABUNDANCE (AGE-1+)
-	N_SUM<-colSums(Z)
+	N_SUM<-colSums(dyn$Z)
 
 	## AGE-1 RECRUITS; NATURAL ORIGIN
-	indx<- lapply(1:inputs$nreps,function(x){out<- which(AGE[,x]>0 & AGE[,x]<24 & Z[,x]==1 & ORIGIN[,x]==0)}) 
+	indx<- lapply(1:inputs$nreps,function(x){out<- which(dyn$AGE[,x]>0 & dyn$AGE[,x]<24 & 
+		dyn$Z[,x]==1 & dyn$ORIGIN[,x]==0)}) 
 
 	
 	recruits<- matrix(sapply(1:inputs$nreps,function(x) length(indx[[x]])),nrow=1)
@@ -233,11 +234,11 @@ sim<- function(inputs)
 		indx<- cbind(unlist(indx),sort(rep(1:inputs$nreps,tmp)))
 	
 		### UPDATE WHETHER FISH SURVIVED PRIOR TO UPDATING OTHER STUFF  
-		dyn$Z[indx]<- dSurvival(phi_age=inputs$phi,	age=AGE[indx])   # slow
+		dyn$Z[indx]<- dSurvival(phi_age=inputs$phi,	age=dyn$AGE[indx])   
 
 		
 		### UPDATE TOTAL LENGTH 
-		dyn$LEN[indx]<-dLength(k=k[indx],linf=Linf[indx],dT=1/12,length1=dyn$LEN[indx])
+		dyn$LEN[indx]<-dLength(k=dyn$k[indx],linf=dyn$Linf[indx],dT=1/12,length1=dyn$LEN[indx])
 	
 		### UPDATE WEIGHT # slow
 		dyn$WGT[indx]<-dWeight(len=dyn$LEN[indx],a=inputs$a,b=inputs$b,er=inputs$lw_er)
@@ -246,10 +247,8 @@ sim<- function(inputs)
 
 	
 		# RECRUITMENT & SPAWNING MODELULE
-		if(inputs$recruit==TRUE) ####fixme####
+		if(inputs$recruit==TRUE & m[i]==6) 
 			{
-			
-			
 			# [1] EXPAND AGE-0 COHORTS TO INDIVIDUALS			
 			## INDEX OF OPEN SLOTS TO PUT AGE-0 FISH TRANSITIONING
 			## TO AGE-1.... HAPPY BIRTHDAY LITTLE FIDDIES
@@ -272,15 +271,15 @@ sim<- function(inputs)
 				if(inputs$spatial==TRUE)
 					{
 					dyn$RKM[indx]<- bend2rkm(c(unlist(sapply(1:inputs$nreps,# ASSIGN LOCATION OF RECRUITS
-						function(x){rep(1:inputs$n_bends,AGE_0_H_BND[,x])}))))
+						function(x){rep(1:inputs$n_bends,dyn$AGE_0_H_BND[,x])}))))
 					}	
 				}
 			# RECRUIT NATURAL FISH TO SUPER POPULATION
-			if(sum(AGE_0_N_BND)>0)
+			if(sum(dyn$AGE_0_N_BND)>0)
 				{
 				indx<- unlist(sapply(1:inputs$nreps,function(x)
 					{
-					which(Z[,x]==0)[1:sum(AGE_0_N_BND[,x])]
+					which(dyn$Z[,x]==0)[1:sum(dyn$AGE_0_N_BND[,x])]
 					}))		
 				indx<- cbind(c(indx),sort(rep(1:inputs$nreps,colSums(AGE_0_H_BND))))
 				dyn$Z[indx]<-1    # ADD NEW 1 YEAR OLD RECRUITS
@@ -293,8 +292,8 @@ sim<- function(inputs)
 				if(inputs$spatial==TRUE)
 					{
 					RKM[indx]<- bend2rkm(c(unlist(sapply(1:inputs$nreps,# ASSIGN LOCATION OF RECRUITS
-						function(x){rep(1:inputs$n_bends,AGE_0_N_BND[,x])}))))
-					}				
+						function(x){rep(1:inputs$n_bends,dyn$AGE_0_N_BND[,x])}))))
+					}		
 				}
 			dyn$AGE_0_N_BND[]<-0 # ZERO OUT AGE 0 AFTER THEY MOVE TO AGE-1
 			dyn$AGE_0_H_BND[]<-0 # ZERO OUT AGE 0 AFTER THEY MOVE TO AGE-1	
@@ -304,49 +303,55 @@ sim<- function(inputs)
 			## ASSIGN WHETHER A FISH WILL SPAWN
 			## GIVEN TIME SINCE LAST SPAWN
 			dyn$SPN[indx]<-spawn(mps=dyn$MPS[indx],a=inputs$spn_a,
-				b=inputs$spn_b,mature=dyn$MAT[indx])
+				b=inputs$spn_b,
+				mature=dyn$MAT[indx])
 				
 			## CALCULATE THE NUMBER OF EGGS PRODUCED
-			dyn$EGGS[indx]<-fecundity(fl=LEN_H[indx],a=inputs$fec_a,
+			dyn$EGGS[indx]<-fecundity(fl=dyn$LEN[indx],a=inputs$fec_a,
 				b=inputs$fec_b,	er=inputs$fec_er,
-				sex=dyn$SEX[indx],spawn=dyn$SPN[indx])	
+				sex=dyn$SEX[indx],spawn=dyn$SPN[indx],
+				mature=dyn$MAT[indx])	
+			
+			## UPDATE THE NUMBER OF MONTHS SINCE SPAWNING FOR FISH JUST SPAWNED
+			dyn$MPS[which(dyn$EGGS>0)]<-0
+
+
 			
 			if(inputs$spatial==FALSE)
 				{
-				dyn$AGE_0_N_BND<- colSums(EGGS)
+				dyn$AGE_0_N_BND<- colSums(dyn$EGGS) # NUMBER OF EGGS
+				dyn$AGE_0_N_BND<- rbinom(inputs$nreps,dyn$AGE_0_N_BND,inputs$pr_embryo) # eggs --> embryos
+				dyn$AGE_0_N_BND<- rbinom(inputs$nreps,dyn$AGE_0_N_BND,inputs$phi_embryo) # embryos --> free embryos
+				dyn$AGE_0_N_BND<- rbinom(inputs$nreps,dyn$AGE_0_N_BND,inputs$phi_free_embryo) # free embryos --> age0
 				}
-				
-				
-				
-				
-			} # END RECRUITMENT
 
-			
+				
+				
+			# SPATIAL SUBMODULE
+			if(inputs$spatial==TRUE)
+				{				
+				## EGGS PER REACH
+				AGE_0_BND<- sapply(1:inputs$nreps,function(x){
+					E<-tapply(EGGS[,x],
+						factor(rkm2bend(RKM[,x]),levels=c(1:inputs$n_bends)),
+						sum)
+					E[is.na(E)]<-0
+					return(E)})	
+				
+				
+				## FERTILIZATION
+				### HOW MANY FEMALES IN EACH BEND
+				FEM_BND<- sapply(1:inputs$nreps,function(x){
+					N<-tapply(Z_H[,x]*SEX_H[,x],
+						factor(rkm2bend(RKM_N[,x]),	levels=c(1:inputs$n_bends)),
+						sum)
+					N[is.na(N)]<-0
+					H<-tapply(Z_N[,x]*SEX_N[,x],
+						factor(rkm2bend(RKM_H[,x]),	levels=c(1:inputs$n_bends)),
+						sum)
+					H[is.na(H)]<-0				
+					return(N+H)})
 
-		# SPATIAL SUBMODULE
-		if(inputs$spatial==TRUE)
-			{				
-			## EGGS PER REACH
-			AGE_0_BND<- sapply(1:inputs$nreps,function(x){
-				E<-tapply(EGGS[,x],
-					factor(rkm2bend(RKM[,x]),	levels=c(1:inputs$n_bends)),
-					sum)
-				E[is.na(E)]<-0
-				return(E)})	
-			## FERTILIZATION
-			### HOW MANY FEMALES IN EACH BEND
-			FEM_BND<- sapply(1:inputs$nreps,function(x){
-				N<-tapply(Z_H[,x]*SEX_H[,x],
-					factor(rkm2bend(RKM_N[,x]),	levels=c(1:inputs$n_bends)),
-					sum)
-				N[is.na(N)]<-0
-				H<-tapply(Z_N[,x]*SEX_N[,x],
-					factor(rkm2bend(RKM_H[,x]),	levels=c(1:inputs$n_bends)),
-					sum)
-				H[is.na(H)]<-0				
-				return(N+H)})
-			
-					
 				### HOW MANY MALES IN EACH BEND
 				MAL_BND<- sapply(1:inputs$nreps,function(x){
 					N<-tapply(Z_H[,x]*(1-SEX_H[,x])*MAT_H[,x],
@@ -358,13 +363,11 @@ sim<- function(inputs)
 						sum)
 					H[is.na(H)]<-0				
 					return(N+H)})			
-				
+					
 				### FERTILIZATION & EMBRYOS
-				
+					
 				### FREE EMBRYOS & DRIFT
 				# AGE_0_N_BND<-c()
-
-				
 				### AGE-0
 				AGE_0_N_BND<-sapply(1:inputs$nreps,dFreeEmbryoDrift,
 					nbends=nrow(AGE_0_N_BND),
@@ -376,29 +379,22 @@ sim<- function(inputs)
 					n=nrow(AGE_0_N_BND),
 					total=AGE_0_N_BND,
 					phi=inputs$phi3^(1/12))	
+				# UPDATE MOVEMENT
 				
-			
-			
-
-
-		
-		
+				## ADULT MOVEMENT
+				RKM[indx]<-loc2(loc1=RKM[indx],er=10,month=m[i])
 		
 
-			# UPDATE MOVEMENT
+				## UPDATE ANY AGE-0 MOVEMENT #########################################################################
+				#AGE_0_N<-	
+				#AGE_0_H<-					
+				} # END SPATIAL
 			
-			## ADULT MOVEMENT
-			RKM[indx]<-loc2(loc1=RKM[indx],er=10,month=m[i])
-	
-
-			## UPDATE ANY AGE-0 MOVEMENT #########################################################################
-			#AGE_0_N<-	
-			#AGE_0_H<-					
-			} # END SPATIAL
-
+			} # END RECRUITMENT
+		
 		# UPDATE MONTHS SINCE SPAWNING
-		MPS[indx]<-MPS[indx]+1 
-
+		dyn$MPS[indx]<-dyn$MPS[indx]+1 		
+		
 		
 		
 		# PALLID STURGEON STOCKING ###############################################################################
@@ -436,11 +432,11 @@ sim<- function(inputs)
 			{
 			PSD<- sapply(1:input$nreps,function(x){
 				out<-c(
-				length(c(which(LEN[,x]>=330 & LEN[,x]<629))),# STOCK
-				length(c(which(LEN[,x]>=630 & LEN[,x]<839))),# QUALITY
-				length(c(which(LEN[,x]>=840 & LEN[,x]<1039))),# PREFERRED
-				length(c(which(LEN[,x]>=1040 & LEN[,x]<1269))),# MEMORABLE
-				length(c(which(LEN[,x]>=1270))))# TROPHY
+				length(c(which(dyn$LEN[,x]>=330 & dyn$LEN[,x]<629))),# STOCK
+				length(c(which(dyn$LEN[,x]>=630 & dyn$LEN[,x]<839))),# QUALITY
+				length(c(which(dyn$LEN[,x]>=840 & dyn$LEN[,x]<1039))),# PREFERRED
+				length(c(which(dyn$LEN[,x]>=1040 & dyn$LEN[,x]<1269))),# MEMORABLE
+				length(c(which(dyn$LEN[,x]>=1270))))# TROPHY
 				out<-trunc(out/sum(out)*100)
 			return(out) 
 			})
@@ -457,35 +453,37 @@ sim<- function(inputs)
 	
 		# SUMMARIES #####################################################################
 		## ABUNDANCE
-		N_SUM<-rbind(N_SUM,colSums(Z))  # TOTAL AGE-1+ ABUNDANCE
+		N_SUM<-rbind(N_SUM,colSums(dyn$Z))  # TOTAL AGE-1+ ABUNDANCE
 		
 		## AGE-1 RECRUITS; NATURAL ORIGIN
-		indx<- lapply(1:inputs$nreps,function(x){out<- which(AGE[,x]>0 & AGE[,x]<24 & ORIGIN[,x]==0 & Z[,x]==1)}) 		
+		indx<- lapply(1:inputs$nreps,function(x){out<- which(dyn$AGE[,x]>0 & dyn$AGE[,x]<24 & dyn$ORIGIN[,x]==0 & dyn$Z[,x]==1)}) 		
 		recruits<- rbind(recruits,sapply(1:inputs$nreps,function(x) length(indx[[x]])))
-		biomass[i,]<- colSums(WGT)
-		mn_wght[i,]<- colSums(WGT)/colSums(Z)
+		biomass[i,]<- colSums(dyn$WGT)
+		mn_wght[i,]<- colSums(dyn$WGT)/colSums(dyn$Z)
 		
 		
 		# END SUMMARIES #################################################################
 		
 		# SENESCENCE
-		if(length(which(AGE>=inputs$maxage*12))>0)
+		if(length(which(dyn$AGE>=inputs$maxage*12))>0)
 			{
-			Z[AGE>=inputs$maxage*12]<- 0
+			dyn$Z[dyn$AGE>=inputs$maxage*12]<- 0
 			}
 		
 		
 		
 		# ZERO OUT LENGTH AND WEIGHTS FOR DEAD FISH
-		LEN<- LEN*Z
-		WGT<- WGT*Z
+		dyn$LEN<- dyn$LEN*dyn$Z
+		dyn$WGT<- dyn$WGT*dyn$Z
 
 		
 		# need to draw new linf and k for new fish...
-		
 		}# end i    		##})# end shiny progress bar
-		# END LOOP ######################################################################
+		# END FOR LOOP ######################################################################
 
+		
+		
+		
 	len_init<-len_init[tolower(len_init$basin)==tolower(inputs$basin),]
 	len_init$rel_freq<- c(0,diff(len_init$x))
 	

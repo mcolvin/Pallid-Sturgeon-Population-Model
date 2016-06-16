@@ -25,10 +25,13 @@ input$fec_er<-c(0.30,0.39)
 ## SEXUAL MATURITY AND RETURN TO SPAWNING	
 input$age_mat<- c(8,8)  ####fixme#### make it work for lower and upper
 input$mat_k<-c(0.2,0.2) ####fixme#### make it work for lower and upper
-input$spn_a<-c(-17.5,-17.5)
-input$spn_B<- c(0.35,0.35)
+input$spn_a<-c(-5,-5)
+input$spn_b<- c(2.5,2.5)
 
 ## SURVIVAL
+input$pr_embryo<- c(0.0001,0.0001)
+input$phi_embryo<- c(0.0001,0.0001)
+input$phi_free_embryo<- c(0.0001,0.0001)
 input$phi_age0_mean<-c(0.001,0.001)
 input$phi_age0_er<-c(0.01,0.001)
 input$phi_age1_mean<-c(0.68,0.95)

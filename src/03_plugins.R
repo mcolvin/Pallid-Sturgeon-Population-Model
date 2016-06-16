@@ -183,18 +183,18 @@ dMaturity<- function(maturity,mat_k,age,age_mat,live)
 	return(M2)
 	}
 	
-spawn<- function(mps,a=-17.5,b=0.35,mature)
+spawn<- function(mps,a=-5,b=2.55,mature)
 	{
 	# FUNCTION RETURNING A 1 IF A FISH SPAWNS IN THE 
 	# NEXT YEAR
-	pr<- plogis(a+b*mps)*mature
+	pr<- plogis(a+b*mps/12)*mature
 	out<- rbinom(length(mps),1, pr)
 	return(out)	
 	}
-fecundity<- function(fl,a,b,er,sex,spawn)
+fecundity<- function(fl,a,b,er,sex,spawn,mature)
 	{
-	y<- exp(a + b * ((fl - 1260.167)/277.404)+rnorm(nrow(fl),0,er))
-	eggs<- rpois(nrow(fl),y)*spawn*sex
+	y<- exp(a + b * ((fl - 1260.167)/277.404)+rnorm(length(fl),0,er))
+	eggs<- rpois(length(fl),y)*spawn*sex*mature
 	return(eggs) 
 	}
 loc2<- function(loc1,er,month)
