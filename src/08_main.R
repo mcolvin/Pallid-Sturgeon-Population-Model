@@ -3,11 +3,8 @@
 	source("./src/01_global.R")# need to get run_sourcefunction
 	
 	# RUN MODEL
-	inputs<-run_source(commit="Missing",output_name="2016-001",run_report=FALSE)
+	inputs<-run_source(commit="67b78d8",output_name="2016-001")
 	out<- sim(inputs=inputs)
-
-
-
 
 	# COMPILE *.RMD TO DOCX
 	setwd("C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Population-Model/output/2016-001")		

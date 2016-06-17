@@ -3,10 +3,10 @@ figures<- function(n)
 	if(n==1)
 		{# TOTAL ABUNDANCE 
 		x<-out$years
-		y<-(apply((out$hatchery+out$natural)[-1,],1,mean))/1000
-		yup<-(apply((out$hatchery+out$natural)[-1,],1,max))/1000
-		ylo<-(apply((out$hatchery+out$natural)[-1,],1,min))/1000
-		plot(out$years,y,ylab="Total abundance (x1000)",
+		y<-(apply(out$total[-1,],1,mean))/1000 
+		yup<-(apply(out$total[-1,],1,max))/1000
+		ylo<-(apply(out$total[-1,],1,min))/1000
+		plot(x,y,ylab="Total abundance (x1000)",
 			xlab="Year",las=1,type='l')
 		polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
 		points(x,y,type='l')
@@ -19,7 +19,7 @@ figures<- function(n)
 		yup<-(apply(out$mn_wght,1,max))/1000
 		ylo<-(apply(out$mn_wght,1,min))/1000
 		plot(out$years,y,ylab="Mean weight (kg)",
-			xlab="Year",las=1,type='l')
+			xlab="Year",las=1,type='l',ylim=c(0,max(yup)))
 		polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
 		points(x,y,type='l')
 		#savePlot("./output/2016-001/figure-04.wmf",type='wmf')
@@ -49,5 +49,15 @@ figures<- function(n)
 			xlab="Year",lwd=2)
 		legend("top",legend=c("PSD-SQ","PSD-QP","PSD-PM","PSD-MT","PSD-T"),
 			bty="n",lty=c(1:5),col=c(1:5),horiz=TRUE,cex=0.8,lwd=2)
+		}
+	if(n==5)
+		{
+		plot(unlist(log(out$k)),unlist(log(out$Linf)),
+			las=1,xlab="Log Length at infinity",
+			ylab="Log growth coefficient")
+		}
+	if(n==6)
+		{# PLOT OF INITIAL LENGTHS
+		hist(out$len_init);box()
 		}
 	}

@@ -14,5 +14,44 @@ tables<- function(n)
 			yr2025=unlist(tmp[tmp$year==2025,-1]),
 			yr2050=unlist(tmp[tmp$year==2050,-1]),
 			yrLast=unlist(tmp[tmp$year==max(tmp$year),-1]))
+		return(tbl1)
+		}
+	if(n==2)
+		{# 	QUICK SUMMARY OF INPUTS
+		meta<- list(
+			"Analysis Metadata",
+				paste(c("Analysis ID","GIT Commit"),c(inputs$output_name, inputs$commit),sep=": "),
+			
+			"Population characteristics",
+				paste(c("Hatchery origin fish", "Natural origin fish", "Initial ratio", "Maximum age","Size at hatch (mm)"),
+				c(inputs$hatchery, inputs$natural,inputs$sexratio,7,inputs$maxAge/12),sep=": "),	
+
+			"Size and growth",
+				list("Length-weight",
+						paste(c("a","a' (ln)","b", " $\\sigma$"),
+						c(round(inputs$a,2),
+						round(inputs$a_prime,2),
+						round(inputs$b,2),
+						round(inputs$lw_er,2)),sep=": "),
+
+					"Growth",  # be sure to add a space before equations in a list
+						paste(c(" $\\mu_{L_{\\infty}}$",
+								" $\\mu_{k}$",
+								" $ln(\\mu_{L_{\\infty}})$",
+								" $ln(\\mu_{k})$",
+								" $\\sigma_{ln(\\mu_{L_{\\infty}})}$", 
+								" $\\sigma_{ln(\\mu_{k})}$",
+								"Corrleation of $ln(\\mu_{L_{\\infty}})$ and $ln(\\mu_{k})$; ($\\rho$)"),
+							c(round(exp(inputs$ln_Linf_mu),2), 
+								round(exp(inputs$ln_k_mu),2),
+								round(inputs$ln_Linf_mu,2), 
+								round(inputs$ln_k_mu,2),
+								round(sqrt(inputs$vcv[1]),2),
+								round(sqrt(inputs$vcv[4]),2),
+								round((inputs$vcv[2]/(sqrt(inputs$vcv[1])*sqrt(inputs$vcv[4]))),2)),sep=": ")
+					))
+
+		return(meta)
 		}
 	}
+	

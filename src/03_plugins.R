@@ -39,13 +39,12 @@ ini_sex<- function(n,ratio)
 ini_age<- function(len,linf,k,sizeAtHatch=7,maxAge)
 	{
 	length2<- len
-	length1<-rep(sizeAtHatch,length(len))
 	age<-sapply(1:length(len),function(x)
-		{solve(-k[x],log(1-((length2[x]-length1[x])/(linf[x]-length1[x]))))})
+		{solve(-k[x],log(1-((length2[x]-sizeAtHatch)/(linf[x]-sizeAtHatch))))})
 	out<- ifelse(age>maxAge,maxAge,age)
 	return(out*12)	
 	}
-
+	
 
 # FUNCTION TO INIITIALIZE LENGTH OF FISH	
 ini_length<-function(linf,basin)
@@ -96,20 +95,11 @@ ini_rkm<- function(n,type,bend_lengths)
 	}
 	
 # INITIALIZE GROWTH PARAMETERS (L_INF, K)	
-ini_growth<- function(x,n,basin)
+ini_growth<- function(x,n,mu_ln_linf,mu_ln_k,vcv)
 	{
-	if(basin=="lower")
-		{
-		tmp<-mvrnorm(x*n,c(6.982160, -2.382711),
-			matrix(c(0.0894,-0.1327,-0.1327,0.3179),2,2,byrow=TRUE))
-		tmp<- exp(tmp)
-		}
-	if(basin=="upper")
-		{
-		tmp<-mvrnorm(x*n,c(7.136028770, -3.003764445),
-			matrix(c(0.2768,-0.364,-0.364,0.6342),2,2,byrow=TRUE))
-		tmp<- exp(tmp)
-		}
+	tmp<-mvrnorm(x*n,c(mu_ln_linf, mu_ln_k),
+		matrix(vcv,2,2,byrow=TRUE))
+	tmp<- exp(tmp)
 	return(list(linf=matrix(tmp[,1],n,x),k=matrix(tmp[,2],n,x)))
 	}
 
@@ -177,6 +167,7 @@ dWeight_v<- function(x,a=0.0001,b=3,er=0.1)
 	{
 	rlnorm(1,log(a*x^b),er) ####fixme####
 	}
+	
 dMaturity<- function(maturity,mat_k,age,age_mat,live)
 	{
 	y<- -mat_k*(age-age_mat)
@@ -184,20 +175,22 @@ dMaturity<- function(maturity,mat_k,age,age_mat,live)
 	return(M2)
 	}
 	
-spawn<- function(mps,a=-17.5,b=0.35,mature)
+spawn<- function(mps,a=-5,b=2.55,mature)
 	{
 	# FUNCTION RETURNING A 1 IF A FISH SPAWNS IN THE 
 	# NEXT YEAR
-	pr<- plogis(a+b*mps)*mature
+	pr<- plogis(a+b*mps/12)*mature
 	out<- rbinom(length(mps),1, pr)
 	return(out)	
 	}
-fecundity<- function(fl,a,b,er,sex,spawn)
+	
+fecundity<- function(fl,a,b,er,sex,spawn,mature)
 	{
-	y<- exp(a + b * ((fl - 1260.167)/277.404)+rnorm(nrow(fl),0,er))
-	eggs<- rpois(nrow(fl),y)*spawn*sex
+	y<- exp(a + b * ((fl - 1260.167)/277.404)+rnorm(length(fl),0,er))
+	eggs<- rpois(length(fl),y)*spawn*sex*mature
 	return(eggs) 
 	}
+	
 loc2<- function(loc1,er,month)
 	{
 	# FUNCTION TO SIMULATE MOVEMENT FROM ONE MONTH TO THE NEXT
