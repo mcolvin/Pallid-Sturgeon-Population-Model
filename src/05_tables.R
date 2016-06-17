@@ -15,4 +15,39 @@ tables<- function(n)
 			yr2050=unlist(tmp[tmp$year==2050,-1]),
 			yrLast=unlist(tmp[tmp$year==max(tmp$year),-1]))
 		}
+	if(n==2)
+		{# 	QUICK SUMMARY OF INPUTS
+		meta<- list(
+			"Analysis Metadata",
+				paste(c("Analysis ID","Commit"),c(inputs$output_name, inputs$commit),sep=": "),
+			
+			"Population characteristics",
+				paste(c("Hatchery origin fish", "Natural origin fish", "Initial ratio", "Maximum age","Size at hatch (mm)"),
+				c(inputs$hatchery, inputs$natural,inputs$sexratio,inputs$maxAge,7),sep=": ")	
+			"Size and growth",
+				list("Length-weight",paste(c("a","b"),c(inputs$a,inputs$b),sep=": "),
+					"Growth", paste(c("$L_{\infty}","k","Correlation"),c(inputs$Linf, input$k),sep=": ")
+					c(),sep=": ")
+			
+			
+		pandoc.list(meta)
+		
+		growth<-
+		surviv<-
+		stocking<- 
+		
+		sim<- data.frame(
+			Type="Simulation meta data",
+			Description=c(),
+			Value=c())
+		
+		
+		}
 	}
+	
+	 l <- list(
+        "First list element",
+        paste0(1:5, '. subelement'),
+        "Second element",
+        list('F', 'B', 'I', c('phone', 'pad', 'talics')))
+ pandoc.list(l, 'roman')

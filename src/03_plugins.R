@@ -95,20 +95,11 @@ ini_rkm<- function(n,type,bend_lengths)
 	}
 	
 # INITIALIZE GROWTH PARAMETERS (L_INF, K)	
-ini_growth<- function(x,n,basin)
+ini_growth<- function(x,n,mu_linf,ln_k,vcv)
 	{
-	if(basin %in% c("Lower","lower"))
-		{
-		tmp<-mvrnorm(x*n,c(6.982160, -2.382711),
-			matrix(c(0.0894,-0.1327,-0.1327,0.3179),2,2,byrow=TRUE))
-		tmp<- exp(tmp)
-		}
-	if(basin %in% c("Upper","upper"))
-		{
-		tmp<-mvrnorm(x*n,c(7.136028770, -3.003764445),
-			matrix(c(0.2768,-0.364,-0.364,0.6342),2,2,byrow=TRUE))
-		tmp<- exp(tmp)
-		}
+	tmp<-mvrnorm(x*n,c(inputs$ln_Linf_mu, inputs$ln_k_mu),
+		matrix(inputs$vcv,2,2,byrow=TRUE))
+	tmp<- exp(tmp)
 	return(list(linf=matrix(tmp[,1],n,x),k=matrix(tmp[,2],n,x)))
 	}
 
@@ -176,6 +167,7 @@ dWeight_v<- function(x,a=0.0001,b=3,er=0.1)
 	{
 	rlnorm(1,log(a*x^b),er) ####fixme####
 	}
+	
 dMaturity<- function(maturity,mat_k,age,age_mat,live)
 	{
 	y<- -mat_k*(age-age_mat)
@@ -191,12 +183,14 @@ spawn<- function(mps,a=-5,b=2.55,mature)
 	out<- rbinom(length(mps),1, pr)
 	return(out)	
 	}
+	
 fecundity<- function(fl,a,b,er,sex,spawn,mature)
 	{
 	y<- exp(a + b * ((fl - 1260.167)/277.404)+rnorm(length(fl),0,er))
 	eggs<- rpois(length(fl),y)*spawn*sex*mature
 	return(eggs) 
 	}
+	
 loc2<- function(loc1,er,month)
 	{
 	# FUNCTION TO SIMULATE MOVEMENT FROM ONE MONTH TO THE NEXT

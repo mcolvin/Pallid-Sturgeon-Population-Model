@@ -50,4 +50,14 @@ figures<- function(n)
 		legend("top",legend=c("PSD-SQ","PSD-QP","PSD-PM","PSD-MT","PSD-T"),
 			bty="n",lty=c(1:5),col=c(1:5),horiz=TRUE,cex=0.8,lwd=2)
 		}
+	if(n==5)
+		{
+		plot(unlist(log(out$k)),unlist(log(out$Linf)),
+			las=1,xlab="Log Length at infinity",
+			ylab="Log growth coefficient")
+		}
+	if(n==6)
+		{# PLOT OF INITIAL LENGTHS
+		hist(out$len_init);box()
+		}
 	}
