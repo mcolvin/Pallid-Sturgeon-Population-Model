@@ -21,6 +21,7 @@ modelInputs<- function(input){#reactive({
 
 	## LENGTH-WEIGHT
 	tmp$a= exp(input$a_prime)[indx]
+	tmp$a_prime= input$a_prime[indx]
 	tmp$b= input$b[indx]
 	tmp$lw_er=input$lw_er[indx]
 	
