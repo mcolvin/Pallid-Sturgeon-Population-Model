@@ -95,10 +95,10 @@ ini_rkm<- function(n,type,bend_lengths)
 	}
 	
 # INITIALIZE GROWTH PARAMETERS (L_INF, K)	
-ini_growth<- function(x,n,mu_linf,ln_k,vcv)
+ini_growth<- function(x,n,mu_ln_linf,mu_ln_k,vcv)
 	{
-	tmp<-mvrnorm(x*n,c(inputs$ln_Linf_mu, inputs$ln_k_mu),
-		matrix(inputs$vcv,2,2,byrow=TRUE))
+	tmp<-mvrnorm(x*n,c(mu_ln_linf, mu_ln_k),
+		matrix(vcv,2,2,byrow=TRUE))
 	tmp<- exp(tmp)
 	return(list(linf=matrix(tmp[,1],n,x),k=matrix(tmp[,2],n,x)))
 	}

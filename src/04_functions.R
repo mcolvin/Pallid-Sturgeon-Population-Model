@@ -145,8 +145,8 @@ sim<- function(inputs)
 	## INIITIALIZE GROWTH COEFFICIENTS
 	## ASSUMES THAT GROWTH IS NOT HERITABLE
 	tmp<- ini_growth(x=inputs$nreps,n=inputs$daug,
-		ln_linf=inputs$ln_Linf_mu,
-		ln_k=inputs$ln_k_mu,
+		mu_ln_linf=inputs$ln_Linf_mu,
+		mu_ln_k=inputs$ln_k_mu,
 		vcv=inputs$vcv) 	
 	dyn$Linf[]<- tmp$linf
 	dyn$k[]<- tmp$k
