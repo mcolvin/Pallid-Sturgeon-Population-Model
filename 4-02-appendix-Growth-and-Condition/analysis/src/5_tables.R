@@ -202,7 +202,9 @@ if(n==4)
 	out$dy<- out$dt/365.25
 	out$flag<- ifelse(out$dl>0,0,1)
 	
-	out<- subset(out, flag==0)
+	# leave in fish with negative growth
+	# measurement error
+	#out<- subset(out, flag==0)
 	out$G<- log(out$l2-out$l1)/out$dt	
 	out$flag<- ifelse(out$G<0.5,0,1)
 	out<- subset(out, flag==0)

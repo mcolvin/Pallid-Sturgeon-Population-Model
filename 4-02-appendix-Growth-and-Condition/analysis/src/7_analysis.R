@@ -3,6 +3,18 @@ adat<- tables(4)
 ni<- 500000	#	n.iter
 nb<- 200000	#	n.burnin
 
+
+
+# inverse logistic
+dL=(max dL)/(1+exp(ln(19)((l_i-L50)/(l95-l50))))+error
+
+# scnute model
+dL = [L_i^b * exp(-a*dt) = c*(1-exp(-a*dt))]^(1/b) + er  
+a != 0 and b !=0 
+
+# linear
+dL = b*dt + error
+
 # BUNDLE UP DATA
 ## LOWER BASIN	
 lower<- subset(adat,basin=="lower")
