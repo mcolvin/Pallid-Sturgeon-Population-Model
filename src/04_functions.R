@@ -222,6 +222,10 @@ sim<- function(inputs)
 	sq<-qp<-pm<-mt<-tr<-matrix(0,ncol=input$nreps,nrow=length(m))# MATRIX
 	mn_wght<-biomass<- matrix(0,nrow=length(m),ncol=inputs$nreps)
 	
+	init_summary<- data.frame(len=dyn$LEN[,1],
+		linf=dyn$Linf[,1],
+		k=dyn$k[,1],
+		age=dyn$AGE[,1])
 	
 	# PROGRESS BAR
 	pb<-txtProgressBar(min=1,max=length(m),initial=0,char="*",style=3)
@@ -502,11 +506,9 @@ sim<- function(inputs)
 	out<-list(total=N_SUM, 
 		years=x,
 		sq=sq,qp=qp,pm=pm,mt=mt,tr=tr,
-		len_init=len_init,
 		biomass=biomass,
 		mn_wght=mn_wght,
-		k=dyn$k,
-		Linf=dyn$Linf)
+		init_summary=init_summary)
 		
 	fn<-paste0("./output/",inputs$output_name,"/",inputs$output_name,"-output.txt")
 	dput(out,fn)

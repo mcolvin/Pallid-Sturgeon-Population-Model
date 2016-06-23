@@ -52,12 +52,25 @@ figures<- function(n)
 		}
 	if(n==5)
 		{
-		plot(unlist(log(out$k)),unlist(log(out$Linf)),
-			las=1,xlab="Log Length at infinity",
-			ylab="Log growth coefficient")
+		trans_grey<- rgb(0,0,0,alpha=10,maxColorValue=255)# make grey color with some transparency
+		par(mfrow=c(2,1))
+		plot(log(out$init_summary$linf),log(out$init_summary$k),
+			las=1,xlab="Log Length at infinity",col=trans_grey,pch=19,
+			ylab="Log growth coefficient",
+			cex.lab=1.3)
+		plot((out$init_summary$linf),(out$init_summary$k),
+			las=1,xlab="Length at infinity",col=trans_grey,pch=19,
+			ylab="Growth coefficient",
+			cex.lab=1.3)
 		}
 	if(n==6)
 		{# PLOT OF INITIAL LENGTHS
-		hist(out$len_init);box()
+		x<-out$init_summary$len
+		y<-out$len_init$rel_freq
+		
+		hist(x,breaks=seq(0,2000,by=100), xlab="Initial length (mm)",main="");box()
+
+		#plot(xx$mids, xx$density,type='l',las=1,ylab="Relative frequency",xlab="Length (mm)",
+		#	cex.lab=1.3)
 		}
 	}
