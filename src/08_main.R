@@ -2,7 +2,7 @@
 	setwd("C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Population-Model/")
 	source("./src/01_global.R")# need to get run_sourcefunction
 	output_name<- "tmp"
-	current_commit<- "32fb39b"
+	current_commit<- "0df8618"
 	dir.create(file.path(paste0(getwd(),"/output/",output_name)), showWarnings = FALSE) # CREATE DIRECTORY IF NOT ALREADY THERE
 	
 	
