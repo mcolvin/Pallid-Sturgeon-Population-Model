@@ -52,20 +52,10 @@ length_initialization<- function(n=10, basin="lower",origin=1, spatial=FALSE)
 # SAVE FUNCTIONS TO PALLID STURGEON INTIIALIZATION FUNCTIONS FOLDER
 #file.remove(...)
 
-modInputFunctionsFP<-"C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Population-Model/input-functions/initialization-functions/"
-
-saveRDS("len_ini_low_hatchery_nospace","./output/function_len_ini_low_hatchery_nospace.rds")
-saveRDS("len_ini_low_hatchery_nospace",paste0(modInputFunctionsFP,"/function_len_ini_low_hatchery_nospace.rds"))
-
-saveRDS("len_ini_low_natural_nospace","./output/function_len_ini_len_ini_low_natural_nospace.rds")
-saveRDS("len_ini_low_natural_nospace",paste0(modInputFunctionsFP,"/function_len_ini_len_ini_low_natural_nospace.rds"))
-
-saveRDS("len_ini_upp_hatchery_nospace","./output/function_len_ini_upp_hatchery_nospace.rds")
-saveRDS("len_ini_upp_hatchery_nospace",paste0(modInputFunctionsFP,"/function_len_ini_upp_hatchery_nospace.rds"))
-
-saveRDS("len_ini_upp_natural_nospace","./output/function_len_ini_upp_natural_nospace.rds")
-saveRDS("len_ini_upp_natural_nospace",paste0(modInputFunctionsFP,"/function_len_ini_upp_natural_nospace.rds"))
-
-saveRDS("length_initialization","./output/function_length_initialization.rds")
-saveRDS("length_initialization",paste0(modInputFunctionsFP,"/function_length_initialization.rds"))
-
+fun_out<- c("len_ini_low_hatchery_nospace","len_ini_low_natural_nospace",
+"len_ini_upp_hatchery_nospace","len_ini_upp_natural_nospace","length_initialization")
+save(list=fun_out,
+	file="./output/initialize_length_functions.Rdata")
+save(list=fun_out,
+	file="C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Population-Model/input-functions/initialization-functions/initialize_length_functions.Rdata")
+	

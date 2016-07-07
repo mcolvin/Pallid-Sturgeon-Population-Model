@@ -47,19 +47,38 @@ ini_age<- function(len,linf,k,sizeAtHatch=7,maxAge)
 	
 
 # FUNCTION TO INIITIALIZE LENGTH OF FISH	
-ini_length<-function(linf,basin)
-	{
-	if(basin=="Lower")
-		{
-		tmp<-lower_len_init(runif(length(linf)))
-		}
-	if(basin=="Upper")
-		{
-		tmp<-upper_len_init(runif(length(linf)))
-		}
-	tmp<- ifelse(tmp> linf,0.9*linf,tmp)
-	return(tmp)
-	}
+ini_length<-function(n=10, basin="lower",origin=1, spatial=FALSE,linf=2000)
+        {# A FUNCTION TO INITIALIZE LENGTHS OF INDIVIDUAL FISH
+        # origin [0 for natural, 1 for hatchery]
+        if(tolower(basin)=="lower" & spatial==FALSE)
+                {
+                tmp<- r(len_ini_low_hatchery_nospace)(n)*origin + # hatchery
+                        r(len_ini_low_natural_nospace)(n)*(1-origin) # natural
+                }
+        if(tolower(basin)=="upper" & spatial==FALSE)
+                {
+                tmp<- r(len_ini_upp_hatchery_nospace)(n)*origin + # hatchery
+                        r(len_ini_upp_natural_nospace)(n)*(1-origin) # natural
+                }
+        # SPATIAL COMPONENT
+        if(tolower(basin)=="lower" & spatial==TRUE )
+                {
+                ####fixme####
+               # tmp<- r(len_ini_low_hatchery_nospace)(n)*origin + # hatchery
+                #        r(len_ini_low_natural_nospace)(n)*(1-origin) # natural
+                }
+        if(tolower(basin)=="upper" & spatial==TRUE )
+                {
+                ####fixme####
+                #tmp<-  r(len_ini_upp_hatchery_nospace)(n)*origin + # hatchery
+                 #       r(len_ini_upp_natural_nospace)(n)*(1-origin) # natural
+                }
+		tmp<- ifelse(tmp> linf,0.9*linf,tmp)
+		return(tmp)
+        }
+
+
+
 	
 
 # INITIALIZE HOW MANY FISH ARE MATURE

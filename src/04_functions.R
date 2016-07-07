@@ -153,8 +153,11 @@ sim<- function(inputs)
 
 	
 	## INITIALIZE LENGTH
-	dyn$LEN[indx]<-ini_length(linf= dyn$Linf[indx],	basin=inputs$basin)
-	
+	dyn$LEN[indx]<-ini_length(n=length(indx), 
+		basin=inputs$basin,
+		origin=dyn$ORIGIN[indx], 
+		spatial=FALSE,
+		linf= dyn$Linf[indx])
 	
 	## INITIALIZE WEIGHT GIVEN LENGTH
 	dyn$WGT[indx]<-ini_wgt(a=inputs$a,b=inputs$b,len=dyn$LEN[indx],er=inputs$lw_er)

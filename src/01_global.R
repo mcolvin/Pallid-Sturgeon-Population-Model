@@ -4,6 +4,7 @@ library(MASS)
 library(utils)
 library(knitr)
 library(pander)
+library(distr)
 run_source<-function(commit="Missing",output_name="Missing")
 	{
 	source("./src/01_global.R")
