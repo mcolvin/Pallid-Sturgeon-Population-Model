@@ -160,6 +160,7 @@ sim<- function(inputs)
 		linf= dyn$Linf[indx])
 	
 	## INITIALIZE WEIGHT GIVEN LENGTH
+	### ASSUMES NO EFFECT OF ORIGIN
 	dyn$WGT[indx]<-ini_wgt(a=inputs$a,b=inputs$b,len=dyn$LEN[indx],er=inputs$lw_er)
 
 	

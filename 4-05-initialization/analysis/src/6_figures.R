@@ -307,5 +307,11 @@ figures<- function(n)
 		boxplot(length~segment_id*origin,dat,las=2)
 					abline(v=13.5,lty=2)
 		}
+	if(n==11)
+		{
+		
+		
+		}
+		
 	}
 	

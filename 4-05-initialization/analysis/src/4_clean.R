@@ -17,6 +17,12 @@ dat$basin<- ifelse(dat$segment_id%in% c(1:4, 21,22), "upper", "lower")
 names(stocked)<- tolower(names(stocked))
 stocked$tagnumber<- as.character(stocked$tagnumber)
 stocked$tagnumber<- toupper(stocked$tagnumber)
+## FORMAT RECAPTURE DATA
+### SUBSET OUT HATCHERY ORIGIN FISH
+recapture2<-subset(recaptured, is.na(Hatchery)==FALSE)
+pits<- toupper(na.omit(unlist(recapture2[,c(2,3)])))
+pits<- c(pits,stocked$tagnumber)
+pits<- toupper(pits[-duplicated(pits)])
 
 # ASSIGN ORIGIN TO CAPTURED FISH
 dat$origin<-"natural"
