@@ -1,7 +1,5 @@
-
-
+input<-list()
 ## INPUT
-input$basin<-"Upper"
 input$maxage<-c(41,60)
 input$sexratio<-c(0.33,0.5)
 input$natural<- c(0,12)
@@ -76,6 +74,5 @@ input$nyears<- 50
 input$daug<- 100000
 input$size_indices<-TRUE
 
-# PROCESS INPUTS FOR INITIALIZATON AND SIMULATION
-inputs<-modelInputs(input=input)
+
 

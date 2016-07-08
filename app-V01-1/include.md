@@ -1,9 +1,0 @@
-### Introduction: The Missouri River Pallid Sturgeon Effects Analysis  
-
-The need for a broadly defined Effects Analysis (EA) was recognized by the Missouri River Independent Science Advisory Panel (Doyle and others, 2011).  The Panel wrote: “The development of an adaptive management plan should be preceded by and based upon an effects analysis that incorporates new knowledge that has accrued since the 2003 Biological Opinion”, referring to the U.S. Fish and Wildlife Service’s (USFWS) amended biological opinion for operation of the Missouri River mainstem reservoir system and maintenance of the Missouri River Bank Stabilization and Navigation Project, and operation of the Kansas River reservoir system (U.S. Fish and Wildlife Service, 2003).  The concept of an effects analysis is explained by Murphy and Weiland (2011) as a systematic evaluation of the effects that a federal agency action that has the potential to harm a listed species.  The three essential components of an EA are:
-
-* Collection of reliable scientific information;
-* Critical assessment and synthesis of available data and analyses;
-* Analysis of the effects of actions on listed species and their habitats.
-
-The last step needs to be as quantitative as possible in order to forecast expected ecological costs and benefits of an action, and to evaluate trade-offs with socio-economic costs and benefits.  The output of an EA provides a useful framework for ongoing assimilation of data from hypothesis-driven monitoring and research, if sufficiently quantitative, can be used to evaluate alternative management actions in structured decision making (Murphy and Weiland, 2014).  In the ideal situation, an effects analysis includes quantitative population dynamics or population viability models that can be used to forecast population effects of management actions (Murphy and Weiland, 2011, 2014)

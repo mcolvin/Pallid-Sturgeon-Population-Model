@@ -1,15 +1,13 @@
 
 	setwd("C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Population-Model/")
 	source("./src/01_global.R")# need to get run_sourcefunction
-	output_name<- "tmp"
-	current_commit<- "0df8618"
-	dir.create(file.path(paste0(getwd(),"/output/",output_name)), showWarnings = FALSE) # CREATE DIRECTORY IF NOT ALREADY THERE
-	
-	
-	# RUN MODEL
-	inputs<-run_source(commit=current_commit,output_name=output_name)
-	inputs$nreps=10
-	out<- sim(inputs=inputs)
+	input$output_name<- "tmp"
+	input$commit<- "0df8618"
+	dir.create(file.path(paste0(getwd(),"/output/",input$output_name)), showWarnings = FALSE) # CREATE DIRECTORY IF NOT ALREADY THERE
+
+	input$basin<-"Upper"
+	input$nreps=10
+	out<- sim(inputs=input)
   
 	
 	
