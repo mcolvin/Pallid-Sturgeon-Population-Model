@@ -1,3 +1,13 @@
+dSurvival<- function(x,phi_age,age)
+	{
+	# phi_age: vector of age specific survival
+	# age: vector of age in months for live individuals
+	phi<- c(phi_age^(1/12))# convert annual to monthly, add 0 to zero out survival of unalive fish
+	a<- floor(age/12)
+	out<- rbinom(length(a),1,phi[a])
+	return(out)
+	}
+
 
 	
 ## DYNAMICS PLUGINS
@@ -23,15 +33,7 @@ dFEtoEFL<- function(x,n,total,phi)
 	return(tmp)
 	}	
 	
-dSurvival<- function(phi_age,age)
-	{
-	# phi_age: vector of age specific survival
-	# age: vector of age in months for live individuals
-	phi<- phi_age^(1/12)# convert annual to monthly
-	a<- floor(age/12)
-	out<- rbinom(length(a),1,phi[a])
-	return(out)
-	}
+
 	
 dLength<- function(k, linf,length1,dT)
 	{# FABENS MODEL WITH MODFICATION	
@@ -50,7 +52,8 @@ dLength<- function(k, linf,length1,dT)
 	
 dWeight<- function(len,a=0.0001,b=3,er=0.1)
 	{
-	out<-rlnorm(length(len),log(a*len^b),er)
+	#out<-rlnorm(length(len),log(a*len^b),er)
+	out<-exp(rnorm(length(len),a+b*len,er))
 	return(out)
 	}
 	

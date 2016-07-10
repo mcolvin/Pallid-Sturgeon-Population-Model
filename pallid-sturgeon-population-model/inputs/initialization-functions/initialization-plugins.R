@@ -64,7 +64,7 @@ ini_length<-function(n=10, basin="lower",origin=1, spatial=FALSE,linf=2000)
                 #tmp<-  r(len_ini_upp_hatchery_nospace)(n)*origin + # hatchery
                  #       r(len_ini_upp_natural_nospace)(n)*(1-origin) # natural
                 }
-		tmp<- ifelse(tmp> linf,0.9*linf,tmp)
+		tmp<- ifelse(tmp> linf,0.99*linf,tmp)
 		return(tmp)
         }
 

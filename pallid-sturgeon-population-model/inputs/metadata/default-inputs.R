@@ -36,7 +36,7 @@ input$phi_age1_mean<-c(0.68,0.95)
 input$phi_age1_er<-c(0.1,0.1)
 input$phi_age2_mean<-c(0.92,0.95)
 input$phi_age2_er<-c(0.01,0.01)
-input$recruitment<- TRUE
+input$recruitment<- 0 #[0 for no recruitment, 1 for yes]
 
 
 ## STOCKING ##

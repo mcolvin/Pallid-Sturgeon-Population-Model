@@ -108,4 +108,111 @@ modelInputs<- function(input){#reactive({
 	return(tmp)
 	} #})
 
+### INITIALIZE MODEL OBJECTS
+initialize<- function(inputs)
+	{
+	# SET UP LIST FOR SIMULATION	
+	dyn<- list(
+		k = matrix(0,inputs$daug,inputs$nreps),
+		Linf = matrix(0,inputs$daug,inputs$nreps),
+		LEN = matrix(0,inputs$daug,inputs$nreps),
+		WGT = matrix(0,inputs$daug,inputs$nreps),
+		Z = matrix(0L,inputs$daug,inputs$nreps),
+		AGE = matrix(0L,inputs$daug,inputs$nreps),
+		MAT = matrix(0L,inputs$daug,inputs$nreps),
+		MPS = matrix(0L,inputs$daug,inputs$nreps),
+		SEX = matrix(0L,inputs$daug,inputs$nreps),
+		SPN = matrix(0L,inputs$daug,inputs$nreps),
+		ORIGIN = matrix(0L,inputs$daug,inputs$nreps),
+		EGGS = matrix(0L,inputs$daug,inputs$nreps))
+	
+	# INITIALIZATION
+
+	indx<- cbind(rep(1:(inputs$natural+inputs$hatchery),inputs$nreps),
+		sort(rep(1:inputs$nreps,(inputs$natural+inputs$hatchery))))
+	## ASSIGN HATCHERY FISH AS A 1
+	dyn$ORIGIN[cbind(rep(1:inputs$hatchery,inputs$nreps),
+		sort(rep(1:inputs$nreps,inputs$hatchery)))]<- 1
+	## FISH ALIVE AT INITIALIZATION [Z]
+	dyn$Z[indx]<- 1
+	
+	## INIITIALIZE GROWTH COEFFICIENTS
+	## ASSUMES THAT GROWTH IS NOT HERITABLE
+	tmp<- ini_growth(x=inputs$nreps,n=inputs$daug,
+		mu_ln_linf=inputs$ln_Linf_mu,
+		mu_ln_k=inputs$ln_k_mu,
+		vcv=inputs$vcv) 	
+	dyn$Linf[]<- tmp$linf
+	dyn$k[]<- tmp$k
+
+	
+	## INITIALIZE LENGTH
+	dyn$LEN[indx]<-ini_length(n=nrow(indx), 
+		basin=inputs$basin,
+		origin=dyn$ORIGIN[indx], 
+		spatial=FALSE,
+		linf= dyn$Linf[indx])
+	
+	## INITIALIZE WEIGHT GIVEN LENGTH
+	### ASSUMES NO EFFECT OF ORIGIN
+	dyn$WGT[indx]<-ini_wgt(a=inputs$a,b=inputs$b,len=dyn$LEN[indx],er=inputs$lw_er)
+
+	
+	## INITIALIZE SEX OF FISH
+	dyn$SEX[indx]<-ini_sex(n=nrow(indx),ratio=inputs$sexratio)
+
+	
+	## INITIALIZE AGE IN MONTHS 
+	dyn$AGE[indx]<- ini_age(len=dyn$LEN[indx],
+		linf=dyn$Linf[indx],
+		k=dyn$k[indx],
+		sizeAtHatch=7,
+		maxAge=inputs$maxage)
+	
+	## INITIALIZE WHETHER A FISH IS SEXUALLY MATURE									
+	dyn$MAT[indx]<-ini_maturity(k=inputs$mat_k,	
+		len=dyn$LEN[indx],
+		age_mat=inputs$age_mat)
+
+
+	## INITIALIZE TIME SINCE SPAWNING
+	dyn$MPS[indx]<-ini_mps(n=(inputs$hatchery+inputs$natural),
+		mature=dyn$MAT[indx])
+	
+	
+	## INITIALIZE IF A FISH WILL SPAWN ONCE CONDITIIONS ARE MET
+	# SPN_H  ####fixme####
+	
+
+	## INITIALIZE SPATIAL
+	if(inputs$spatial==FALSE)
+		{
+		dyn$AGE_0_N_BND<-matrix(inputs$natural_age0,nrow=1,ncol=inputs$nreps)
+		dyn$AGE_0_H_BND<-matrix(inputs$hatchery_age0,nrow=1,ncol=inputs$nreps)
+		}
+	if(inputs$spatial==TRUE)
+		{
+		dyn$RKM<- matrix(0,inputs$daug,inputs$nreps)# float
+		
+		# INITIALIZE LOCATION OF ADULTS
+		dyn$RKM[indx]<-ini_rkm(n=inputs$hatchery+inputs$natural,
+			type=inputs$adult_spatial_structure,
+			bend_lengths=inputs$bend_lengths)
+	
+		# INITIALIZE AGE-0 IN EACH BEND
+		dyn$AGE_0_N_BND<-as.matrix(rmultinom(inputs$nreps,inputs$natural_age0,inputs$natural_age0_rel_dens))
+		dyn$AGE_0_H_BND<-as.matrix(rmultinom(inputs$nreps,inputs$hatchery_age0,inputs$hatchery_age0_rel_dens))
+		}
+	# END INITIALIZATION ##########	
+	
+	# VECTOR OF MONTHS
+	## STARTS IN JANUARY
+	dyn$m<- rep(c(1:12),inputs$nyears) 	
+	return(dyn)
+	}	
+		
+		
+		
+		
+	
 	

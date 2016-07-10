@@ -24,5 +24,8 @@ source("./core/initialization.R")
 ## LOAD SIMULATION FUNCTION
 source("./core/simulation.R")
 
+## LOAD SIMULATION MODULES
+source("./inputs/modules/recruitment-module.R")
+source("./inputs/modules/stocking-module.R")
 
 
