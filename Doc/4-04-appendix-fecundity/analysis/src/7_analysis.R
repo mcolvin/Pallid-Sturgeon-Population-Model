@@ -1,76 +1,249 @@
 
+	
+dat_complete<- subset(dat, is.na(FL)==FALSE)
+adat<- list(
+	X=as.matrix(
+		cbind(dat_complete$W, 
+			dat_complete$FL,
+			ifelse(dat_complete$BASIN=="Lower",1,2),#basin
+			dat_complete$EGGS)),# response
+	n=nrow(dat_complete))
 
-# lower basin
-fit1a<-glmer(EGGS~W+(1|id),dat,
-	family=poisson(link="log"),subset=BASIN=="Lower")
-fit2a<-glmer(EGGS~FL+(1|id),dat,
-	family=poisson(link="log"),subset=BASIN=="Lower")
+mod00<- function()
+	{
+	# WEIGHT AS AN OFFSET
+	for(i in 1:n)
+		{
+		log(fec_mu[i])<- a + b_fec*X[i,2] + log(X[i,1]) #+ disp[i]
+		#disp[i]~dnorm(0,prec_sigma)
+		X[i,4]~dpois(fec_mu[i])	
+		}
+	# PRIORS
+	a~dnorm(0,0.001)
+	b_fec~dnorm(0,0.001)
+	#sigma~dunif(0.00001, 5)
+	#prec_sigma[1] <-pow(sigma,-2)
+	}
+	
+
+inits<- function(t)
+	{	
+	list(a=0.1,b_fec=0.0005)
+	list(a=0.1,b_fec=0.0005)
+	list(a=0.1,b_fec=0.0005)
+	}
+
+out00 <- jags(data=adat,
+	inits=inits,
+	parameters=c("a","b_fec","fec_mu"),	
+	model.file=mod00,
+	n.chains = 3,	
+	n.iter = 50000,	
+	n.burnin = 25000, 
+	n.thin=2,
+	working.directory=getwd())	
+	
+	
+	
+mod0<- function()
+	{
+	# WEIGHT AS AN OFFSET
+	for(i in 1:n)
+		{
+		log(fec_mu[i])<- a + b_fec*X[i,2] + log(X[i,1]) + disp[i]
+		disp[i]~dnorm(0,prec_sigma)
+		X[i,4]~dpois(fec_mu[i])	
+		}
+	# PRIORS
+	a~dnorm(0,0.001)
+	b_fec~dnorm(0,0.001)
+	sigma~dunif(0.00001, 5)
+	prec_sigma[1] <-pow(sigma,-2)
+	}
+	
+
+inits<- function(t)
+	{	
+	list(a=0.1,b_fec=0.0005,sigma=c(.25))
+	list(a=0.0,b_fec=0.0005,sigma=c(.25))
+	list(a=-0.1,b_fec=0.0005,sigma=c(.25))
+	}
+params<- c("a","b_fec","fec_mu","sigma")	
+
+out0 <- jags(data=adat,
+	inits=inits,
+	parameters=params,	
+	model.file=mod0,
+	n.chains = 3,	
+	n.iter = 50000,	
+	n.burnin = 25000, 
+	n.thin=2,
+	working.directory=getwd())	
+	
+	
+
+mod1<- function()
+	{
+	# WEIGHT AS AN OFFSET
+	for(i in 1:n)
+		{
+		log(fec_mu[i])<- a + b_fec*X[i,2] + log(X[i,1]) + disp[i]
+		disp[i]~dnorm(0,prec_sigma[X[i,3]])
+		X[i,4]~dpois(fec_mu[i])	
+		}
+	# PRIORS
+	a~dnorm(0,0.001)
+	b_fec~dnorm(0,0.001)
+	sigma[1]~dunif(0.00001, 5)
+	sigma[2]~dunif(0.00001, 5)
+	prec_sigma[1] <-pow(sigma[1],-2)
+	prec_sigma[2] <-pow(sigma[2],-2)
+	}
+	
+
+inits<- function(t)
+	{	
+	list(a=0.1,b_fec=0.0005,sigma=c(.25,0.25))
+	list(a=0.0,b_fec=0.0005,sigma=c(.25,0.25))
+	list(a=-0.1,b_fec=0.0005,sigma=c(.25,0.25))
+	}
+params<- c("a","b_fec","fec_mu","sigma")	
+
+out1 <- jags(data=adat,
+	inits=inits,
+	parameters=params,	
+	model.file=mod1,
+	n.chains = 3,	
+	n.iter = 50000,	
+	n.burnin = 25000, 
+	n.thin=2,
+	working.directory=getwd())
 
 	
-fit1a<-glmer(EGGS~w_std:BASIN+(1|id)+(1|BASIN),dat,	family=poisson(link="log"))
-AIC(fit1a)
-fit1a<-glmer(EGGS~w_std:BASIN+(1|id),dat,	family=poisson(link="log"))
-AIC(fit1a)
-dat$eggs_w<- dat$EGGS/dat$W
-dat$eggs_w_ln<- log(dat$eggs_w)
-boxplot(eggs_w~BASIN,dat)
-plot(eggs_w_ln~FL,dat)
-points(eggs_w_ln~FL,dat,subset=BASIN=="Lower",col="red")
-plot(EGGS~W,dat)
-points(EGGS~W,dat,subset=BASIN=="Lower",col="red")
 	
-fit2a<-glmer(EGGS~fl_std+(1|id/BASIN),dat,
-	family=poisson(link="log"),subset=BASIN=="Lower")
-fit2a<-glmer(EGGS~fl_std+(1|id),dat,
-	family=poisson(link="log"),subset=BASIN=="Upper")
+mod2<- function()
+	{
+	# WEIGHT AS AN OFFSET
+	for(i in 1:n)
+		{
+		log(fec_mu[i])<- a[X[i,3]] + b_fec*X[i,2] + log(X[i,1]) + disp[i]
+		disp[i]~dnorm(0,prec_sigma[X[i,3]])
+		X[i,4]~dpois(fec_mu[i])	
+		}
+	# PRIORS
+	a[1]~dnorm(0,0.001)
+	a[2]~dnorm(0,0.001)
+	b_fec~dnorm(0,0.001)
+	sigma[1]~dunif(0.00001, 5)
+	sigma[2]~dunif(0.00001, 5)
+	prec_sigma[1] <-pow(sigma[1],-2)
+	prec_sigma[2] <-pow(sigma[2],-2)
+	}
+params<- c("a","b_fec","fec_mu","sigma")		
+inits<- function(t)
+	{	
+	list(a=c(0.1,0),b_fec=0.0005,sigma=c(.25,0.25))
+	list(a=c(0.1,0),b_fec=0.0005,sigma=c(.25,0.25))
+	list(a=c(0.1,0),b_fec=0.0005,sigma=c(.25,0.25))
+	}	
+out2 <- jags(data=adat,
+	inits=inits,
+	parameters=params,	
+	model.file=mod2,
+	n.chains = 3,	
+	n.iter = 50000,	
+	n.burnin = 25000, 
+	n.thin=2,
+	working.directory=getwd())
+
+
+mod3<- function()
+	{
+	# WEIGHT AS AN OFFSET
+	for(i in 1:n)
+		{
+		log(fec_mu[i])<- a[X[i,3]] + b_fec[X[i,3]]*X[i,2] + log(X[i,1]) + disp[i]
+		disp[i]~dnorm(0,prec_sigma[X[i,3]])
+		X[i,4]~dpois(fec_mu[i])	
+		}
+	# PRIORS
+	a[1]~dnorm(0,0.001)
+	a[2]~dnorm(0,0.001)
+	b_fec[1]~dnorm(0,0.001)
+	b_fec[2]~dnorm(0,0.001)
+	sigma[1]~dunif(0.00001, 5)
+	sigma[2]~dunif(0.00001, 5)
+	prec_sigma[1] <-pow(sigma[1],-2)
+	prec_sigma[2] <-pow(sigma[2],-2)
+	}
+params<- c("a","b_fec","fec_mu","sigma")		
+inits<- function(t)
+	{	
+	list(a=c(0.1,0),b_fec=c(0.0005,0),sigma=c(.25,0.25))
+	list(a=c(0.1,0),b_fec=c(0.0005,0),sigma=c(.25,0.25))
+	list(a=c(0.1,0),b_fec=c(0.0005,0),sigma=c(.25,0.25))
+	}	
+out3 <- jags(data=adat,
+	inits=inits,
+	parameters=params,	
+	model.file=mod3,
+	n.chains = 3,	
+	n.iter = 50000,	
+	n.burnin = 25000, 
+	n.thin=2,
+	working.directory=getwd())
+
+save(out00,out0,out1,out2,out3,file="./output/bugs-output.Rdata")
+
 
 	
-low<-subset(dat,BASIN=="Lower")
-fit1a<-glm(EGGS~fl_std + 1,
-	low,
-	offset=low$W,
-	family=poisson(link="log"))		
-fit2a<-glmer(EGGS~fl_std+(1|id),
-	low,
-	offset=low$W,
-	family=poisson(link="log"))	
-out<-cbind(low$EGGS, fitted(fit1a),fitted(fit2a))
-logLik(fit1a)
-sum(dpois(out[,1],out[,2],log=TRUE))
-logLik(fit2a)
-sum(dpois(out[,1],out[,3],log=TRUE))
-AIC(fit1a)
-AIC(fit2a)
+	
 
+mod4<- function()
+	{
+	# WEIGHT AS AN OFFSET
+	for(i in 1:n)
+		{
+		log(fec_mu[i])<- a + b_fec*X[i,1] +log(X[i,2])
+		#disp[i]~dnorm(0,prec_sigma)
+		X[i,4]~dpois(fec_mu[i])	
+		}
+	# PRIORS
+	a~dnorm(0,0.001)
+	b_fec~dnorm(0,0.001)
+	#sigma~dunif(0.00001, 5)
+	#prec_sigma[1] <-pow(sigma,-2)
+	}
+	
 
+inits<- function(t)
+	{	
+	list(a=0.1,b_fec=0.0005)
+	list(a=0.1,b_fec=0.0005)
+	list(a=0.1,b_fec=0.0005)
+	}
 
-
-
-
-
-# Upper
-fit1a<-glmer(EGGS~W+(1|id),dat,
-	family=poisson(link="log"),subset=BASIN=="Upper")
-fit2a<-glmer(EGGS~FL+(1|id),dat,
-	family=poisson(link="identity"),subset=BASIN=="Upper")
-AIC(fit1a)
-AIC(fit2a)
-
-AIC(fit1a)
-AIC(fit2a)
-
-plot(EGGS~W,dat,subset=BASIN=="Upper")
-plot(EGGS~FL,dat,subset=BASIN=="Upper")
-
-
-
-
-
-x<- runif(500,14,30)
-y<-fixef(fit2a)[1] + fixef(fit2a)[2]*x+rnorm(500,0,62458)
-EGGS<- rpois(500,y)
-plot(EGGS~W,dat,subset=BASIN=="Upper",pch=19)
-
-plot(x,EGGS,col="red")
-points(EGGS~W,dat,subset=BASIN=="Upper",pch=19)
-
+out4 <- jags(data=adat,
+	inits=inits,
+	parameters=c("a","b_fec","fec_mu"),	
+	model.file=mod4,
+	n.chains = 3,	
+	n.iter = 50000,	
+	n.burnin = 25000, 
+	n.thin=2,
+	working.directory=getwd())
+	
+	
+	
+out4
+out00	
+	
+	
+plot(adat$X[,4],out4$BUGSoutput$mean$fec_mu);abline(0,1)
+points(adat$X[,4],out00$BUGSoutput$mean$fec_mu,col='red')
+	
+sum(dpois(adat$X[,4],out4$BUGSoutput$mean$fec_mu,log=TRUE))*-2
+sum(dpois(adat$X[,4],out00$BUGSoutput$mean$fec_mu,log=TRUE))*-2
+	
+	
+	

@@ -11,8 +11,8 @@
 	dyn<- initialize(inputs=inputs) # INITIALIZE OBJECTS NEEDED FOR SIMUALTION
 	dyn2<-dyn
 	
-	inputs$yearling<-1000
-	out<- sim(inputs=inputs) #
+	inputs$yearling<-100
+	out<- sim(inputs=inputs,dyn=dyn) #
 	dyn<-dyn2
 	
 	

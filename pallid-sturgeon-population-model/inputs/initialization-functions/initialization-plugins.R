@@ -29,12 +29,14 @@ ini_sex<- function(n,ratio)
 	
 ini_age<- function(len,linf,k,sizeAtHatch=7,maxAge)
 	{
-	length2<- len
-	age<-sapply(1:length(len),function(x)
-		{solve(-k[x],log(1-((length2[x]-sizeAtHatch)/(linf[x]-sizeAtHatch))))})
-	out<- ifelse(age>maxAge,maxAge,age)
-	return(out*12)	
+	age<-ifelse(len==0,0,log(-1*(len-sizeAtHatch)/(linf-sizeAtHatch)+1)/-k)
+	age<- ifelse(age>maxAge,maxAge,age)
+	return(age*12)	
 	}
+	
+	
+	
+	
 	
 
 # FUNCTION TO INIITIALIZE LENGTH OF FISH	
