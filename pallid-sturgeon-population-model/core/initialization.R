@@ -113,18 +113,18 @@ initialize<- function(inputs)
 	{
 	# SET UP LIST FOR SIMULATION
 	dyn<- list(
-		k = as.data.table(matrix(0,inputs$daug,inputs$nreps)),
-		Linf = as.data.table(matrix(0,inputs$daug,inputs$nreps)),
-		LEN = as.data.table(matrix(0,inputs$daug,inputs$nreps)),
-		WGT = as.data.table(matrix(0,inputs$daug,inputs$nreps)),
-		Z = as.data.table(matrix(0L,inputs$daug,inputs$nreps)),
-		AGE = as.data.table(matrix(0L,inputs$daug,inputs$nreps)),
-		MAT = as.data.table(matrix(0L,inputs$daug,inputs$nreps)),
-		MPS = as.data.table(matrix(0L,inputs$daug,inputs$nreps)),
-		SEX = as.data.table(matrix(0L,inputs$daug,inputs$nreps)),
-		SPN = as.data.table(matrix(0L,inputs$daug,inputs$nreps)),
-		ORIGIN = as.data.table(matrix(0L,inputs$daug,inputs$nreps)),
-		EGGS = as.data.table(matrix(0L,inputs$daug,inputs$nreps)))
+		k = matrix(0,inputs$daug,inputs$nreps),
+		Linf = matrix(0,inputs$daug,inputs$nreps),
+		LEN = matrix(0,inputs$daug,inputs$nreps),
+		WGT = matrix(0,inputs$daug,inputs$nreps),
+		Z = matrix(0L,inputs$daug,inputs$nreps),
+		AGE = matrix(0L,inputs$daug,inputs$nreps),
+		MAT = matrix(0L,inputs$daug,inputs$nreps),
+		MPS = matrix(0L,inputs$daug,inputs$nreps),
+		SEX = matrix(0L,inputs$daug,inputs$nreps),
+		SPN = matrix(0L,inputs$daug,inputs$nreps),
+		ORIGIN = matrix(0L,inputs$daug,inputs$nreps),
+		EGGS = matrix(0L,inputs$daug,inputs$nreps))
 	
 	# INITIALIZATION
 	
@@ -132,60 +132,43 @@ initialize<- function(inputs)
 	## [1] ASSIGN LIVE OR DEAD
 	for(j in 1:inputs$nreps)
 		{
-		set(dyn$Z,j=j,
-			value=c(rep(1,inputs$natural+inputs$hatchery),
-				rep(0,inputs$daug-(inputs$natural+inputs$hatchery))))
+		dyn$Z[,j]<-c(rep(1,inputs$natural+inputs$hatchery),
+				rep(0,inputs$daug-(inputs$natural+inputs$hatchery)))
 		## [2] ASSIGN ORIGIN HATCHERY=1 NATURAL = 0
-		set(dyn$ORIGIN,j=j,
-			value=c(rep(1,inputs$hatchery),
-				rep(0,inputs$daug-inputs$hatchery)))
+		dyn$ORIGIN[,j]<-c(rep(1,inputs$hatchery),
+				rep(0,inputs$daug-inputs$hatchery))
 		## [3] INIITIALIZE GROWTH COEFFICIENTS; GROWTH IS NOT HERITABLE
 		tmp<- ini_growth(x=1,n=inputs$daug,
 			mu_ln_linf=inputs$ln_Linf_mu,
 			mu_ln_k=inputs$ln_k_mu,
 			vcv=inputs$vcv) 
-		set(dyn$Linf,j=j,value=tmp$linf)
-		set(dyn$k,j=j,value=tmp$k)
+		dyn$Linf[,j]<-tmp$linf
+		dyn$k[,j]<-tmp$k
 		## [4] INITIALIZE LENGTH
-		set(dyn$LEN,
-			j=j,
-			value=dyn$Z[[j]]*ini_length(n=input$daug, 
+		dyn$LEN[,j]<-dyn$Z[,j]*ini_length(n=input$daug, 
 				basin=inputs$basin,
-				origin=dyn$ORIGIN[[j]], 
+				origin=dyn$ORIGIN[,j], 
 				spatial=FALSE,
-				linf= dyn$Linf[[j]]))
-		set(dyn$Linf,
-			i=NULL,
-			j=j,
-			value=ifelse(dyn$LEN[[j]]<dyn$Linf[[j]],dyn$Linf[[j]], dyn$LEN[[j]]*1.1))
+				linf= dyn$Linf[,j])
+		dyn$Linf[,j]<-ifelse(dyn$LEN[,j]<dyn$Linf[,j],dyn$Linf[,j], dyn$LEN[,j]*1.1)
 		## INITIALIZE WEIGHT GIVEN LENGTH
 		### ASSUMES NO EFFECT OF ORIGIN
-		set(dyn$WGT,
-			j=j,
-			value=dyn$Z[[j]]*ini_wgt(a=inputs$a,b=inputs$b,len=dyn$LEN[[j]],er=inputs$lw_er))
+		dyn$WGT[,j]<-dyn$Z[,j]*ini_wgt(a=inputs$a,b=inputs$b,len=dyn$LEN[,j],er=inputs$lw_er)
 		## [4] INITIALIZE SEX
-		set(dyn$SEX,
-			j=j,
-			value=dyn$Z[[j]]*ini_sex(n=input$daug,ratio=inputs$sexratio))
+		dyn$SEX[,j]<-dyn$Z[,j]*ini_sex(n=input$daug,ratio=inputs$sexratio)
 		## [4] INITIALIZE AGE IN MONTHS
-		set(dyn$AGE,
-			j=j,
-			value=ini_age(len=dyn$LEN[[j]],
-				linf=dyn$Linf[[j]],
-				k=dyn$k[[j]],
+		dyn$AGE[,j]<-ini_age(len=dyn$LEN[,j],
+				linf=dyn$Linf[,j],
+				k=dyn$k[,j],
 				sizeAtHatch=7,
-				maxAge=inputs$maxage))
+				maxAge=inputs$maxage)
 		## [4] INITIALIZE WHETHER A FISH IS SEXUALLY MATURE	
-		set(dyn$MAT,
-			j=j,
-			value=dyn$Z[[j]]*ini_maturity(k=inputs$mat_k,	
-				len=dyn$LEN[[j]],
-				age_mat=inputs$age_mat))
+		dyn$MAT[,j]<-dyn$Z[,j]*ini_maturity(k=inputs$mat_k,	
+				len=dyn$LEN[,j],
+				age_mat=inputs$age_mat)
 		## INITIALIZE TIME SINCE SPAWNING	
-		set(dyn$MPS,
-			j=j,
-			value=dyn$Z[[j]]*ini_mps(n=inputs$daug,
-				mature=dyn$MAT[[j]]))
+		dyn$MPS[,j]<-dyn$Z[,j]*ini_mps(n=inputs$daug,
+				mature=dyn$MAT[,j])
 		}	
 
 	## INITIALIZE IF A FISH WILL SPAWN ONCE CONDITIIONS ARE MET
@@ -195,29 +178,23 @@ initialize<- function(inputs)
 	## INITIALIZE SPATIAL
 	if(inputs$spatial==FALSE)
 		{
-		dyn$AGE_0_N_BND<-as.data.table(matrix(inputs$natural_age0,nrow=1,ncol=inputs$nreps))
-		dyn$AGE_0_H_BND<-as.data.table(matrix(inputs$hatchery_age0,nrow=1,ncol=inputs$nreps))
+		dyn$AGE_0_N_BND<-matrix(inputs$natural_age0,nrow=1,ncol=inputs$nreps)
+		dyn$AGE_0_H_BND<-matrix(inputs$hatchery_age0,nrow=1,ncol=inputs$nreps)
 		}
 	if(inputs$spatial==TRUE)
 		{
-		dyn$RKM<- as.data.table(matrix(0,inputs$daug,inputs$nreps))
-		dyn$AGE_0_N_BND<-as.data.table(matrix(inputs$natural_age0,nrow=inputs$n_bends,ncol=inputs$nreps))
-		dyn$AGE_0_H_BND<-as.data.table(matrix(inputs$hatchery_age0,nrow=inputs$n_bends,ncol=inputs$nreps))
+		dyn$RKM<- matrix(0,inputs$daug,inputs$nreps)
+		dyn$AGE_0_N_BND<-matrix(inputs$natural_age0,nrow=inputs$n_bends,ncol=inputs$nreps)
+		dyn$AGE_0_H_BND<-matrix(inputs$hatchery_age0,nrow=inputs$n_bends,ncol=inputs$nreps)
 		for(j in 1:input$nreps)
 			{
 			# INITIALIZE LOCATION OF ADULTS
-			set(dyn$RKM,
-				j=j,
-				value=dyn$Z[[j]]*ini_rkm(n=inputs$daug,
+			dyn$RKM[,j]<-dyn$Z[,j]*ini_rkm(n=inputs$daug,
 					type=inputs$adult_spatial_structure,
-					bend_lengths=inputs$bend_lengths))
+					bend_lengths=inputs$bend_lengths)
 			# INITIALIZE AGE-0 IN EACH BEND
-			set(dyn$AGE_0_N_BND,
-				j=j,
-				value= rmultinom(1,inputs$natural_age0,inputs$natural_age0_rel_dens))
-			set(dyn$AGE_0_H_BND,
-				j=j,
-				value=rmultinom(1,inputs$hatchery_age0,inputs$hatchery_age0_rel_dens))
+			dyn$AGE_0_N_BND[,j]<-rmultinom(1,inputs$natural_age0,inputs$natural_age0_rel_dens)
+			dyn$AGE_0_H_BND[,j]<-rmultinom(1,inputs$hatchery_age0,inputs$hatchery_age0_rel_dens)
 			}
 		}
 	# END INITIALIZATION ##########	

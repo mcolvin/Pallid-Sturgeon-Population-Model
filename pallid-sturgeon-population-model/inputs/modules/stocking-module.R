@@ -2,7 +2,8 @@ stocking<- function(fingerlings,
 	fingerlings_month, yearlings, yearlings_month,month)
 	{
 	# THIS FUNCTION ADDS HATCHERY FISH TO THE DYNAMIC PARTS
-	# OF THE SIMULATION.  
+	# OF THE SIMULATION
+	# IT BASICALLY UPDATES AND RETURNS DYN  
 	
 	if(fingerlings > 0 & fingerlings_month==month)
 		{
@@ -29,3 +30,5 @@ stocking<- function(fingerlings,
 	# END STOCKING ##################################################################	
 	return(dyn)
 	}
+	
+	

@@ -19,6 +19,7 @@ load("./inputs/initialization-functions/initialize_length_functions.Rdata")
 source("./inputs/metadata/default-inputs.R")
 ## LOAD DYNAMIC PLUGINS
 source("./inputs/dynamics-functions/dynamics-plugins.R")
+source("./inputs/dynamics-functions/001-adult-survival.R")
 ## LOAD INITIALIZATON FUNCTION
 source("./core/initialization.R")	
 ## LOAD SIMULATION FUNCTION
