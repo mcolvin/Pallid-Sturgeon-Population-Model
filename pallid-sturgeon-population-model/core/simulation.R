@@ -139,8 +139,7 @@ ptm <- proc.time()
 		}# end i 
 #Rprof(NULL)
 #summaryRprof(out.out”)
-proc.time() - ptm
-
+proc.time() - ptm  
 	x<- sort(rep(inputs$startYear:(inputs$startYear+inputs$nyears-1),12))+rep(1:12/12,inputs$nyears)
 	out<-list(total=N_SUM, 
 		years=x,
