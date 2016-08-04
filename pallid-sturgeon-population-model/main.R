@@ -6,19 +6,22 @@
 	dir.create(file.path(paste0(getwd(),"/output/",input$output_name)), showWarnings = FALSE) # CREATE DIRECTORY IF NOT ALREADY THERE
 	input$basin<-"Upper"
 	inputs<- modelInputs(input)
-	inputs$nreps=10	
-
+	inputs$nreps=10
+	inputs$daug_H=60000	
+	inputs$daug_N=20000	
+	inputs$nyears<- 20
 	dyn<- initialize(inputs=inputs) # INITIALIZE OBJECTS NEEDED FOR SIMUALTION
 	dyn2<-dyn
 	
 	inputs$yearling<-100
+	
+	ptm <- proc.time()
 	out<- sim(inputs=inputs,dyn=dyn) #
-	dyn<-dyn2
+	proc.time() - ptm 
+
 	
-	
-	
-	
-	
+
+
 	
 
 source("./tables.R")

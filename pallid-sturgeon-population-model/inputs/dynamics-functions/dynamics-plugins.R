@@ -72,8 +72,12 @@ spawn<- function(mps,a=-5,b=2.55,mature)
 	
 fecundity<- function(fl,a,b,er,sex,spawn,mature)
 	{
-	y<- exp(a + b * ((fl - 1260.167)/277.404)+rnorm(length(fl),0,er))
-	eggs<- rpois(length(fl),y)*spawn*sex*mature
+	N<-length(fl)
+	fl_normalized<- (fl - 1260.167)/277.404 
+	#yy<- exp(a + b*fl_normalized) + exp(rnorm(N,0,er))
+	#y<- exp(rnorm(N,a + b*fl_normalized,er))
+	#eggs<- rpois(N,y)*spawn*sex*mature
+	eggs<- rpois(N,exp(rnorm(N,a + b*fl_normalized,er)))*spawn*sex*mature
 	return(eggs) 
 	}
 	

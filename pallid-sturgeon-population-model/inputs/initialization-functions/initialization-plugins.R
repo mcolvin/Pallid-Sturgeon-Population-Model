@@ -43,6 +43,7 @@ ini_age<- function(len,linf,k,sizeAtHatch=7,maxAge)
 ini_length<-function(n=10, basin="lower",origin=1, spatial=FALSE,linf=2000)
         {# A FUNCTION TO INITIALIZE LENGTHS OF INDIVIDUAL FISH
         # origin [0 for natural, 1 for hatchery]
+		# CALLS r WHICH IS AN EMPRICAL DISTRIBUTION
         if(tolower(basin)=="lower" & spatial==FALSE)
                 {
                 tmp<- r(len_ini_low_hatchery_nospace)(n)*origin + # hatchery

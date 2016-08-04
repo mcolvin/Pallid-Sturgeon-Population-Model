@@ -70,7 +70,8 @@ modelInputs<- function(input){#reactive({
 	# SIMULATION STUFF
 	tmp$nreps=input$nreps
 	tmp$nyears=input$nyears
-	tmp$daug=input$daug
+	tmp$daug_H=input$daug_H
+	tmp$daug_N=input$daug_N
 	tmp$startYear<-input$startYear
 	
 
@@ -113,62 +114,128 @@ initialize<- function(inputs)
 	{
 	# SET UP LIST FOR SIMULATION
 	dyn<- list(
-		k = matrix(0,inputs$daug,inputs$nreps),
-		Linf = matrix(0,inputs$daug,inputs$nreps),
-		LEN = matrix(0,inputs$daug,inputs$nreps),
-		WGT = matrix(0,inputs$daug,inputs$nreps),
-		Z = matrix(0L,inputs$daug,inputs$nreps),
-		AGE = matrix(0L,inputs$daug,inputs$nreps),
-		MAT = matrix(0L,inputs$daug,inputs$nreps),
-		MPS = matrix(0L,inputs$daug,inputs$nreps),
-		SEX = matrix(0L,inputs$daug,inputs$nreps),
-		SPN = matrix(0L,inputs$daug,inputs$nreps),
-		ORIGIN = matrix(0L,inputs$daug,inputs$nreps),
-		EGGS = matrix(0L,inputs$daug,inputs$nreps))
+		k_H = matrix(0,inputs$daug_H,inputs$nreps),
+		k_N = matrix(0,inputs$daug_N,inputs$nreps),
+		Linf_H = matrix(0,inputs$daug_H,inputs$nreps),
+		Linf_N = matrix(0,inputs$daug_N,inputs$nreps),
+		LEN_H = matrix(0,inputs$daug_H,inputs$nreps),
+		LEN_N = matrix(0,inputs$daug_N,inputs$nreps),
+		WGT_H = matrix(0,inputs$daug_H,inputs$nreps),
+		WGT_N = matrix(0,inputs$daug_N,inputs$nreps),
+		Z_H = matrix(0L,inputs$daug_H,inputs$nreps),
+		Z_N = matrix(0L,inputs$daug_N,inputs$nreps),
+		AGE_H = matrix(0L,inputs$daug_H,inputs$nreps),
+		AGE_N = matrix(0L,inputs$daug_N,inputs$nreps),
+		MAT_H = matrix(0L,inputs$daug_H,inputs$nreps),
+		MAT_N = matrix(0L,inputs$daug_N,inputs$nreps),
+		MPS_H = matrix(0L,inputs$daug_H,inputs$nreps),
+		MPS_N = matrix(0L,inputs$daug_N,inputs$nreps),
+		SEX_H = matrix(0L,inputs$daug_H,inputs$nreps),
+		SEX_N = matrix(0L,inputs$daug_N,inputs$nreps),
+		SPN_H = matrix(0L,inputs$daug_H,inputs$nreps),
+		SPN_N = matrix(0L,inputs$daug_N,inputs$nreps),
+		#ORIGIN = matrix(0L,inputs$daug,inputs$nreps),
+		EGGS_H = matrix(0L,inputs$daug_H,inputs$nreps),
+		EGGS_N = matrix(0L,inputs$daug_N,inputs$nreps))
 	
 	# INITIALIZATION
 	
+	dyn$Z_H[1:inputs$hatchery,]<-1
+	dyn$Z_N[1:inputs$natural,]<-1
 	
 	## [1] ASSIGN LIVE OR DEAD
 	for(j in 1:inputs$nreps)
 		{
-		dyn$Z[,j]<-c(rep(1,inputs$natural+inputs$hatchery),
-				rep(0,inputs$daug-(inputs$natural+inputs$hatchery)))
-		## [2] ASSIGN ORIGIN HATCHERY=1 NATURAL = 0
-		dyn$ORIGIN[,j]<-c(rep(1,inputs$hatchery),
-				rep(0,inputs$daug-inputs$hatchery))
-		## [3] INIITIALIZE GROWTH COEFFICIENTS; GROWTH IS NOT HERITABLE
-		tmp<- ini_growth(x=1,n=inputs$daug,
+		## [3] INIITIALIZE GROWTH COEFFICIENTS
+		##     GROWTH IS NOT HERITABLE
+		tmp<- ini_growth(x=1,n=inputs$daug_H,
 			mu_ln_linf=inputs$ln_Linf_mu,
 			mu_ln_k=inputs$ln_k_mu,
 			vcv=inputs$vcv) 
-		dyn$Linf[,j]<-tmp$linf
-		dyn$k[,j]<-tmp$k
+		dyn$Linf_H[,j]<-tmp$linf
+		dyn$k_H[,j]<-tmp$k
+		
+		tmp<- ini_growth(x=1,n=inputs$daug_N,
+			mu_ln_linf=inputs$ln_Linf_mu,
+			mu_ln_k=inputs$ln_k_mu,
+			vcv=inputs$vcv) 
+		dyn$Linf_N[,j]<-tmp$linf
+		dyn$k_N[,j]<-tmp$k	
+		
+		
 		## [4] INITIALIZE LENGTH
-		dyn$LEN[,j]<-dyn$Z[,j]*ini_length(n=input$daug, 
+		dyn$LEN_H[,j]<-dyn$Z_H[,j]*ini_length(n=inputs$daug_H, 
 				basin=inputs$basin,
-				origin=dyn$ORIGIN[,j], 
+				origin=1, # 1 FOR HATCHERY, 0 FOR NATURAL
 				spatial=FALSE,
-				linf= dyn$Linf[,j])
-		dyn$Linf[,j]<-ifelse(dyn$LEN[,j]<dyn$Linf[,j],dyn$Linf[,j], dyn$LEN[,j]*1.1)
+				linf= dyn$Linf_H[,j])
+		dyn$Linf_H[,j]<-ifelse(dyn$LEN_H[,j]<dyn$Linf_H[,j],
+			dyn$Linf_H[,j], 
+			dyn$LEN_H[,j]*1.1)
+		
+		dyn$LEN_N[,j]<-dyn$Z_N[,j]*ini_length(n=inputs$daug_N, 
+				basin=inputs$basin,
+				origin=0, # 1 FOR HATCHERY, 0 FOR NATURAL
+				spatial=FALSE,
+				linf= dyn$Linf_N[,j])
+		dyn$Linf_N[,j]<-ifelse(dyn$LEN_N[,j]<dyn$Linf_N[,j],
+			dyn$Linf_N[,j], 
+			dyn$LEN_N[,j]*1.1)		
+		
+		
 		## INITIALIZE WEIGHT GIVEN LENGTH
 		### ASSUMES NO EFFECT OF ORIGIN
-		dyn$WGT[,j]<-dyn$Z[,j]*ini_wgt(a=inputs$a,b=inputs$b,len=dyn$LEN[,j],er=inputs$lw_er)
+		dyn$WGT_H[,j]<-dyn$Z_H[,j]*
+			ini_wgt(a=inputs$a,
+				b=inputs$b,
+				len=dyn$LEN_H[,j],
+				er=inputs$lw_er)
+		dyn$WGT_N[,j]<-dyn$Z_N[,j]*
+			ini_wgt(a=inputs$a,
+				b=inputs$b,
+				len=dyn$LEN_N[,j],
+				er=inputs$lw_er)				
+	
+				
+				
 		## [4] INITIALIZE SEX
-		dyn$SEX[,j]<-dyn$Z[,j]*ini_sex(n=input$daug,ratio=inputs$sexratio)
+		dyn$SEX_H[,j]<-dyn$Z_H[,j]*
+			ini_sex(n=inputs$daug_H,
+				ratio=inputs$sexratio)
+		dyn$SEX_N[,j]<-dyn$Z_N[,j]*
+			ini_sex(n=inputs$daug_N,
+				ratio=inputs$sexratio)				
+				
 		## [4] INITIALIZE AGE IN MONTHS
-		dyn$AGE[,j]<-ini_age(len=dyn$LEN[,j],
-				linf=dyn$Linf[,j],
-				k=dyn$k[,j],
+		dyn$AGE_H[,j]<-ini_age(len=dyn$LEN_H[,j],
+				linf=dyn$Linf_H[,j],
+				k=dyn$k_H[,j],
 				sizeAtHatch=7,
 				maxAge=inputs$maxage)
+		dyn$AGE_N[,j]<-ini_age(len=dyn$LEN_N[,j],
+				linf=dyn$Linf_N[,j],
+				k=dyn$k_N[,j],
+				sizeAtHatch=7,
+				maxAge=inputs$maxage)				
+					
+				
 		## [4] INITIALIZE WHETHER A FISH IS SEXUALLY MATURE	
-		dyn$MAT[,j]<-dyn$Z[,j]*ini_maturity(k=inputs$mat_k,	
-				len=dyn$LEN[,j],
+		dyn$MAT_H[,j]<-dyn$Z_H[,j]*ini_maturity(k=inputs$mat_k,	
+				len=dyn$LEN_H[,j],
 				age_mat=inputs$age_mat)
+		dyn$MAT_N[,j]<-dyn$Z_N[,j]*ini_maturity(k=inputs$mat_k,	
+				len=dyn$LEN_N[,j],
+				age_mat=inputs$age_mat)				
+				
+				
 		## INITIALIZE TIME SINCE SPAWNING	
-		dyn$MPS[,j]<-dyn$Z[,j]*ini_mps(n=inputs$daug,
-				mature=dyn$MAT[,j])
+		dyn$MPS_H[,j]<-dyn$Z_H[,j]*ini_mps(n=inputs$daug_H,
+			mature=dyn$MAT_H[,j])
+		dyn$MPS_N[,j]<-dyn$Z_N[,j]*ini_mps(n=inputs$daug_N,
+			mature=dyn$MAT_N[,j])
+				
+				
+				
 		}	
 
 	## INITIALIZE IF A FISH WILL SPAWN ONCE CONDITIIONS ARE MET
@@ -183,15 +250,20 @@ initialize<- function(inputs)
 		}
 	if(inputs$spatial==TRUE)
 		{
-		dyn$RKM<- matrix(0,inputs$daug,inputs$nreps)
+		dyn$RKM_H<- matrix(0,inputs$daug_H,inputs$nreps)
+		dyn$RKM_N<- matrix(0,inputs$daug_N,inputs$nreps)
 		dyn$AGE_0_N_BND<-matrix(inputs$natural_age0,nrow=inputs$n_bends,ncol=inputs$nreps)
 		dyn$AGE_0_H_BND<-matrix(inputs$hatchery_age0,nrow=inputs$n_bends,ncol=inputs$nreps)
 		for(j in 1:input$nreps)
 			{
 			# INITIALIZE LOCATION OF ADULTS
-			dyn$RKM[,j]<-dyn$Z[,j]*ini_rkm(n=inputs$daug,
+			dyn$RKM_H[,j]<-dyn$Z[,j]*ini_rkm(n=inputs$daug_H,
 					type=inputs$adult_spatial_structure,
 					bend_lengths=inputs$bend_lengths)
+			dyn$RKM_N[,j]<-dyn$Z[,j]*ini_rkm(n=inputs$daug_N,
+					type=inputs$adult_spatial_structure,
+					bend_lengths=inputs$bend_lengths)					
+					
 			# INITIALIZE AGE-0 IN EACH BEND
 			dyn$AGE_0_N_BND[,j]<-rmultinom(1,inputs$natural_age0,inputs$natural_age0_rel_dens)
 			dyn$AGE_0_H_BND[,j]<-rmultinom(1,inputs$hatchery_age0,inputs$hatchery_age0_rel_dens)

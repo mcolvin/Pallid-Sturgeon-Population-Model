@@ -4,27 +4,58 @@
 sim<- function(inputs,dyn)
 	{
 	## assign objects from dyn
-	k<-dyn$k
-	Linf<-dyn$Linf
-	LEN<-dyn$LEN
-	WGT<-dyn$WGT
-	Z<-dyn$Z
-	AGE<-dyn$AGE
-	MAT<-dyn$MAT
-	MPS<-dyn$MPS
-	SEX<-dyn$SEX
-	SPN<-dyn$SPN
-	ORIGIN<-dyn$ORIGIN
-	EGGS<-dyn$EGGS
+	k_H<-dyn$k_H
+	k_N<-dyn$k_N
+	
+	Linf_H<-dyn$Linf_H
+	Linf_N<-dyn$Linf_N
+	
+	LEN_H<-dyn$LEN_H
+	LEN_N<-dyn$LEN_N
+	
+	WGT_H<-dyn$WGT_H
+	WGT_N<-dyn$WGT_N
+	
+	Z_H<-dyn$Z_H
+	Z_N<-dyn$Z_N
+	
+	AGE_H<-dyn$AGE_H
+	AGE_N<-dyn$AGE_N
+
+	MAT_H<-dyn$MAT_H
+	MAT_N<-dyn$MAT_N
+	
+	MPS_H<-dyn$MPS_H
+	MPS_N<-dyn$MPS_N
+	
+	SEX_H<-dyn$SEX_H
+	SEX_N<-dyn$SEX_N
+	
+	SPN_H<-dyn$SPN_H
+	SPN_N<-dyn$SPN_N
+	
+	EGGS_H<-dyn$EGGS_H
+	EGGS_N<-dyn$EGGS_N
+	
 	AGE_0_N_BND<-dyn$AGE_0_N_BND
 	AGE_0_H_BND<-dyn$AGE_0_H_BND
+	
 	m<-dyn$m
+	
 	rm(list='dyn')
 	
 	
 	# SUMMARIES
-	## ABUNDANCE (AGE-1+)
-	N_REC<-MEANWEIGHT<-BIOMASS<-N_NAT<-N_HAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
+	RECRUITS<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	
+	MEANWEIGHT_N<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	MEANWEIGHT_H<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	
+	BIOMASS_N<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	BIOMASS_H<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	
+	N_NAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
+	N_HAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
 
 
 	#sq<-qp<-pm<-mt<-tr<-matrix(0,ncol=input$nreps,nrow=length(m))# MATRIX
@@ -33,35 +64,60 @@ sim<- function(inputs,dyn)
 	#	k=k[,1],
 	#	age=AGE[,1])
 	
-ptm <- proc.time()
+
 	# PROGRESS BAR
 	pb<-txtProgressBar(min=1,max=length(m),initial=0,char="*",style=3)
 	
-#Rprof("out.out") # for profiling in for loop
+	#Rprof("out.out") # for profiling in for loop
 
 	# SIMULATE POPULATION DYNAMICS GIVEN INITIAL STATES
-	for(i in 1:length(m)) # M IS A VECTOR OF MONTHS 1:12, REPEATED FOR NYEARS
+	for(i in 1:length(m)) 
 		{
 		setTxtProgressBar(pb, i)
 
-		indx<- lapply(1:inputs$nreps,function(x){which(Z[,x]==1)}) # ROW INDICES
-		tmp<- unlist(lapply(1:inputs$nreps,function(x) rep(x,length(indx[[x]])))) # COLUMN INDICES
-		indx<- cbind(unlist(indx),tmp)#row,column
+		indx_H<- lapply(1:inputs$nreps,
+			function(x){which(Z_H[,x]==1)}) # ROW INDICES
+		tmp<- unlist(lapply(1:inputs$nreps,
+			function(x) rep(x,length(indx_H[[x]])))) # COLUMN INDICES
+		indx_H<- cbind(unlist(indx_H),tmp)#row,column
+	
+		indx_N<- lapply(1:inputs$nreps,
+			function(x){which(Z_N[,x]==1)}) # ROW INDICES
+		tmp<- unlist(lapply(1:inputs$nreps,
+			function(x) rep(x,length(indx_N[[x]])))) # COLUMN INDICES
+		indx_N<- cbind(unlist(indx_N),tmp)#row,column
+	
 	
 		### UPDATE TOTAL LENGTH 
-		LEN[indx]<-dLength(k=k[indx],
-			linf=Linf[indx],
+		LEN_H[indx_H]<-dLength(k=k_H[indx_H],
+			linf=Linf_H[indx_H],
 			dT=1/12,
-			length1=LEN[indx])
+			length1=LEN_H[indx_H])
+		LEN_N[indx_N]<-dLength(k=k_N[indx_N],
+			linf=Linf_N[indx_N],
+			dT=1/12,
+			length1=LEN_N[indx_N])			
+			
+			
 		### UPDATE WEIGHT # slow
-		WGT[indx]<-dWeight(len=LEN[indx],
+		WGT_H[indx_H]<-dWeight(len=LEN_H[indx_H],
 			a=inputs$a,
 			b=inputs$b,
-			er=inputs$lw_er)	
+			er=inputs$lw_er)
+		WGT_N[indx_N]<-dWeight(len=LEN_N[indx_N],
+			a=inputs$a,
+			b=inputs$b,
+			er=inputs$lw_er)
+			
 		### UPDATE WHETHER A FISH WILL SPAWN
-		SPN[indx]<-spawn(mps=MPS[indx],a=inputs$spn_a,
+		SPN_H[indx_H]<-spawn(mps=MPS_H[indx_H],a=inputs$spn_a,
 			b=inputs$spn_b,
-			mature=MAT[indx])*inputs$recruitment			
+			mature=MAT_H[indx_H])*inputs$recruitment
+		SPN_N[indx_N]<-spawn(mps=MPS_N[indx_N],a=inputs$spn_a,
+			b=inputs$spn_b,
+			mature=MAT_N[indx_N])*inputs$recruitment
+
+			
 		### RECRUIT AGE-0 FISH TO THE POPULATION; NATURAL AND HATCHERY
 		#if(m[i]==6) 
 			#{
@@ -69,25 +125,41 @@ ptm <- proc.time()
 			#}
 
 			
-		## UPDATE THE NUMBER OF EGGS IN A FEMALE
-		EGGS[indx]<-fecundity(fl=LEN[indx],
+		## UPDATE THE NUMBER OF EGGS IN A FEMALE  ####slow####
+		EGGS_H[indx_H]<-fecundity(fl=LEN_H[indx_H],
 			a=inputs$fec_a,
 			b=inputs$fec_b,
 			er=inputs$fec_er,
-			sex=SEX[indx],
-			spawn=SPN[indx],
-			mature=MAT[indx])	
+			sex=SEX_H[indx_H],
+			spawn=SPN_H[indx_H],
+			mature=MAT_H[indx_H])	
+		EGGS_N[indx_N]<-fecundity(fl=LEN_N[indx_N],
+			a=inputs$fec_a,
+			b=inputs$fec_b,
+			er=inputs$fec_er,
+			sex=SEX_N[indx_N],
+			spawn=SPN_N[indx_N],
+			mature=MAT_N[indx_N])			
+		
 		
 		## UPDATE THE NUMBER OF MONTHS SINCE SPAWNING FOR FISH JUST SPAWNED
-		MPS[EGGS>0]<-0
+		MPS_H[EGGS_H>0]<-0
+		MPS_N[EGGS_N>0]<-0
 		
-		AGE_0_N_BND<- matrix(colSums(EGGS),nrow=1) # NUMBER OF EGGS
-		AGE_0_N_BND[]<- rbinom(inputs$nreps,AGE_0_N_BND,inputs$pr_embryo) # eggs --> embryos
-		AGE_0_N_BND[]<- rbinom(inputs$nreps,AGE_0_N_BND,inputs$phi_embryo) # embryos --> free embryos
-		AGE_0_N_BND[]<- rbinom(inputs$nreps,AGE_0_N_BND,inputs$phi_free_embryo) # free embryos --> age0
+		AGE_0_N_BND<- matrix(colSums(EGGS_N)+colSums(EGGS_H),nrow=1) # NUMBER OF EGGS
+		AGE_0_N_BND[]<- rbinom(inputs$nreps,
+			AGE_0_N_BND,
+			inputs$pr_embryo) # eggs --> embryos
+		AGE_0_N_BND[]<- rbinom(inputs$nreps,
+			AGE_0_N_BND,
+			inputs$phi_embryo) # embryos --> free embryos
+		AGE_0_N_BND[]<- rbinom(inputs$nreps,
+			AGE_0_N_BND,
+			inputs$phi_free_embryo) # free embryos --> age0
 			
 		# UPDATE MONTHS SINCE SPAWNING
-		MPS[indx]<-MPS[indx]+1 	
+		MPS_H[indx_H]<-MPS_H[indx_H]+1 	
+		MPS_N[indx_N]<-MPS_N[indx_N]+1 	
 		
 		
 		# PALLID STURGEON STOCKING 
@@ -101,17 +173,24 @@ ptm <- proc.time()
 	if(inputs$yearling>0 & inputs$yearling_month==m[i])
 		{
 		### GET INDEXES OF OPEN SLOTS TO STICK STOCKED INDIVIDUALS
-		indx<- lapply(1:inputs$nreps,function(x){out<- which(Z[,x]==0)[1:inputs$yearling]}) 
-		indx<- cbind(unlist(indx),sort(rep(1:inputs$nreps,inputs$yearling)))
-		Z[indx]<- 1### ADD NEWLY STOCKED INDIVIDUALS TO Z_H
-		LEN[indx]<- rnorm(inputs$yearling*inputs$nreps,inputs$yearling_mn,inputs$yearling_sd)# UPDATE LENGTH
-		WGT[indx]<- rlnorm(length(indx[,1]),log(inputs$a*LEN[indx]^inputs$b),inputs$lw_er)	# UPDATE 
-		AGE[indx]<- inputs$yearling_age # ASSIGN AGE
-		MAT[indx]<- 0	# ASSIGN MATURITY
-		#RKM[indx]<- inputs$yearling_stocking_rkm# ASSIGN LOCATION OF STOCKED INDIVIDUALS
-		MAT[indx]<- 0  # ASSIGN MATURATION STATUS OF NEW RECRUITS
-		SEX[indx]<-rbinom(length(indx[,1]),1,0.5)# ASSIGN SEX TO RECRUITS	
-		ORIGIN[indx]<-1
+		indx_R<- lapply(1:inputs$nreps,
+			function(x){out<- which(Z_H[,x]==0)[1:inputs$yearling]}) 
+		indx_R<- cbind(unlist(indx_R),
+			sort(rep(1:inputs$nreps,inputs$yearling)))
+		Z_H[indx_R]<- 1### ADD NEWLY STOCKED INDIVIDUALS TO Z_H
+		LEN_H[indx_R]<- rnorm(inputs$yearling*inputs$nreps,
+			inputs$yearling_mn,
+			inputs$yearling_sd)# UPDATE LENGTH
+		WGT_H[indx_R]<- rlnorm(length(indx_R[,1]),
+			log(inputs$a*LEN_H[indx_R]^inputs$b),
+			inputs$lw_er)	# UPDATE 
+		AGE_H[indx_R]<- inputs$yearling_age # ASSIGN AGE
+		MAT_H[indx_R]<- 0	# ASSIGN MATURITY
+		#RKM[indx_R]<- inputs$yearling_stocking_rkm# ASSIGN LOCATION OF STOCKED INDIVIDUALS
+		MAT_H[indx_R]<- 0  # ASSIGN MATURATION STATUS OF NEW RECRUITS
+		SEX_H[indx_R]<-rbinom(length(indx_R[,1]),
+			n=1,
+			p=0.5)# ASSIGN SEX TO 
 		}
 		
 		
@@ -121,32 +200,37 @@ ptm <- proc.time()
 
 		# SUMMARIES #####################################################################
 		## ABUNDANCE AGE-1+
-		N_NAT[i,]<-colSums(Z) - colSums(Z*ORIGIN)
-		N_HAT[i,]<-colSums(Z*ORIGIN)
+		N_NAT[i,]<-colSums(Z_N) 
+		N_HAT[i,]<-colSums(Z_H) 
 		## BIOMASS
-		BIOMASS[i,]<- colSums(WGT)
+		BIOMASS_N[i,]<- colSums(WGT_N)
+		BIOMASS_N[i,]<- colSums(WGT_H)
 		## MEAN WEIGHT
-		MEANWEIGHT[i,]<- colSums(WGT)/colSums(Z)		
-
+		MEANWEIGHT_N[i,]<- colSums(WGT_N)/colSums(Z_N)	
+		MEANWEIGHT_H[i,]<- colSums(WGT_H)/colSums(Z_H)
 		## AGE-1 RECRUITS; NATURAL ORIGIN
-		indx<- lapply(1:inputs$nreps,function(x)
+		indx_R<- lapply(1:inputs$nreps,function(x)
 			{
-			out<- which(AGE[,x]>0 & AGE[,x]<24 & ORIGIN[,x]==0 & Z[,x]==1)
+			out<- which(AGE_N[,x]>0 & AGE_N[,x]<24 & Z_N[,x]==1)
 			}) 		
-		N_REC[i,]<- sapply(1:inputs$nreps,function(x) length(indx[[x]]))
+		RECRUITS[i,]<- sapply(1:inputs$nreps,
+			function(x) length(indx_R[[x]]))
 
 		# END SUMMARIES #################################################################
 		}# end i 
-#Rprof(NULL)
-#summaryRprof(out.out”)
-proc.time() - ptm  
-	x<- sort(rep(inputs$startYear:(inputs$startYear+inputs$nyears-1),12))+rep(1:12/12,inputs$nyears)
-	out<-list(total=N_SUM, 
-		years=x,
-		sq=sq,qp=qp,pm=pm,mt=mt,tr=tr,
-		biomass=biomass,
-		mn_wght=mn_wght,
-		init_summary=init_summary)
+		#Rprof(NULL)
+		#summaryRprof(out.out”)
+
+
+	out<-list(
+		total_N=N_NAT,
+		total_H=N_HAT,
+		months=m,
+		years=cumsum(m/12))
+	#	sq=sq,qp=qp,pm=pm,mt=mt,tr=tr,
+	#	biomass=biomass,
+	#	mn_wght=mn_wght,
+	#	init_summary=init_summary)
 		
 	#fn<-paste0("./output/",inputs$output_name,"/",inputs$output_name,"-output.txt")
 	#dput(out,fn)
