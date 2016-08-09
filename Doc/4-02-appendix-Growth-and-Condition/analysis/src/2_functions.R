@@ -24,6 +24,7 @@ mod1<- function()
 	sigma_obs  ~ dunif (0, 10)	
 	prec_obs <-pow(sigma_obs,-2)
 	}
+
 mod2<- function()
 	{# FABENS MODEL WITH VARYING L_INF AND K
 	for(i in 1:N)
@@ -51,7 +52,7 @@ mod2<- function()
 	prec_Linf <-  pow(sigma_Linf,-2)
 	
 	# OBSERVATION
-	sigma_obs  ~ dunif (0, 10)	
+	sigma_obs  ~ dunif(0, 10)	
 	prec_obs <-pow(sigma_obs,-2)
 	}
 
@@ -91,7 +92,38 @@ mod3<- function()
 	}	
 	
 	
+mod3b<- function()
+	{# FABENS MODEL WITH VARYING L_INF AND K=a+b*linf
+	for(i in 1:N)
+		{
+		# MODEL	
+		ki[i]<- exp(a + b*Linfi[ind_id[i]])
+		Linf_hat[i]<- exp(Linfi[ind_id[i]])
+		L2[i]<- L1[i]+ (Linf_hat[i]-L1[i])*(1-exp(-ki[i]*dY[i]))
+		# LIKLIHOOD
+		Y[i]~dnorm(L2[i],prec_obs)
+		}
+	# INDVIDUALS	
+	for(j in 1:N_inds)
+		{
+		Linfi[j]~dnorm(Linf,prec_Linf)%_%T(,2000) # INDVIDUAL Linf
+		}
 	
+	Linf~dunif(1000,2000)
+	sigma_Linf ~ dunif (0, 10)		
+	prec_Linf <-  pow(sigma_Linf,-2)
+
+	#sigma_k ~ dunif (0, 10)		
+	#prec_k <-  pow(sigma_k,-2)	
+	
+	a~dnorm(0,0.001)
+	b~dnorm(0,0.001)
+	
+	# OBSERVATION
+	sigma_obs  ~ dgamma(0.001,0.001)
+	prec_obs <-pow(sigma_obs,-2)
+	}	
+		
 	
 	
 	

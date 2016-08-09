@@ -205,13 +205,13 @@ if(n==4)
 	# leave in fish with negative growth
 	# measurement error
 	#out<- subset(out, flag==0)
-	out$G<- log(out$l2-out$l1)/out$dt	
-	out$flag<- ifelse(out$G<0.5,0,1)
-	out<- subset(out, flag==0)
+	#out$G<- log((out$l2+0.001)-out$l1)/out$dt	
+	#out$flag<- 0
+	#out<- subset(out, flag==0)
 	out$dldt<- out$dl/out$dt # daily growth	
-	out$flag<- ifelse(out$dldt<4,0,1)
-	out$flag<- ifelse(out$tagnumber=="unknown",1,out$flag)
-	out<- subset(out, flag==0)	
+	#out$flag<- ifelse(out$dldt<4,0,1)
+	#out$flag<- ifelse(out$tagnumber=="unknown",1,out$flag)
+	#out<- subset(out, flag==0)	
 	tmp<-aggregate(dl~basin.y+tagnumber,out,length)
 	tmp<- tmp[order(tmp$basin.y,tmp$tagnumber),]
 	tmp$ind_id<- c(1:nrow(tmp[tmp$basin.y=="lower",]),c(1:nrow(tmp[tmp$basin.y=="upper",])))

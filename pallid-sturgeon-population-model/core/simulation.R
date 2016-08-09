@@ -42,7 +42,8 @@ sim<- function(inputs,dyn)
 	
 	m<-dyn$m
 	
-	rm(list='dyn')
+	#rm(list='dyn')
+ 
 	
 	
 	# SUMMARIES
@@ -50,20 +51,49 @@ sim<- function(inputs,dyn)
 	
 	MEANWEIGHT_N<-matrix(0,nrow=length(m),ncol=inputs$nreps)
 	MEANWEIGHT_H<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	MEANWEIGHT<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	
+	MEANLENGTH_N<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	MEANLENGTH_H<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	MEANLENGTH<-matrix(0,nrow=length(m),ncol=inputs$nreps)
 	
 	BIOMASS_N<-matrix(0,nrow=length(m),ncol=inputs$nreps)
 	BIOMASS_H<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	BIOMASS<-matrix(0,nrow=length(m),ncol=inputs$nreps)
 	
 	N_NAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
 	N_HAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
 
-
-	#sq<-qp<-pm<-mt<-tr<-matrix(0,ncol=input$nreps,nrow=length(m))# MATRIX
-	#init_summary<- data.frame(len=LEN[,1],
-	#	linf=Linf[,1],
-	#	k=k[,1],
-	#	age=AGE[,1])
 	
+	if(inputs$sizeStructure==TRUE)
+		{
+		stock<-matrix(0L,ncol=inputs$nreps,	nrow=length(m))# MATRIX
+		quality<-matrix(0L,ncol=inputs$nreps,	nrow=length(m))# MATRIX
+		preferred<-matrix(0L,ncol=inputs$nreps,	nrow=length(m))# MATRIX
+		memorable<-matrix(0L,ncol=inputs$nreps,	nrow=length(m))# MATRIX
+		trophy<-matrix(0L,ncol=inputs$nreps,	nrow=length(m))# MATRIX
+		}
+	init_summary<- data.frame(
+		len=c(LEN_H[1:inputs$hatchery,1],LEN_N[1:inputs$natural,1]),
+		wgt=c(WGT_H[1:inputs$hatchery,1],WGT_N[1:inputs$natural,1]),
+		linf=c(Linf_H[1:inputs$hatchery,1],Linf_N[1:inputs$natural,1]),
+		k=c(k_H[1:inputs$hatchery,1],k_N[1:inputs$natural,1]),
+		age=c(AGE_H[1:inputs$hatchery,1],AGE_N[1:inputs$natural,1]))
+
+
+
+	indx_H<- lapply(1:inputs$nreps,
+		function(x){which(Z_H[,x]==1)}) # ROW INDICES
+	tmp<- unlist(lapply(1:inputs$nreps,
+		function(x) rep(x,length(indx_H[[x]])))) # COLUMN INDICES
+	indx_H<- cbind(unlist(indx_H),tmp)#row,column
+
+	indx_N<- lapply(1:inputs$nreps,
+		function(x){which(Z_N[,x]==1)}) # ROW INDICES
+	tmp<- unlist(lapply(1:inputs$nreps,
+		function(x) rep(x,length(indx_N[[x]])))) # COLUMN INDICES
+	indx_N<- cbind(unlist(indx_N),tmp)#row,column
+		
 
 	# PROGRESS BAR
 	pb<-txtProgressBar(min=1,max=length(m),initial=0,char="*",style=3)
@@ -74,6 +104,14 @@ sim<- function(inputs,dyn)
 	for(i in 1:length(m)) 
 		{
 		setTxtProgressBar(pb, i)
+		
+		Z_H[indx_H]<- dSurvival(phi_age=inputs$phi,
+			age=AGE_H[indx_H],
+			maxAge=inputs$maxage)
+		
+		Z_N[indx_N]<- dSurvival(phi_age=inputs$phi,
+			age=AGE_N[indx_N],
+			maxAge=inputs$maxage)
 
 		indx_H<- lapply(1:inputs$nreps,
 			function(x){which(Z_H[,x]==1)}) # ROW INDICES
@@ -86,8 +124,13 @@ sim<- function(inputs,dyn)
 		tmp<- unlist(lapply(1:inputs$nreps,
 			function(x) rep(x,length(indx_N[[x]])))) # COLUMN INDICES
 		indx_N<- cbind(unlist(indx_N),tmp)#row,column
-	
-	
+
+			
+		LEN_H<- LEN_H*Z_H
+		LEN_N<- LEN_N*Z_N
+		WGT_H<- WGT_H*Z_H
+		WGT_N<- WGT_N*Z_N
+			
 		### UPDATE TOTAL LENGTH 
 		LEN_H[indx_H]<-dLength(k=k_H[indx_H],
 			linf=Linf_H[indx_H],
@@ -97,8 +140,19 @@ sim<- function(inputs,dyn)
 			linf=Linf_N[indx_N],
 			dT=1/12,
 			length1=LEN_N[indx_N])			
-			
-			
+		
+		
+	#	xx<-data.frame(len1=LEN_N[indx_N],len2=dLength(k=k_N[indx_N],
+	#		linf=Linf_N[indx_N],
+	#		dT=60,
+	#		length1=LEN_N[indx_N]),
+	#		linf=Linf_N[indx_N])
+	#	xx$weight<-dWeight(len=xx$len2,
+	#		a=inputs$a,
+	#		b=inputs$b,
+	#		er=inputs$lw_er)/1000
+
+		
 		### UPDATE WEIGHT # slow
 		WGT_H[indx_H]<-dWeight(len=LEN_H[indx_H],
 			a=inputs$a,
@@ -109,39 +163,43 @@ sim<- function(inputs,dyn)
 			b=inputs$b,
 			er=inputs$lw_er)
 			
-		### UPDATE WHETHER A FISH WILL SPAWN
-		SPN_H[indx_H]<-spawn(mps=MPS_H[indx_H],a=inputs$spn_a,
-			b=inputs$spn_b,
-			mature=MAT_H[indx_H])*inputs$recruitment
-		SPN_N[indx_N]<-spawn(mps=MPS_N[indx_N],a=inputs$spn_a,
-			b=inputs$spn_b,
-			mature=MAT_N[indx_N])*inputs$recruitment
+
 
 			
 		### RECRUIT AGE-0 FISH TO THE POPULATION; NATURAL AND HATCHERY
-		#if(m[i]==6) 
+		#if(m[i]%in% c(6,7,8)) 
 			#{
 			#dyn<- recruitment_to_population(spatial=inputs$spatial)
 			#}
-
+		if(inputs$recruitmentFreq>0)
+			{
+			### UPDATE WHETHER A FISH WILL SPAWN
+			SPN_H[indx_H]<-spawn(mps=MPS_H[indx_H],a=inputs$spn_a,
+				b=inputs$spn_b,
+				mature=MAT_H[indx_H])
+			SPN_N[indx_N]<-spawn(mps=MPS_N[indx_N],a=inputs$spn_a,
+				b=inputs$spn_b,
+				mature=MAT_N[indx_N])
 			
-		## UPDATE THE NUMBER OF EGGS IN A FEMALE  ####slow####
-		EGGS_H[indx_H]<-fecundity(fl=LEN_H[indx_H],
-			a=inputs$fec_a,
-			b=inputs$fec_b,
-			er=inputs$fec_er,
-			sex=SEX_H[indx_H],
-			spawn=SPN_H[indx_H],
-			mature=MAT_H[indx_H])	
-		EGGS_N[indx_N]<-fecundity(fl=LEN_N[indx_N],
-			a=inputs$fec_a,
-			b=inputs$fec_b,
-			er=inputs$fec_er,
-			sex=SEX_N[indx_N],
-			spawn=SPN_N[indx_N],
-			mature=MAT_N[indx_N])			
-		
-		
+			
+			
+			## UPDATE THE NUMBER OF EGGS IN A FEMALE  ####slow####
+			EGGS_H[indx_H]<-fecundity(fl=LEN_H[indx_H],
+				a=inputs$fec_a,
+				b=inputs$fec_b,
+				er=inputs$fec_er,
+				sex=SEX_H[indx_H],
+				spawn=SPN_H[indx_H],
+				mature=MAT_H[indx_H])	
+			EGGS_N[indx_N]<-fecundity(fl=LEN_N[indx_N],
+				a=inputs$fec_a,
+				b=inputs$fec_b,
+				er=inputs$fec_er,
+				sex=SEX_N[indx_N],
+				spawn=SPN_N[indx_N],
+				mature=MAT_N[indx_N])			
+			}		
+			
 		## UPDATE THE NUMBER OF MONTHS SINCE SPAWNING FOR FISH JUST SPAWNED
 		MPS_H[EGGS_H>0]<-0
 		MPS_N[EGGS_N>0]<-0
@@ -194,50 +252,95 @@ sim<- function(inputs,dyn)
 		}
 		
 		
-		# need to draw new linf and k for new fish...				
-
-
-
+	
 		# SUMMARIES #####################################################################
 		## ABUNDANCE AGE-1+
 		N_NAT[i,]<-colSums(Z_N) 
 		N_HAT[i,]<-colSums(Z_H) 
-		## BIOMASS
-		BIOMASS_N[i,]<- colSums(WGT_N)
-		BIOMASS_N[i,]<- colSums(WGT_H)
-		## MEAN WEIGHT
-		MEANWEIGHT_N[i,]<- colSums(WGT_N)/colSums(Z_N)	
-		MEANWEIGHT_H[i,]<- colSums(WGT_H)/colSums(Z_H)
+		## BIOMASS IN KILOGRAMS
+		BIOMASS_N[i,]<- colSums(WGT_N)/1000
+		BIOMASS_H[i,]<- colSums(WGT_H)/1000
+		BIOMASS[i,]<- colSums(WGT_H)+colSums(WGT_N)/1000 
+		## MEAN WEIGHT IN KILOGRAMS
+		MEANWEIGHT_N[i,]<- (colSums(WGT_N)/colSums(Z_N))/1000 
+		MEANWEIGHT_H[i,]<- (colSums(WGT_H)/colSums(Z_H))/1000 
+		MEANWEIGHT[i,]<-((colSums(WGT_H)+colSums(WGT_N))/(colSums(Z_H)+colSums(Z_N)))/1000 
+		
+		## MEAN LENGTH IN MM
+		MEANLENGTH_N[i,]<- colSums(LEN_N)/colSums(Z_N)	
+		MEANLENGTH_H[i,]<- colSums(LEN_H)/colSums(Z_H)
+		MEANLENGTH[i,]<- (colSums(LEN_H)+ colSums(LEN_N))/(colSums(Z_H)+colSums(Z_N))
+		
+		
 		## AGE-1 RECRUITS; NATURAL ORIGIN
 		indx_R<- lapply(1:inputs$nreps,function(x)
 			{
 			out<- which(AGE_N[,x]>0 & AGE_N[,x]<24 & Z_N[,x]==1)
 			}) 		
 		RECRUITS[i,]<- sapply(1:inputs$nreps,
-			function(x) length(indx_R[[x]]))
+			function(x)
+				{ 
+				length(indx_R[[x]])
+				})
+		if(inputs$sizeStructure==TRUE)
+			{	
+			stock[i,]<- sapply(1:inputs$nreps,function(x)
+				{
+				length(LEN_H[LEN_H[,x]>330,x])+length(LEN_N[LEN_N[,x]>330,x])
+				})	# 330
+			quality[i,]<-sapply(1:inputs$nreps,function(x)
+				{
+				length(LEN_H[LEN_H[,x]>630,x])+length(LEN_N[LEN_N[,x]>630,x])
+				}) 			# 630
+			preferred[i,]<- sapply(1:inputs$nreps,function(x)
+				{
+				length(LEN_H[LEN_H[,x]>840,x])+length(LEN_N[LEN_N[,x]>840,x])
+				})		# 840
+			memorable[i,]<- sapply(1:inputs$nreps,function(x)
+				{
+				length(LEN_H[LEN_H[,x]>1040,x])+length(LEN_N[LEN_N[,x]>1040,x])
+				})		# 1040
+			trophy[i,]<- sapply(1:inputs$nreps,function(x)
+				{
+				length(LEN_H[LEN_H[,x]>1270,x])+length(LEN_N[LEN_N[,x]>1270,x])
+				})			# 1270
+			}	
+			
 
 		# END SUMMARIES #################################################################
 		}# end i 
 		#Rprof(NULL)
 		#summaryRprof(out.out”)
 
-
 	out<-list(
 		total_N=N_NAT,
 		total_H=N_HAT,
 		months=m,
-		years=cumsum(m/12))
-	#	sq=sq,qp=qp,pm=pm,mt=mt,tr=tr,
-	#	biomass=biomass,
-	#	mn_wght=mn_wght,
-	#	init_summary=init_summary)
+		recruits=RECRUITS,
+		biomass_n=BIOMASS_N,
+		biomass_h=BIOMASS_H,
+		biomass=BIOMASS,
+		mean_weight_n=MEANWEIGHT_N,
+		mean_weight_h=MEANWEIGHT_H,
+		mean_weight=MEANWEIGHT,
+		mean_length_n=MEANLENGTH_N,
+		mean_length_h=MEANLENGTH_H,
+		mean_length=MEANLENGTH,
+		post_length=c(LEN_H[LEN_H[,1]>0,1],LEN_N[LEN_N[,1]>0,1]), # LENGTH DISTRIBUTION POST SIMULATION
+		post_weight=c(WGT_H[WGT_H[,1]>0,1],WGT_N[WGT_N[,1]>0,1]), # WEIGHT DISTRIBUTION POST SIMULATION
+		years=inputs$startYear+cumsum(rep(1,length(m))/12),
+		init_summary=init_summary)
 		
-	#fn<-paste0("./output/",inputs$output_name,"/",inputs$output_name,"-output.txt")
-	#dput(out,fn)
-	#fn<-paste0("./output/",inputs$output_name,"/",inputs$output_name,"-input.txt")
-	#dput(inputs,fn)
-	#fn<-paste0("./output/",inputs$output_name,"/",inputs$output_name,".Rdata")
-	#save(out,inputs, file=fn)
+		if(inputs$sizeStructure==TRUE)
+			{	
+			out$stock=stock
+			out$quality=quality
+			out$preferred=preferred
+			out$memorable=memorable
+			out$trophy=trophy
+			}
+	fn0<-paste0("./analyses/",inputs$output_name,"/",inputs$output_name,"-",inputs$version,"/")
+	fn<-paste0(fn0,inputs$output_name,"-",inputs$version,"-output.rds")
+	saveRDS(list(output=out, input=inputs),fn)
 	return(out)	
 	}
-

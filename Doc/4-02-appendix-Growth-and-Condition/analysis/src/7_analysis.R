@@ -1,7 +1,38 @@
 adat<- tables(4)
-
+saveRDS(adat,"./output/adat.RDS")
+adat<- readRDS("./output/adat.RDS")
 ni<- 500000	#	n.iter
 nb<- 200000	#	n.burnin
+
+
+## MODEL 3b ln(k)~a+b*ln(linf)
+upper<- subset(adat,basin=="upper")
+linf_ini<- log(tapply(upper$l2, upper$ind_id,max)*1.25)
+upper<- list(L1=upper$l1,
+	Y=upper$l2,
+	dY=upper$dy,
+	ind_id=upper$ind_id, N_inds= max(upper$ind_id),N=nrow(upper))	
+inits<- function(t)
+	{	
+	list(a=0,b=0,Linf=1500,sigma_obs=.25,Linfi=linf_ini,sigma_Linf=.25)
+	list(a=0,b=0,Linf=1500,sigma_obs=.25,Linfi=linf_ini,sigma_Linf=.25)
+	list(a=0,b=0,Linf=1500,sigma_obs=.25,Linfi=linf_ini,sigma_Linf=.25)
+	}
+params<- c("a","b","Linf","prec_obs","sigma_Linf")
+out_upper <-  jags(data=upper,
+	inits=inits,
+	parameters=params,	
+	model.file=mod3b,
+	n.chains = 3,	
+	n.iter = 200,	
+	n.burnin = 50,
+	n.thin=2,
+	#export_obj_names=c("
+	working.directory=getwd())
+	
+save(out_upper, file = "./output/out_upper-mod3b.RData")
+
+
 
 
 
@@ -31,7 +62,8 @@ params<- c("k","Linf","sigma_obs","sigma_Linf")
 
 out_lower <- jags(data=lower,
 	inits=inits,
-	parameters=params,	model.file=mod1,
+	parameters=params,	
+	model.file=mod1,
 	n.chains = 3,	
 	n.iter = ni,	
 	n.burnin = nb,
@@ -68,10 +100,11 @@ out_lower <-  jags.parallel(data=lower,
 save(out_lower, file = "./output/out_lower-mod3.RData")
  
 
+ 
+ 
 
-
-
-
+ 
+ 
 
 ## UPPER BASIN
 inits<- function(t)

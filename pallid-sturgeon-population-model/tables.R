@@ -2,18 +2,30 @@ tables<- function(n)
 	{
 	if(n==1)
 		{# PSD TABLE FOR VARYING YEARS
-		indx<-which(rowSums(out$qp)>1)
-		tmp<-data.frame(year=c(2015+0:49),
-			sq=apply(out$sq[indx,],1,mean),
-			qp=apply(out$qp[indx,],1,mean),
-			pm=apply(out$pm[indx,],1,mean),
-			mt=apply(out$mt[indx,],1,mean),
-			tr=apply(out$tr[indx,],1,mean))
+		tmp<-data.frame(year=out$years,
+			month=out$month,
+			sq=apply(out$stock,1,mean)-
+				apply(out$quality,1,mean),
+			qp=apply(out$quality,1,mean)-
+				apply(out$preferred,1,mean),
+			pm=apply(out$preferred,1,mean)-
+				apply(out$memorable,1,mean),
+			mt=apply(out$memorable,1,mean)-
+				apply(out$trophy,1,mean),
+			tr=apply(out$trophy,1,mean))
+		tmp$sq<- tmp$sq/apply(out$stock,1,mean)*100
+		tmp$qp<- tmp$qp/apply(out$stock,1,mean)*100
+		tmp$pm<- tmp$pm/apply(out$stock,1,mean)*100
+		tmp$mt<- tmp$mt/apply(out$stock,1,mean)*100
+		tmp$tr<- tmp$tr/apply(out$stock,1,mean)*100
+		
+		
 		tbl1<-data.frame(PSD=c("PSD-SQ","PSD-QP","PSD-PM","PSD-MT","PSD-T"),
-			yr2015=unlist(tmp[tmp$year==2015,-1]),
-			yr2025=unlist(tmp[tmp$year==2025,-1]),
-			yr2050=unlist(tmp[tmp$year==2050,-1]),
-			yrLast=unlist(tmp[tmp$year==max(tmp$year),-1]))
+			yr2015=unlist(tmp[floor(tmp$year)==2015 & tmp$month==6,-c(1:2)]),
+			yr2025=unlist(tmp[floor(tmp$year)==2025 & tmp$month==6,-c(1:2)]),
+			yr2050=unlist(tmp[floor(tmp$year)==2050 & tmp$month==6,-c(1:2)]),
+			yrLast=unlist(tmp[tmp$year==max(tmp$year),-c(1:2)]))
+		tbl1<-format(tbl1,digits=0)
 		return(tbl1)
 		}
 	if(n==2)

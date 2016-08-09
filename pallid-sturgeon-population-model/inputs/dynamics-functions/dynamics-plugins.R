@@ -41,18 +41,7 @@ dLength<- function(k, linf,length1,dT)
 #	(mps[,x]+1)*mature[,x]*live[,x]
 #	}
 	
-dWeight<- function(len,a=0.0001,b=3,er=0.1)
-	{
-	#out<-rlnorm(length(len),log(a*len^b),er)
-	ypred<- a+b*len
-	out<-exp(rnorm(length(len),ypred,er))
-	return(out)
-	}
-	
-dWeight_v<- function(x,a=0.0001,b=3,er=0.1)
-	{
-	rlnorm(1,log(a*x^b),er) ####fixme####
-	}
+
 	
 dMaturity<- function(maturity,mat_k,age,age_mat,live)
 	{

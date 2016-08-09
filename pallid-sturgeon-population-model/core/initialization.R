@@ -1,113 +1,117 @@
 
 ### PROCESS INPUTS TO INITILIZE AND SIMULATE POPULATION	
-modelInputs<- function(input){#reactive({
+modelInputs<- function(input,spatial,recruitmentFreq=0,sizeStructure=TRUE){
 	tmp<-list()
-	if(input$basin=="Lower"){indx<-1}else{indx<-2}
 	tmp$basin_inp=ifelse(input$basin=="Lower",0,1)	
 	
 	
 	## POPULATION CHARACTERISTICS
 	tmp$basin= input$basin
-	tmp$maxage=input$maxage[indx]
-	tmp$sexratio=input$sexratio[indx]
-	tmp$natural=input$natural[indx]
-	tmp$hatchery=input$hatchery[indx]
-	tmp$natural_age0=input$natural_age0[indx]
-	tmp$hatchery_age0=input$hatchery_age0[indx]
+	tmp$maxage=input[[input$basin]]$maxage
+	tmp$sexratio=input[[input$basin]]$sexratio
+	tmp$natural=input[[input$basin]]$natural
+	tmp$hatchery=input[[input$basin]]$hatchery
+	tmp$natural_age0=input[[input$basin]]$natural_age0
+	tmp$hatchery_age0=input[[input$basin]]$hatchery_age0
 	
 
 	## LENGTH-WEIGHT
-	tmp$a= exp(input$a_prime)[indx]
-	tmp$a_prime= input$a_prime[indx]
-	tmp$b= input$b[indx]
-	tmp$lw_er=input$lw_er[indx]
+	tmp$a			= exp(input[[input$basin]]$a_prime)
+	tmp$a_prime		= input[[input$basin]]$a_prime
+	tmp$b			= input[[input$basin]]$b
+	tmp$lw_er		=input[[input$basin]]$lw_er
 	
 	## FECUNDITY
-	tmp$fec_a=input$fec_a[indx]
-	tmp$fec_b=input$fec_b[indx]
-	tmp$fec_er=input$fec_er[indx]
+	tmp$fec_a=input[[input$basin]]$fec_a
+	tmp$fec_b=input[[input$basin]]$fec_b
+	tmp$fec_er=input[[input$basin]]$fec_er
 	
 	# GROWTH
-	tmp$ln_Linf_mu<-c(6.982160,7.136028770)[indx]
-	tmp$ln_k_mu<- c(-2.382711,-3.003764445)[indx]
-	tmp$vcv<- as.matrix(cbind(c(0.0894,-0.1327,-0.1327,0.3179),(c(0.2768,-0.364,-0.364,0.6342))))
+	tmp$maxLinf<-input[[input$basin]]$maxLinf
+	tmp$ln_Linf_mu<-input[[input$basin]]$ln_Linf_mu
+	tmp$ln_k_mu<- input[[input$basin]]$ln_k_mu
+	tmp$vcv<- input[[input$basin]]$vcv
 
 
 	# SEXUAL MATURITY AND RETURN TO SPAWNING
-	tmp$age_mat=input$age_mat[indx]
-	tmp$mat_k=input$mat_k[indx]
-	tmp$spn_a=input$spn_a[indx]
-	tmp$spn_b=input$spn_b[indx]
+	tmp$age_mat=input[[input$basin]]$age_mat
+	tmp$mat_k=input[[input$basin]]$mat_k
+	tmp$spn_a=input[[input$basin]]$spn_a
+	tmp$spn_b=input[[input$basin]]$spn_b
 
 	# SURVIVALS
-	tmp$pr_embryo<-input$pr_embryo[indx] 
-	tmp$phi_embryo<-input$phi_embryo[indx] 
-	tmp$phi_free_embryo<-input$phi_free_embryo[indx] 
-	tmp$phi0=input$phi_age0_mean[indx] 
-	tmp$phi1=input$phi_age1_mean[indx]
-	tmp$phi2=input$phi_age2_mean[indx]
+	tmp$pr_embryo<-input[[input$basin]] $pr_embryo 
+	tmp$phi_embryo<-input[[input$basin]]$phi_embryo
+	tmp$phi_free_embryo<-input[[input$basin]]$phi_free_embryo
+	tmp$phi0=input[[input$basin]]$phi_age0_mean
+	tmp$phi1=input[[input$basin]]$phi_age1_mean
+	tmp$phi2=input[[input$basin]]$phi_age2_mean
 	tmp$phi=c(tmp$phi1,rep(tmp$phi2,tmp$maxage-1))
-	tmp$recruitment<- input$recruitment # TURN RECRUITMENT ON OR OFF
 	
 	
 	# STOCKING
-	tmp$fingerling=input$fingerling
-	tmp$fingerling_month=input$fingerling_month
-	tmp$fingerling_mn=input$fingerling_mn
-	tmp$fingerling_sd=input$fingerling_sd 
-	tmp$fingerling_stocking_rkm=input$fingerling_stocking_rkm
+	tmp$fingerling=input$stockingInput$fingerling
+	tmp$fingerling_month=input$stockingInput$fingerling_month
+	tmp$fingerling_mn=input$stockingInput$fingerling_mn
+	tmp$fingerling_sd=input$stockingInput$fingerling_sd 
+	tmp$fingerling_stocking_rkm=input$stockingInput$fingerling_stocking_rkm
 
 	
 	### YEARLINGS
-	tmp$yearling<-input$yearling
-	tmp$yearling_month<-input$yearling_month
-	tmp$yearling_mn<-input$yearling_mn
-	tmp$yearling_sd<-input$yearling_sd
-	tmp$yearling_age<-input$yearling_age
-	tmp$yearling_stocking_rkm<-input$yearling_stocking_rkm
+	tmp$yearling<-input$stockingInput$yearling
+	tmp$yearling_month<-input$stockingInput$yearling_month
+	tmp$yearling_mn<-input$stockingInput$yearling_mn
+	tmp$yearling_sd<-input$stockingInput$yearling_sd
+	tmp$yearling_age<-input$stockingInput$yearling_age
+	tmp$yearling_stocking_rkm<-input$stockingInput$yearling_stocking_rkm
 	
 	
 	# SIMULATION STUFF
-	tmp$nreps=input$nreps
-	tmp$nyears=input$nyears
-	tmp$daug_H=input$daug_H
-	tmp$daug_N=input$daug_N
-	tmp$startYear<-input$startYear
-	
-
+	tmp$nreps=input$simulationInput$nreps
+	tmp$nyears=input$simulationInput$nyears
+	tmp$daug_H=input$simulationInput$daug_H
+	tmp$daug_N=input$simulationInput$daug_N
+	tmp$startYear<-input$simulationInput$startYear
+	tmp$spatial=spatial
+	tmp$recruitmentFreq = recruitmentFreq
+	tmp$sizeStructure = sizeStructure
 
 	tmp$commit<-input$commit
 	tmp$output_name<- input$output_name	
+	tmp$version<- input$version	
 	
 	# SPATIAL
-	## BEND DATA & META
-	tmp$bend_meta<- subset(bend_meta,basin==tmp$basin)
-	tmp$n_bends<- nrow(tmp$bend_meta)	
-	tmp$bend_lengths<- diff(c(0,bend_meta[which(bend_meta$basin==input$basin),]$bend_start_rkm))
-	## MONTHLY MOVEMENT MATRIX
-	tmp$prob<- matrix(runif(tmp$n_bends*tmp$n_bends),nrow=tmp$n_bends,ncol=tmp$n_bends)
-	tmp$prob[upper.tri(tmp$prob)]<-0
-	tmp$prob<- tmp$prob/apply(tmp$prob,1,sum)
-	tmp$spatial<- input$spatial
 	## SPATIAL STRUCTURE ADULTS
-	tmp$adult_spatial_structure<-input$adult_spatial_structure
-	## SPATIAL STRUCTURE AGE-0
-	if(input$age0_n_spatial_structure=="Uniform")
-		{
-		pp<- runif(tmp$n_bends)
-		tmp$natural_age0_rel_dens<- pp/sum(pp)
-		}	
-	if(input$age0_h_spatial_structure=="Uniform")
-		{
-		pp<- runif(tmp$n_bends)
-		tmp$hatchery_age0_rel_dens<- pp/sum(pp)
-		}	
-	tmp$size_indices<-input$size_indices
-	## END SPATIAL 
+	if(spatial==TRUE)
+		{	
+		## BEND DATA & META
+		tmp$bend_meta<- bend_meta[[input$basin]]
+		tmp$n_bends<- nrow(bend_meta[[input$basin]])	
+		tmp$bend_lengths<- diff(c(0,bend_meta[[input$basin]]$bend_start_rkm))
+		
+		## MONTHLY MOVEMENT MATRIX
+		tmp$prob<- matrix(runif(tmp$n_bends*tmp$n_bends),nrow=tmp$n_bends,ncol=tmp$n_bends)
+		tmp$prob[upper.tri(tmp$prob)]<-0
+		tmp$prob<- tmp$prob/apply(tmp$prob,1,sum)
+		tmp$spatial<- input$spatial
 
-
+		tmp$adult_spatial_structure<-input$adult_spatial_structure
+		## SPATIAL STRUCTURE AGE-0
+		if(input$age0_n_spatial_structure=="Uniform")
+			{
+			pp<- runif(tmp$n_bends)
+			tmp$natural_age0_rel_dens<- pp/sum(pp)
+			}	
+		if(input$age0_h_spatial_structure=="Uniform")
+			{
+			pp<- runif(tmp$n_bends)
+			tmp$hatchery_age0_rel_dens<- pp/sum(pp)
+			}	
+		tmp$size_indices<-input$size_indices
+		## END SPATIAL 
+		}
 	return(tmp)
-	} #})
+	}
 
 ### INITIALIZE MODEL OBJECTS
 initialize<- function(inputs)
@@ -148,17 +152,19 @@ initialize<- function(inputs)
 		{
 		## [3] INIITIALIZE GROWTH COEFFICIENTS
 		##     GROWTH IS NOT HERITABLE
-		tmp<- ini_growth(x=1,n=inputs$daug_H,
+		tmp<- ini_growth(n=inputs$daug_H,
 			mu_ln_linf=inputs$ln_Linf_mu,
 			mu_ln_k=inputs$ln_k_mu,
-			vcv=inputs$vcv) 
+			vcv=inputs$vcv,
+			maxLinf=inputs$maxLinf) 
 		dyn$Linf_H[,j]<-tmp$linf
 		dyn$k_H[,j]<-tmp$k
 		
-		tmp<- ini_growth(x=1,n=inputs$daug_N,
+		tmp<- ini_growth(n=inputs$daug_N,
 			mu_ln_linf=inputs$ln_Linf_mu,
 			mu_ln_k=inputs$ln_k_mu,
-			vcv=inputs$vcv) 
+			vcv=inputs$vcv,
+			maxLinf=inputs$maxLinf) 
 		dyn$Linf_N[,j]<-tmp$linf
 		dyn$k_N[,j]<-tmp$k	
 		
@@ -270,6 +276,13 @@ initialize<- function(inputs)
 			}
 		}
 	# END INITIALIZATION ##########	
+
+	#if(sizeStructure==TRUE)
+	#	{
+#
+#		
+#		}
+
 	
 	# VECTOR OF MONTHS
 	## STARTS IN JANUARY
