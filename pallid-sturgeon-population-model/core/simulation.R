@@ -1,9 +1,12 @@
 
 
 ### CORE FUNCTION TO DO SIMULATIONS	
-sim<- function(inputs,dyn)
+sim<- function(inputs,dyn,recruitmentFreq=0,sizeStructure=TRUE)
 	{
-	## assign objects from dyn
+	inputs$recruitmentFreq<-recruitmentFreq
+	inputs$sizeStructure<-sizeStructure
+	
+	## ASSIGN OBJECTS FROM DYN INPUT
 	k_H<-dyn$k_H
 	k_N<-dyn$k_N
 	
@@ -42,11 +45,16 @@ sim<- function(inputs,dyn)
 	
 	m<-dyn$m
 	
-	#rm(list='dyn')
- 
+
+	if(inputs$spatial==TRUE)
+		{
+		BEND_N <- dyn$BEND_N
+		BEND_H <- dyn$BEND_H
+		}
 	
+	#rm(list='dyn')	
 	
-	# SUMMARIES
+	# SET UP SUMMARIES
 	RECRUITS<-matrix(0,nrow=length(m),ncol=inputs$nreps)
 	
 	MEANWEIGHT_N<-matrix(0,nrow=length(m),ncol=inputs$nreps)
@@ -79,9 +87,10 @@ sim<- function(inputs,dyn)
 		linf=c(Linf_H[1:inputs$hatchery,1],Linf_N[1:inputs$natural,1]),
 		k=c(k_H[1:inputs$hatchery,1],k_N[1:inputs$natural,1]),
 		age=c(AGE_H[1:inputs$hatchery,1],AGE_N[1:inputs$natural,1]))
+	# END SUMMARIES
 
-
-
+	
+	# SET UP INDICES PRIOR TO RUNNING MODEL
 	indx_H<- lapply(1:inputs$nreps,
 		function(x){which(Z_H[,x]==1)}) # ROW INDICES
 	tmp<- unlist(lapply(1:inputs$nreps,
@@ -165,22 +174,39 @@ sim<- function(inputs,dyn)
 			
 
 
+
+		# SPATIAL 
+		if(inputs$spatial==TRUE)
+			{
+			## ADULT MOVEMENT
+			BEND_H[indx_H]<- adultMovement(previousLocation=BEND_H[indx_H],
+				fromToMatrix=inputs$adult_prob)
+			BEND_N[indx_N]<- adultMovement(previousLocation=BEND_N[indx_N],
+				fromToMatrix=inputs$adult_prob)
+			}
+
+			
+		#compare <- microbenchmark::microbenchmark(
+		#	a=adultMovement(previousLocation=BEND_H[indx_H],
+		#		fromToMatrix=inputs$adult_prob),
+		#	b=adultMovement_cmpld(previousLocation=BEND_H[indx_H],
+		#		fromToMatrix=inputs$adult_prob), times =20)
+		#ggplot2::autoplot(compare)
 			
 		### RECRUIT AGE-0 FISH TO THE POPULATION; NATURAL AND HATCHERY
 		#if(m[i]%in% c(6,7,8)) 
 			#{
 			#dyn<- recruitment_to_population(spatial=inputs$spatial)
 			#}
-		if(inputs$recruitmentFreq>0)
+		if(inputs$recruitmentFreq>0 & m[i]%in% c(6,7,8))
 			{
-			### UPDATE WHETHER A FISH WILL SPAWN
+			### UPDATE WHETHER A FISH WILL SPAWN 
 			SPN_H[indx_H]<-spawn(mps=MPS_H[indx_H],a=inputs$spn_a,
 				b=inputs$spn_b,
 				mature=MAT_H[indx_H])
 			SPN_N[indx_N]<-spawn(mps=MPS_N[indx_N],a=inputs$spn_a,
 				b=inputs$spn_b,
 				mature=MAT_N[indx_N])
-			
 			
 			
 			## UPDATE THE NUMBER OF EGGS IN A FEMALE  ####slow####
@@ -198,11 +224,15 @@ sim<- function(inputs,dyn)
 				sex=SEX_N[indx_N],
 				spawn=SPN_N[indx_N],
 				mature=MAT_N[indx_N])			
+
+			## UPDATE THE NUMBER OF MONTHS SINCE SPAWNING FOR FISH JUST SPAWNED
+			MPS_H[EGGS_H>0]<-0
+			MPS_N[EGGS_N>0]<-0
+
+
 			}		
 			
-		## UPDATE THE NUMBER OF MONTHS SINCE SPAWNING FOR FISH JUST SPAWNED
-		MPS_H[EGGS_H>0]<-0
-		MPS_N[EGGS_N>0]<-0
+
 		
 		AGE_0_N_BND<- matrix(colSums(EGGS_N)+colSums(EGGS_H),nrow=1) # NUMBER OF EGGS
 		AGE_0_N_BND[]<- rbinom(inputs$nreps,

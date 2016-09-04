@@ -53,8 +53,6 @@ peak biomass due to the interaction of growth and survival (i.e., number of biom
 given model inputs (Figure 3)
 * <font color="#FF0000#">Length distribution shifted to larger individuals after 50 years, compared to year 1 of the simulation (Figure 5).  The growth of Pallid Sturgeon is slow with vonBertalanffy growth coefficient equal to `r round (exp(inputs$ln_k_mu),3)`.  This value is slightly larger than the value of 0.01 reported by Shuman 2011 and reflects that the overall mean $L_{\infty}$ is lower for this analysis (NOTE: these values are from a Fabens estimate using PSPAP capure-recapture data to estimate $k$ and $L_{\infty}$).</font>
 * <font color="#FF0000#"> Weight distribution shifted to larger individuals after 50 years, compared to year 1 of the simulation (Figure 6). </font>
-
-
 ___
 ^1 Methods describe and detail relevant information required to replicate analysis using the Pallid Sturgeon Population model.
 Exact model details are in progress of write up for publication which will serve as the primary citation for 

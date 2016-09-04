@@ -1,11 +1,15 @@
 adat<- tables(4)
+adat<-subset(adat, !(is.na(basin)))
 saveRDS(adat,"./output/adat.RDS")
 adat<- readRDS("./output/adat.RDS")
 ni<- 500000	#	n.iter
 nb<- 200000	#	n.burnin
+adat$basin_id<-ifelse(adat$basin=="lower",1,2)
 
 
-## MODEL 3b ln(k)~a+b*ln(linf)
+
+
+## MODEL 4a ln(k)~a+b*ln(linf)
 upper<- subset(adat,basin=="upper")
 linf_ini<- log(tapply(upper$l2, upper$ind_id,max)*1.25)
 upper<- list(L1=upper$l1,
@@ -19,15 +23,51 @@ inits<- function(t)
 	list(a=0,b=0,Linf=1500,sigma_obs=.25,Linfi=linf_ini,sigma_Linf=.25)
 	}
 params<- c("a","b","Linf","prec_obs","sigma_Linf")
-out_upper <-  jags(data=upper,
+out_upper <-  jags.parallel(data=upper,
 	inits=inits,
 	parameters=params,	
-	model.file=mod3b,
+	model.file=mod4,
 	n.chains = 3,	
-	n.iter = 200,	
-	n.burnin = 50,
+	n.iter = 3009,	
+	n.burnin = 1000,
 	n.thin=2,
-	#export_obj_names=c("
+	export_obj_names=c("linf_ini","upper","inits","params"),
+	working.directory=getwd())
+	
+save(out_upper, file = "./output/out_upper-mod3b.RData")
+
+
+## MODEL 4b: basin effect ln(k)~a+b*ln(linf)
+
+dat<- list(L1=adat$l1,
+	Y=adat$l2,
+	dY=adat$dy,
+	ind=as.matrix(cbind(adat$ind_id,adat$basin_id)), 
+	N_inds= max(adat$ind_id),
+	xx = as.matrix(aggregate(L1~ind_id+basin_id,adat,length)[,-3]),
+	N=nrow(adat))
+	
+inits<- function(t)
+	{	
+	list(a=runif(2),
+		b=runif(2),
+		sigma_obs=runif(2),
+		Linfi=log(tapply(dat$Y, dat$ind[,1],max)*1.25),
+		Linf=c(6.5,6.5),		
+		sigma_Linf=runif(2))
+	
+		
+	}
+params<- c("a","b","Linf","prec_obs","sigma_Linf")
+out_upper <-  jags.parallel(data=dat,
+	inits=inits,
+	parameters=params,	
+	model.file=mod4b,
+	n.chains = 3,	
+	n.iter = 300,	
+	n.burnin = 100,
+	n.thin=2,
+	export_obj_names=c("dat","inits","params"),
 	working.directory=getwd())
 	
 save(out_upper, file = "./output/out_upper-mod3b.RData")

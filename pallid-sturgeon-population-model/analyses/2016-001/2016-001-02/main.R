@@ -8,7 +8,7 @@ setwd("C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturg
 source("global.R")
 input$output_name<- "2016-001" 
 input$version<- "02"
-input$commit<- "0df8618"
+input$commit<- "f6a8565"
 	
 # CREATE DIRECTORY IF NOT ALREADY THERE
 dir.create(file.path(paste0(getwd(),"/output/",input$output_name,"-",input$version)), showWarnings = FALSE) 
@@ -27,6 +27,9 @@ inputs$natural_age0	= 0
 inputs$nyears		= 50
 dyn<- initialize(inputs=inputs) # INITIALIZE OBJECTS NEEDED FOR SIMUALTION
 out<- sim(inputs=inputs,dyn=dyn) #
+
+
+
 
 figures(1)
 figures(2)

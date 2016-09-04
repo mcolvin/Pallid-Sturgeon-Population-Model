@@ -1,5 +1,6 @@
 figures<- function(n)
 	{
+	op <- par(no.readonly = TRUE) 	
 	if(n==1)
 		{# TOTAL ABUNDANCE 
 		x<-out$years
@@ -11,10 +12,10 @@ figures<- function(n)
 			xlab="Year",las=1,type='l',ylim=c(0,max(yup)))
 		polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
 		points(x,y,type='l')
-		#savePlot("./output/2016-001/figure-03.wmf",type='wmf')
 		}
 	if(n==2)
 		{# MEAN WEIGHT 
+		op <- par(no.readonly = TRUE) 
 		par(mfrow=c(2,1),mar=c(1,4,0.25,0),
 			oma=c(3,1,1,1),cex.lab=1.3)	
 		x<-out$years
@@ -30,7 +31,6 @@ figures<- function(n)
 		points(x,y,type='l')
 		
 		# MEAN LENGTH
-		
 		x<-out$years
 		y<-(apply(out$mean_length,1,mean))
 		yup<-(apply(out$mean_length,1,max))
@@ -40,23 +40,25 @@ figures<- function(n)
 			ylim=c(0,max(yup)))
 		polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
 		points(x,y,type='l')
-				
 		}
 		
 	if(n==3)
 		{# BIOMASS
+		op <- par(no.readonly = TRUE) 
 		x<-out$years
 		yy<- (out$biomass_n+out$biomass_h)/1000
 		y<-apply(yy,1,mean)
 		yup<-apply(yy,1,max)
 		ylo<-apply(yy,1,min)
 		plot(x,y,ylab="Biomass (kg; x1000)",
-			xlab="Year",las=1,type='l')
+			xlab="Year",las=1,type='l',ylim=c(0, max(c(yup,ylo))))
 		polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
 		points(x,y,type='l')
+
 		}
 	if(n==4)
 		{# PSD
+		op <- par(no.readonly = TRUE) 
 		tmp<-data.frame(year=out$years,
 			sq=apply(out$stock,1,mean)-
 				apply(out$quality,1,mean),
@@ -72,8 +74,6 @@ figures<- function(n)
 		tmp$pm<- tmp$pm/apply(out$stock,1,mean)*100
 		tmp$mt<- tmp$mt/apply(out$stock,1,mean)*100
 		tmp$tr<- tmp$tr/apply(out$stock,1,mean)*100
-		
-		
 		matplot(tmp$year,tmp[,-1],type='l',las=1,ylab="Incrimental PSD value",
 			xlab="Year",lwd=2)
 		legend("top",legend=c("PSD-SQ","PSD-QP","PSD-PM","PSD-MT","PSD-T"),
@@ -81,6 +81,7 @@ figures<- function(n)
 		}
 	if(n==5)
 		{
+		op <- par(no.readonly = TRUE) 
 		trans_grey<- rgb(0,0,0,
 			alpha=10,
 			maxColorValue=255)# make grey color with some transparency
@@ -96,6 +97,7 @@ figures<- function(n)
 		}
 	if(n==6)
 		{# PLOT OF INITIAL LENGTHS
+		op <- par(no.readonly = TRUE) 
 		par(oma=c(3,1,1,1),cex.lab=1.3)	
 		# LENGTH
 		x1<-out$init_summary$len
@@ -119,6 +121,7 @@ figures<- function(n)
 	if(n==7)
 		{
 		# PLOT OF INITIAL AND FINAL LENGTHS
+		op <- par(no.readonly = TRUE) 
 		par(oma=c(1,1,1,1),cex.lab=1.3)				
 		x1<-out$init_summary$wg/1000
 		x2<-out$post_weight/1000
@@ -138,4 +141,12 @@ figures<- function(n)
 		box()
 		mtext(side=1, "Weigth group (kg)",line=-1,cex=1.3,outer=TRUE)
 		}
+	on.exit(par(op))
 	}
+	
+	
+	
+	
+	
+	
+	

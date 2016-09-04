@@ -1,4 +1,14 @@
-
+# MODEL 1 VBGF: RANDOM LINF
+# MODEL 2 VBGF: RANDOM K
+# MODEL 3 VBGF: RANDOM K & LINF
+# MODEL 4 VBGF: RANDOM K & LINF
+# MODEL 4 VBGF: RANDOM K & LINF
+# GOMPERTZ
+# INVERSE LOGISTIC
+# SCHNUTE MODEL
+# LINEAR
+# POWER
+# 
 
 mod1<- function()
 	{# FABENS MODEL WITH RANDOM L_INF	
@@ -90,9 +100,8 @@ mod3<- function()
 	sigma_obs  ~ dgamma(0.001,0.001)
 	prec_obs <-pow(sigma_obs,-2)
 	}	
-	
-	
-mod3b<- function()
+		
+mod4a<- function()
 	{# FABENS MODEL WITH VARYING L_INF AND K=a+b*linf
 	for(i in 1:N)
 		{
@@ -124,7 +133,42 @@ mod3b<- function()
 	prec_obs <-pow(sigma_obs,-2)
 	}	
 		
+mod4b<- function()
+	{# FABENS MODEL WITH K~a+b*linf[basin]
+	for(i in 1:N)
+		{
+		# MODEL	
+		ki[i]<- exp(a[ind[i,2]] + 
+			b[ind[i,2]]*Linfi[ind[i,1]])
+		Linf_hat[i]<- exp(Linfi[ind[i,1]])
+		L2[i]<- L1[i]+ 
+			(Linf_hat[i]-L1[i])*
+			(1-exp(-ki[i]*dY[i]))
+		# LIKLIHOOD
+		Y[i]~dnorm(L2[i],prec_obs[ind[i,2]])
+		}
+	# INDVIDUALS
 	
+	for(j in 1:N_inds)
+		{
+		Linfi[j] ~ dnorm(Linf[xx[j,2]],prec_Linf[xx[j,2]])			
+		}
+
+	# PRIORS
+	for(basin in 1:2)
+		{
+		Linf[basin] ~dunif(0,10)
+		sigma_Linf[basin] ~ dunif (0, 10)		
+		prec_Linf[basin] <-  pow(sigma_Linf[basin],-2)
+		
+		a[basin]~dnorm(0,0.001)
+		b[basin]~dnorm(0,0.001)
+		
+		# OBSERVATION
+		sigma_obs[basin]  ~ dgamma(0.001,0.001)
+		prec_obs[basin] <-pow(sigma_obs[basin],-2)
+		}
+	}	
 	
 	
 # GOMPERTZ

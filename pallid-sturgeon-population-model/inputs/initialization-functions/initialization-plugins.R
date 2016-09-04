@@ -1,9 +1,9 @@
 
 #### FUNCTIONS TO ASSIGN RKM TO BENDS FOR UPPER AND LOWER
-rkm_start<-seq(1,1000,length=317)
-bend<- c(1:317)
-rkm2bend<- approxfun(rkm_start,bend,method='constant')
-bend2rkm<- approxfun(bend,rkm_start,method='constant')
+#rkm_start<-seq(1,1000,length=317)
+#bend<- c(1:317)
+#rkm2bend<- approxfun(rkm_start,bend,method='constant')
+#bend2rkm<- approxfun(bend,rkm_start,method='constant')
 
 
 ## INITIALIZATION PLUGINS
@@ -25,8 +25,8 @@ ini_sex<- function(n,ratio)
 	out<-rbinom(n,1,ratio)
 	return(out)
 	}
-
 	
+
 ini_age<- function(len,linf,k,sizeAtHatch=7,maxAge)
 	{
 	age<-ifelse(len==0,0,log(-1*(len-sizeAtHatch)/(linf-sizeAtHatch)+1)/-k)
@@ -56,14 +56,19 @@ ini_length<-function(n=10, basin="lower",origin=1, spatial=FALSE,linf=2000)
                 }
         # SPATIAL COMPONENT
         if(tolower(basin)=="lower" & spatial==TRUE )
-                {
-                ####fixme####
+                {####fixme####
+                tmp<- r(len_ini_low_hatchery_nospace)(n)*origin + # hatchery
+                        r(len_ini_low_natural_nospace)(n)*(1-origin) # natural				
+				
+                
                # tmp<- r(len_ini_low_hatchery_nospace)(n)*origin + # hatchery
                 #        r(len_ini_low_natural_nospace)(n)*(1-origin) # natural
                 }
         if(tolower(basin)=="upper" & spatial==TRUE )
-                {
-                ####fixme####
+                {####fixme####
+				tmp<- r(len_ini_upp_hatchery_nospace)(n)*origin + # hatchery
+					r(len_ini_upp_natural_nospace)(n)*(1-origin) # natural
+                
                 #tmp<-  r(len_ini_upp_hatchery_nospace)(n)*origin + # hatchery
                  #       r(len_ini_upp_natural_nospace)(n)*(1-origin) # natural
                 }
@@ -80,27 +85,3 @@ ini_maturity<- function(k,len,age_mat)
 	M2<- rbinom(length(len),1,p)	
 	return(M2)				
 	}
-	
-# INITIALIZE RIVER LOCATION
-ini_rkm<- function(n,type,bend_lengths)
-	{
-	# FUNCTION TO INITIALIZE RIVER 
-	# KILOMETER FOR INVIDUAL FISH
-	nbends<- length(bend_lengths)
-	# BUILD INVERSE DISTRIBUTATION TO SAMPLE FROM
-	if(type=="Uniform")
-		{
-		y<- rep(1, nbends)*bend_lengths
-		y<- cumsum(y)/sum(y)
-		cumdist<- approxfun(y,c(1:nbends),rule=2)
-		}
-	if(type=="Emperical")  ####fixme####
-		{
-		y<- rep(1, nbends)*bend_lengths
-		y<- cumsum(y)/sum(y)
-		cumdist<- approxfun(y,c(1:nbends),rule=2)
-		}
-	x<-cumdist(runif(n))
-	return(x)
-	}
-	
