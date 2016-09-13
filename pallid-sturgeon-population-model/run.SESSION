@@ -2,7 +2,6 @@
     <Session activeView="0">
         <mainView activeIndex="3">
             <File firstVisibleLine="0" xOffset="0" scrollWidth="902" startPos="0" endPos="0" selMode="0" lang="R" encoding="-1" filename="C:\Users\mcolvin\Documents\projects\Pallid Sturgeon\Analysis\Pallid-Sturgeon-Population-Model\pallid-sturgeon-population-model\global.R" backupFilePath="" originalFileLastModifTimestamp="1468006138" />
-            <File firstVisibleLine="0" xOffset="0" scrollWidth="1181" startPos="7" endPos="7" selMode="0" lang="R" encoding="-1" filename="C:\Users\mcolvin\Documents\projects\Pallid Sturgeon\Analysis\Pallid-Sturgeon-Population-Model\pallid-sturgeon-population-model\core\initialization.R" backupFilePath="" originalFileLastModifTimestamp="1468005647" />
             <File firstVisibleLine="0" xOffset="0" scrollWidth="852" startPos="0" endPos="0" selMode="0" lang="R" encoding="-1" filename="C:\Users\mcolvin\Documents\projects\Pallid Sturgeon\Analysis\Pallid-Sturgeon-Population-Model\pallid-sturgeon-population-model\core\simulation.R" backupFilePath="" originalFileLastModifTimestamp="1468005754" />
             <File firstVisibleLine="0" xOffset="0" scrollWidth="1650" startPos="0" endPos="0" selMode="0" lang="R" encoding="-1" filename="C:\Users\mcolvin\Documents\projects\Pallid Sturgeon\Analysis\Pallid-Sturgeon-Population-Model\pallid-sturgeon-population-model\main.R" backupFilePath="" originalFileLastModifTimestamp="1468006362" />
         </mainView>
