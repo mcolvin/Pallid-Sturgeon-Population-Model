@@ -54,22 +54,25 @@ modelInputs<- function(input,spatial=FALSE)
 	
 	
 	# STOCKING
-	tmp$fingerling=input$stockingInput$fingerling
-	tmp$fingerling_month=input$stockingInput$fingerling_month
-	tmp$fingerling_mn=input$stockingInput$fingerling_mn
-	tmp$fingerling_sd=input$stockingInput$fingerling_sd 
-	tmp$fingerling_stocking_rkm=input$stockingInput$fingerling_stocking_rkm
-
+	
+	### FINGERGLINGS
+	tmp$fingerling<- data.frame(
+			month=input$stockingInput$fingerling_month,
+			mean_length=input$stockingInput$fingerling_mn,
+			length_sd=input$stockingInput$fingerling_sd	,	
+			number=input$stockingInput$fingerling,
+			age=input$stockingInput$fingerling_age,
+			bend=nput$stockingInput$bend)
 	
 	### YEARLINGS
-	tmp$yearling<-input$stockingInput$yearling
-	tmp$yearling_month<-input$stockingInput$yearling_month
-	tmp$yearling_mn<-input$stockingInput$yearling_mn
-	tmp$yearling_sd<-input$stockingInput$yearling_sd
-	tmp$yearling_age<-input$stockingInput$yearling_age
-	tmp$yearling_stocking_rkm<-input$stockingInput$yearling_stocking_rkm
-	
-	
+	tmp$yearling<-data.frame(
+		month=input$stockingInput$yearling_month,
+		mean_length=input$stockingInput$yearling_mn,
+		length_sd=input$stockingInput$yearling_sd	,	
+		number=input$stockingInput$yearling,
+		age=input$stockingInput$yearling_age,
+		bend=nput$stockingInput$bend)
+
 	# SIMULATION STUFF
 	tmp$nreps=input$simulationInput$nreps
 	tmp$nyears=input$simulationInput$nyears

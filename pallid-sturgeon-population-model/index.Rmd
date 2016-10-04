@@ -1,0 +1,24 @@
+---
+title: "About the model"
+author: Michael E. Colvin
+date: 1 September 2016
+output:
+  html_document:
+    theme: flatly
+    highlight: espresso
+    toc: FALSE
+---
+
+
+# Initialization
+
+## Age-0 Pallid Sturgeon
+
+* Take number of age-0 fish and allocate them from
+multinomial
+* If no spatial component, allocate all to a single reach
+* If spatial then allocate among all reaches given a vector
+of probabilities
+* Currently these probability's are random _need to allocate
+as a function of spawning reaches_
+
