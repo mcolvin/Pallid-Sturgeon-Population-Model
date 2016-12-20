@@ -4,7 +4,9 @@ archive/
 *.docx
 *.zip
 *.pptx
-
+*.docx
+*.xlsx
+*.pdf
 
 # Windows image file caches
 Thumbs.db
