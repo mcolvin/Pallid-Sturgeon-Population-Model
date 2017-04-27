@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html >
+
+<head>
+
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Pop Model</title>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+  <meta name="description" content="Pop Model">
+  <meta name="generator" content="bookdown 0.2.3 and GitBook 2.6.7">
+
+  <meta property="og:title" content="Pop Model" />
+  <meta property="og:type" content="book" />
+  
+  
+  
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Pop Model" />
+  
+  
+  
+
+<meta name="author" content="Michael E. Colvin, and others…">
+
+
+<meta name="date" content="2017-02-22">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  
+  
+
+
+
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+</head>
+
+<body>
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="" data-path=""><a href="#preface"><i class="fa fa-check"></i>Preface</a><ul>
+<li class="chapter" data-level="" data-path=""><a href="#structure-of-the-book"><i class="fa fa-check"></i>Structure of the book</a></li>
+<li class="chapter" data-level="0.1" data-path="index.html"><a href="#some-stuff"><i class="fa fa-check"></i><b>0.1</b> Some stuff</a></li>
+<li class="chapter" data-level="0.2" data-path="index.html"><a href="#management-effects-on-movement"><i class="fa fa-check"></i><b>0.2</b> Management effects on movement</a></li>
+<li class="chapter" data-level="0.3" data-path="index.html"><a href="#effects-on-survival"><i class="fa fa-check"></i><b>0.3</b> Effects on survival</a></li>
+<li class="chapter" data-level="0.4" data-path="index.html"><a href="#allee-effect"><i class="fa fa-check"></i><b>0.4</b> Allee effect</a></li>
+</ul></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Pop Model</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="header">
+<h1 class="title">Pop Model</h1>
+<h4 class="author"><em>Michael E. Colvin, and others…</em></h4>
+<h4 class="date"><em>2017-02-22</em></h4>
+</div>
+<div id="preface" class="section level1 unnumbered">
+<h1>Preface</h1>
+<p><em>This is work in progress, results are provisional and subject to change. Do not used or cite this material in any way</em></p>
+<div id="structure-of-the-book" class="section level2 unnumbered">
+<h2>Structure of the book</h2>
+</div>
+<div id="some-stuff" class="section level2">
+<h2><span class="header-section-number">0.1</span> Some stuff</h2>
+<p>River bends, defined as a outer bend and crossover were used to simulate spatial dynamics. The location of individual Pallid Sturgeon were tracked during each time step and moved to a new bend, conditional on survival and previous bend location assuming a multinomial distirubtion as,</p>
+<p>Loc_{j,t+t}~Multinomial(p_{I,.,t}</p>
+<p>Where varibles and indices are defined in table xx. The vector of probabilities <span class="math inline">\(p_{I,.,t}\)</span> predicts the probable location given the previous bend location. This approach to movement provided a flexible approach to modeling movement that can be readily related to management actions. Specifically, $p_{I,j,t} is an array of probabilities with each row summing to one forming a 12 transition matrices providing the probability of moving from bend <span class="math inline">\(i\)</span> to bend <span class="math inline">\(j\)</span>. This array of probabilities provides a plugin location for movement. The diagonal represents the probability of remaining in the same reach, off diagonal elements represent downstream or upstream movements.</p>
+</div>
+<div id="management-effects-on-movement" class="section level2">
+<h2><span class="header-section-number">0.2</span> Management effects on movement</h2>
+<p>The effect of management actions on movement or drift of adult or larval Pallid Sturgeion respectively can be simulated by modifying monthly transition matrices. For example, suppose that adult Pallid Sturgeon migrate upstream given a flow or temperature cue. This directed movement can be simulated by specifying the probability of a fish moving to downstream bends equal to 0 and upstream bends greather than 0. Similarly, the effect of flow on free embryo drift can be simulated with increased downstream probabilities.</p>
+<p><span class="math inline">\(Y_{I,j,t+1}=\beta_0 + \beta_1 \cdot Q_{I,j,t}\)</span> for i&lt;=j i&gt;j = 0</p>
+<p>Current model implementation requires an array of transitions for each timestep. Future model versions will attempt to reefing the linke between environmental covariates like flow such that a time series of predicted flows can be used as as inputs. The relationship between movement and varying covariates may take the form of a model prediction given previous location. For example, movement in terms of kilometers could be modeled</p>
+<p><span class="math inline">\(rkm_{t+1} = \beta_0 + \beta_1 \cdot Q + \beta_2 \cdot rkm_t + \beta_3 \cdot Q \cdot rkm_t + \sigma\)</span>.</p>
+<p>The equation predicts how far, on average, a pallid sturgeon will move given an effect of flow and current location. The interaction term accounts for the effect of location (i.e., fish cannot move as far if they are near the uppermost bends).</p>
+</div>
+<div id="effects-on-survival" class="section level2">
+<h2><span class="header-section-number">0.3</span> Effects on survival</h2>
+<p>Modeling the effect of management actions on survival is specified by a logistic equation. Specifically, the base survivals are simulated using the equation</p>
+<p><span class="math inline">\(\Phi_{stage} = \frac{exp(\beta_0)}{1+exp(\beta_0)}\)</span>,</p>
+<p>Where <span class="math inline">\(\beta_0\)</span> represents the expected survival on logit scale. For example, adult survival is expected</p>
+</div>
+<div id="allee-effect" class="section level2">
+<h2><span class="header-section-number">0.4</span> Allee effect</h2>
+<p>A FUNCTION THAT PRODUCES AN ALLEE EFFECT MODIFYING GAMETE FERTILIZATAION SUCCESS</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">B0=<span class="fl">0.49</span>
+B1=<span class="fl">0.72</span>
+D&lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span><span class="op">:</span><span class="dv">1000</span>)
+y&lt;-<span class="st"> </span>B1<span class="op">*</span><span class="kw">log</span>(D)<span class="op">+</span>B0
+y&lt;-<span class="st"> </span><span class="kw">exp</span>(y)
+<span class="kw">plot</span>(D,y,<span class="dt">ylab=</span><span class="st">&quot;Fertilization success&quot;</span>,
+    <span class="dt">xlab=</span><span class="st">&quot;Density (fish/rkm)&quot;</span>)</code></pre></div>
+<p><img src="PDSG_Population_Model_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+
+
+
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"google": false,
+"weibo": false,
+"instapper": false,
+"vk": false,
+"all": ["facebook", "google", "twitter", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"download": null,
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    if (location.protocol !== "file:" && /^https?:/.test(script.src))
+      script.src  = script.src.replace(/^https?:/, '');
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

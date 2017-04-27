@@ -1,0 +1,247 @@
+
+
+
+```{r}
+	source("R/1_global.R")  	
+	source("R/2_functions.R")         
+	source("R/3_load.R")     
+  	source("R/4_clean.R" )
+ 	source("R/5_tables.R") 
+	source("R/6_figures.R")  
+```
+
+	
+	
+```{r}
+source("./src/7_analysis.R")
+```
+	
+	
+	
+
+```{r}
+figures(1)
+savePlot("./figures/figure-01.png",type="png")
+figures(2)
+savePlot("./figures/figure-02.png",type="png")
+write.csv(tables(1),"./output/table-01.csv")# model selection
+write.csv(tables(2),"./output/table-02.csv")# parameter estimates    
+```
+    
+# Appendix XXX Relating Pallid Sturgeon fecundity to length and weight.
+
+Target-Applied Ichthyology: Short communication- 9000 characters
+
+## Introduction
+A model predicting fecundity as a function of size or a surrogate like 
+age is a common inclusion in a population model used to perform 
+population viability analysis (PVA). Population models are an integral 
+component of species recovery planning because they assimilate what is 
+known about the population and can be used to evaluate potential 
+management strategies. There has been wide use of population models to 
+evaluate or estimate the probability that sturgeon species will go 
+extinct over some time period. For example, Steffensen et al. (2013) and 
+Wildhaber et al. (????) used a stage structured model to predict population 
+viability and evaluate management actions like supplemental stocking. In 
+both models fecundity was modeled as a function of length where mean 
+length at age is predicted and used to estimate age-specific fecundity 
+which in turn can be multiplied by the number of reproductive mature 
+females in each age class and summed for an estimate of total egg 
+production. However estimates of growth and mortality from calcified 
+structures in long lived species like Scaphirhynchus sturgeon are 
+subject to aging errors and subjectivity that contribute additional 
+uncertainty to age-structured population models and estimates of 
+viability (Hamel et al. 2016). 
+
+
+Individual based models (IBMs) of populations are an alternative to 
+age-structured population models that can potentially minimize the 
+consequences of aging error. Specifically, in an IBM can predict 
+fecundity as a function of individual length which depending on how the 
+model is structured, does not rely on age. Similar to age-structured 
+models it is common to predict the number of eggs produced by a female 
+as a function of length. For example, Jager (2001) used length based 
+fecundity estimates to perform a PVA of White Sturgeon in the Columbia 
+River basin. 
+
+
+Variability in length fecundity relationships is likely in part due to 
+fish level variability in weight. However the highly correlated nature 
+of length and weight preclude them from being included in the same 
+linear model as predictors. One way to solve this problem is to model 
+eggs per weight as a linear function of length, a model such as 
+\[F/W={{\beta }_{0}}+{{\beta }_{1}}\cdot L\] where $F$ is fecundity, $W$ 
+is fish weight, $\beta_0$ is the intercept, $\beta_1$ is the effect of 
+fish length $L$ on the number of eggs per fish weight. Reporting eggs 
+per fish weight (\[F/W\]) is natural and common practice (Holden and 
+Raitt 1974, Moretti et al. 1999). By taking the log of the right hand 
+side of the equation and applying the law of logarithms, the equation 
+becomes \[\ln (F)={{\beta }_{0}}+{{\beta }_{1}}\cdot L+\ln (W)\] which 
+can be fist as a generalized linear model assuming a Poisson 
+distribution and the natural logarithm of weight in included as an 
+offset (i.e., a variability with a known relationship). This method was 
+used by Dick (2009) to model fecundity of Rockfish Sebastes species. 
+
+
+An IBM for Pallid Sturgeon is being developed as part of ongoing species 
+recovery planning and adaptive management in the Missouri River that 
+requires a model predicting fecundity of individuals. In the larger 
+context of evaluating management alternatives hypothesized to influence 
+fish growth (i.e., length, weight) a fecundity model accounting for the 
+effect of length and weight provides the necessary link to begin to 
+propagate the hypothesized effects of management actions through the 
+population. Therefore the objectives of this analysis was to relate 
+Pallid Sturgeon fecundity to length and weight. 
+
+
+## Methods and materials
+
+### Study area
+
+Relating fecundity to fish size and weight
+asdf
+Data sources
+Data analysis 
+1.  relate eggs to fl using poisson regression
+2. include a random effect of ind as an oversipersion parm
+3. do separate for upper and lower, or allow heterogeneous random effects…
+5. Weight as an offset… get eggs per kg 
+
+
+$$\[\ln (\widehat{{{[Fecundity]}_{i}}})={{\beta }_{0}}+{{\beta }_{1}}\cdot {{[Length]}_{i}}+\ln {{[Weight]}_{i}}+{{\epsilon }_{i}}\] $$
+
+
+$$\[{{[Eggs\,released]}_{i}}\tilde{\ }Poisson(\widehat{{{[Fecundity]}_{i}}})\]$$
+
+where $\beta_0$ is the intercept on log scale, 
+$\beta_1$ is the effect of length on fecundity, and 
+$\epsilon_i$ is normally distributed term with mean 0 and standard deviation of $\sigma$.    
+
+Several factors are hypothesized to influence female fecundity in fish 
+species. One factor that has received much attention is fish condition. 
+Condition is indexed by calculating the deviation of an observed weight 
+from an expected or standard weight given length. Linear and log-linear 
+regression is commonly used to estimate fecundity-weight and 
+fecundity-length relationships. However the effect to of condition is 
+rarely evaluated, likely because condition is a function of length and 
+weight and is there dependent on those values. One assumption of linear 
+regression is that covariates are independent, posing a challenge to 
+using condition as a covariate of length or weight to explain additional 
+variability in observed fecundities. Similarly, the use of length and 
+weight as covariates to explain variation in observed fecundity is 
+problematic because these covariates are nearly perfectly correlated on 
+log scale. We used linear regression with an offset to remedy these 
+issues and predict female fecundity from individual fish length and 
+weight. Using offsets in linear regression assumes that the coefficient 
+of the covariate with the dependent variable is 1. In this case, length 
+was included as an offset in a linear model as 
+
+
+$$\[\log (\widehat{Fecundit{{y}_{i}}})=a+b\cdot Weigh{{t}_{i}}+
+    \log (Lengt{{h}_{i}})+{{D}_{i}}\] (1)$$
+
+where $i$ indexes individual Pallid Sturgeon, \[\widehat{Fecundity}\] is 
+expected fecundity, $a$ is the intercept, $b$ is the slope, $W$ is fish 
+weight, $\log (L)$ is the known effect of length included as an offset, 
+and $D$ is a normally distributed overdispersion parameter (i.e., 
+${{D}_{i}}\tilde{\ }N(0,\sigma )$). The parameters $a$ ,$b$, and 
+$\sigma$ were estimated by maximum likelihood assuming observed 
+fecundity was Poisson distributed as \[Fecundity\tilde{\ 
+}Poisson(\widehat{Fecundity})\]. 
+
+
+The length offset treats fecundity as a ratio, number of eggs per cm of 
+length, which can then be increased or decreased depending on the 
+estimated effect of weight. This type of regression is commonly used in 
+exposure studies where counts of the dependent variable are a function 
+of exposure time. This approach was used by Dick (2009) to model 
+rockfish fecundity, however weight was used as the offset. We believe 
+using length, rather than weight as an offset is more appropriate for 
+this analysis because length sets the stage for how many eggs can be 
+expected and fish that are heavier for their given length are more 
+likely to have higher fecundity. 
+
+
+The model given in equation 1 was by Markov Chain Monte Carlo (MCMC). 
+Three chains were initialized and allowed to burn in for 25K iterations 
+and then thinned by 2 for the remaining 25K iterations to generate 
+posterior distributions of parameters. Statistical inference was done by 
+examining 95% credible intervals. 
+
+
+To evaluate the potential effect of condition on fecundity, fecundity 
+was predicted for all possible combinations of fish lengths from 800 to 
+1100 by 10 mm and conditions from 0.7 to 1.1 by 0.05. Weight was then 
+calculated by first estimating the standard weight using the 
+length-weight relationship from Shuman and multiplying by condition. 
+Fecundity was then estimated from the fitted model given the length and 
+weight of the fish. Estimated fecundities were then plotted versus 
+length and grouped by condition to visually evaluate the effect of 
+condition on fecundity. 
+
+
+
+## Results 
+Fecundity estimates for 17 and 33 Pallid Sturgeon from the lower and 
+upper Missouri River basin respectively. Weight of reproductive Pallid 
+Sturgeon varying from 2.1 to 5.45 kg for and 13.5 to 30 kg for the lower 
+and upper Missouri River basins respectively. Lengths were only reported 
+for lower basin Pallid Sturgeon and varied from 788 to 1075 mm, although 
+it should be noted that policy is to retain fish greater than 800 mm for 
+brood stock collection. 
+
+Models fit the same when you drop ln(W): Explains more variation in 
+lower (reduced sigma rpma4), but length only performs better in upper 
+
+
+## Discussion
+Ovary amount versus released, they may get more, or less out at the hatchery…
+Effect of length and weight… skinny fish…energetics
+Chicken and egg…   prediction for recover and AM experiments \...
+•	This is a bit of chicken and egg thing.  
+•	Does a fish produce more eggs because it weighs more or does it weigh more because it has more eggs?
+•	Larger fish may have fewer eggs per kg because they produce bigger eggs!
+
+## Model plugin
+The link to the population model is that the effect of management 
+actions may be propagated through fecundity through the equation: 
+$Fecundity={{e}^{2.75+0.0001352\cdot W+log(L)+N(0,0.33)}}$ where length 
+($L$) and weight ($W$) can be predicted from the growth module . 
+Alternatively models can be included that predict fecundity as a 
+function of length as done for previous analyses (e.g., Wildhaber et al. 
+, Steffensen et al. 2013). 
+
+
+
+
+Dick, E. J. 2009. Modeling the reproductive potential of rockfishes (Sebastes spp.) Doctoral Dissertation. University of California Santa Cruz.
+Hamel, M. J., J. J. Spurgeon, C. J. Chizinski, K. D. Steffensen, and M. A. Pegg. 2016. Variability in Age Estimation Results in Ambiguity and False Understanding of Population Persistence. North American Journal of Fisheries Management 36:514-522.
+Holden, M. J., and D. F. S. Raitt. 1974. Manual of fisheries science. Part 2 - Methods of resource investigation and their application. FAO Fisheries Technical Paper 115, rev. 1. United Nations, Rome.
+Jager, H. I. 2001. Individual variation in life history characteristics can influence extinction risk. Ecological Modelling 144:61-76.
+Moretti, A., M. Pedini Fernandez-Criado, G. Cittolin, and R. Guidastri. 1999. Manual on Hatchery Production of Seabass and
+Gilthead Seabream, Volume 1. FAO, Rome. 194 pp.
+Steffensen, K. D., M. A. Pegg, and G. Mestl. 2013. Population prediction and viability model for pallid sturgeon (Scaphirhynchus albus, Forbes and Richardson, 1905) in the lower Missouri River. Journal of Applied Ichthyology 29:984-989.
+Wildhaber, M. L., J. L. Albers, N. S. Green, and E. H. Moran. A fully-stochasticized, age-structured population model for population viability analysis of fish: Lower Missouri River endangered pallid sturgeon example. Ecological Modelling.
+
+
+## Figures
+	
+    
+```{r echo=FALSE, out.width="95%"}
+include_graphics(figures/figure-01.png")
+```
+
+    
+```{r echo=FALSE, out.width="95%"}
+include_graphics(figures/figure-02.png")
+```
+## Tables
+
+```{r}
+kable(tables(1))
+```
+
+```{r}
+kable(tables(2))
+```
+

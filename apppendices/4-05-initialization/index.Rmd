@@ -1,0 +1,242 @@
+
+# Pallid Sturgeon Model Length Initialization (Non-spatial)
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+source("R/1_global.R")  	
+source("R/2_functions.R")         
+source("R/3_load.R")     
+source("R/4_clean.R" )
+source("R/5_tables.R") 
+source("R/6_figures.R") 	
+source("R/7_analysis.R")
+```
+     
+## Overview and rational
+
+The Pallid Sturgeon simulation model is an individual based model that 
+can be run as a spatially explicit or not. for the user-specified number 
+of stochastic replicates initial lengths need to be assigned to 
+individuals in order to simulate population dynamics. Additionally, 
+initialization of lengths needs to account for origin (hatchery, 
+natural), basin (RPMA2, RPMA4), and location within basin. The 
+objectives of this analysis were to: 1) evaluate length distribution 
+between hatchery and natural origin Pallid Sturgeon within basin, 2) 
+develop function to stochastically simulate lengths of individual Pallid 
+Sturgeon from conditional on basin and origin, 3) evaluate length 
+distribution between hatchery and natural origin Pallid Sturgeon for 
+locations within basin, and 4) develop function to stochastically 
+simulate lengths of individual Pallid Sturgeon from conditional on 
+location within basin and origin. 
+
+  
+    
+    
+## Methods
+
+### Study area
+
+Pallid Sturgeon were captured and tagged as part of the Pallid Sturgeon 
+Population Assessment Program since 2006. Fish were captured throughout 
+the upper and lower Missouri River basins (Figure 1). 
+
+
+    
+### Data origin and collection
+
+Fish captured during part of Pallid Sturgeon Population Assessment 
+Program (PSPAP) were used for analysis. The PSPAP is a long-term 
+monitoring program targeting Pallid Sturgeon using a variety of gear 
+(i.e., otter trawls, trotlines). Briefly, Pallid Sturgeon were captured 
+throughout RPMA2 and RPMA4 from 2006 to 2015 (Figure1 and Figure 2). 
+Captured Pallid Sturgeon were measured for length and weight and 
+examined for the presence of a passive integrated transponder (PIT) tag. 
+PIT tagged fish were compared to stocking records and assigned as a 
+hatchery origin if present and natural origin if not. See Welker and 
+Drobish (2012) for full details of monitoring program. 
+
+  
+    
+### Non-spatial length distributions
+
+We developed empirical distributions of length to use to stochastically 
+assign an individual Pallid Sturgeon length given its origin and basin. 
+Length distributions were generated as empirical cumulative distribution 
+function (ECDF) of fish length. Four ECDFs were generated representing 
+hatchery and natural origin fish from RPMA2 and RPMA4. The cumulative 
+distribution was used because it does not impose any distributional 
+assumptions (e.g., normal, lognormal) and the empirical distribution can 
+be easily updated and used in the Pallid Sturgeon model each year with 
+new samples. Additionally, random fish lengths can be easily generated 
+using a random uniform number. All fish within a year were used to 
+develop length distributions because Pallid Sturgeon, relative to other 
+fish, grow slowly and therefore using all fish captured within a year 
+provides a sufficient sample size to assume a reasonable approximation 
+of the true length distribution for RPMA2 and RPMA4. 
+
+   
+### Spatial distribution of fish and length
+    
+Individual fish are assigned to a location (i.e., 
+rkm, bend) within the basis of interest in the model. This assignment 
+was done by stochastically assigning a river bend within basin. This 
+probabilistic assignment was done by developing a density function for 
+RPMA2 and RPMA4 using catch per unit effort data. Catch per unit effort 
+was Because river bends are the sampling unit of the PSPAP Catch per 
+unit effort data was pooled among years such to maximize the spatial 
+coverage of sampling efforts because a subset of the entire river 
+segment was sampled each year. When a bend was . The density function 
+was Within the modelCatch per unit effort data for Pallid Sturgeon 
+
+
+### Length distributions in space 
+ 
+ 
+## Results
+
+### Data
+
+Data available to generate length distributions varied between basins 
+and sample years. There were 12,465 fish used to develop empirical 
+cumulative distribution functions the fish length, 7227 and 5238 for the 
+lower and upper basin respectively (Table 1). The number of hatchery 
+
+
+    
+### Length distribution by origin and basin
+
+Length distributions varied between basin and origin. There was a larger 
+proportion of hatchery origin fish were generally smaller than natural 
+origin fish representing the effect of annual stocking efforts. The 
+longest Pallid Sturgeon were natural origin fish captured in RPMA2. 
+ 
+    
+### Length distribution by origin within basin	
+    
+## Discussion
+
+### Process for incorporating new information into the model
+
+As new information is entered into the master Pallid Sturgeon database 
+this information can be used to update length distributions used in the 
+model. In order to do this a dataset with length data is required that 
+matches the dataset used to create the distribution. The most efficient 
+approach to this would be to establish a database query that can be 
+accessed using an ODBC connection through R. Once an ODBC connection is 
+established the query can be fetched and imported to R. Within R the 
+user will simply need to change the year to the year of interest and 
+rerun the code. The code will then save the functions as an *.Rdata file 
+which is then read by the Pallid Sturgeon model on opening. Caveat to 
+this process is that file architecture is important because files have 
+to save to specific locations for sourcing by the Pallid Sturgeon model. 
+
+## References 
+
+Gelman, A., and D. B. Rubin. 1992. Inference from iterative simulation using multiple sequences. Statistical Science 7:457–511.
+Helser, T. E., and H.-L. Lai. 2004. A Bayesian hierarchical meta-analysis of fish growth: with an example for North American largemouth bass, Micropterus salmoides Ecological Modelling 178:399-416 
+Plummer, M. 2003. JAGS: A program for analysis of Bayesian graphical models using Gibbs sampling. . Proceedings of the 3rd International Workshop on Distributed Statistical Computing:1–10.
+R Development Core Team. 2010. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria.
+Su, Y.-S., and M. Yajima. 2013. Package “R2jags”.
+Welker, T. L., and M. R. Drobish. 2012. Missouri River standard operating procedures for fish sampling and data collection. U.S. Army Corps of Engineers.
+
+## Figures
+
+```{r,echo=FALSE}
+figures(1)
+```  
+Figure 1.
+ 
+```{r,echo=FALSE}
+figures(2)
+```  
+Figure 2.
+ 
+```{r,echo=FALSE}
+figures(3)
+```  
+Figure 3. Relative frequency (y-axis) versus length (x-axis) for Pallid 
+Sturgeon captured in RPMA4 from 2006 to 2015. Pallid Sturgeon were 
+captured as part of the Pallid Sturgeon Population Assessment Program in 
+the Missouri River. 
+
+```{r,echo=FALSE}
+figures(4)
+```  
+Figure 4.  Relative frequency (y-axis) versus length (x-axis) for Pallid Sturgeon captured in RPMA2 from 2006 to 2015.  Pallid Sturgeon were captured as part of the Pallid Sturgeon Population Assessment Program in the Missouri River.  Pallid Sturgeon origin was not differentiated when calculating relative frequencies.  
+
+```{r,echo=FALSE}
+figures(5)
+```  
+Figure 5.  Relative frequency (y-axis) versus length (x-axis) for natural origin Pallid Sturgeon captured in RPMA4 from 2006 to 2015.  Pallid Sturgeon were captured as part of the Pallid Sturgeon Population Assessment Program in the Missouri River.  
+
+```{r,echo=FALSE}
+figures(6)
+```  
+Figure 6.  Relative frequency (y-axis) versus length (x-axis) for hatchery origin Pallid Sturgeon captured in RPMA4 from 2006 to 2015.  Pallid Sturgeon were captured as part of the Pallid Sturgeon Population Assessment Program in the Missouri River.  
+
+```{r,echo=FALSE}
+figures(7)
+```  
+Figure 7.  Relative frequency (y-axis) versus length (x-axis) for natural origin Pallid Sturgeon captured in RPMA4 from 2006 to 2015.  Pallid Sturgeon were captured as part of the Pallid Sturgeon Population Assessment Program in the Missouri River.  
+
+```{r,echo=FALSE}
+figures(8)
+```  
+Figure 8.  Relative frequency (y-axis) versus length (x-axis) for hatchery origin Pallid Sturgeon captured in RPMA2 from 2006 to 2015.  Pallid Sturgeon were captured as part of the Pallid Sturgeon Population Assessment Program in the Missouri River.  
+
+```{r,echo=FALSE}
+figures(9)
+``` 
+Figure 9.  Length distributions (left columns) and cumulative length distributions (right column) for hatchery and natural origin fish from RPMA2 and RPMA4.  Distributions are used to initialize lengths for individual fish in stochastic simulations.  
+
+## Tables
+
+Table 1. Number of Pallid Sturgeon captured by origin and basin from 
+2006-2015 as part of the Pallid Sturgeon Population Assessment Program 
+in the Missouri River. 
+
+```{r,echo=FALSE}
+kable(tables(1))   
+```
+
+	 
+    
+
+Plugin functions used to initialize Pallid Sturgeon population model
+Box 1.  
+
+
+```{r,eval=FALSE}
+length_initialization<- function(n=10, basin="lower",origin=1, spatial=FALSE)
+	{# A FUNCTION TO INITIALIZE LENGTHS OF INDIVIDUAL FISH
+	# origin [0 for natural, 1 for hatchery
+	if(tolower(basin)=="lower" & spatial==FALSE)
+		{
+		out<- r(len_ini_low_hatchery_nospace)(n)*origin + # hatchery
+			r(len_ini_low_natural_nospace)(n)*(1-origin) # natural
+		}
+	if(tolower(basin)=="upper" & spatial==FALSE)
+		{
+		out<- r(len_ini_upp_hatchery_nospace)(n)*origin + # hatchery
+			r(len_ini_upp_natural_nospace)(n)*(1-origin) # natural
+		}
+	# SPATIAL COMPONENT
+	if(tolower(basin)=="lower" & spatial==TRUE )
+		{
+		####fixme####
+		out<- r(len_ini_low_hatchery_nospace)(n)*origin + # hatchery
+			r(len_ini_low_natural_nospace)(n)*(1-origin) # natural
+		}
+	if(tolower(basin)=="upper" & spatial==TRUE )
+		{
+		####fixme####
+		out<-  r(len_ini_upp_hatchery_nospace)(n)*origin + # hatchery
+			r(len_ini_upp_natural_nospace)(n)*(1-origin) # natural
+		}
+	}
+
+```
+
+
+
+
+	
