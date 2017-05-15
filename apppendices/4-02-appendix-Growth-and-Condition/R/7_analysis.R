@@ -1,13 +1,10 @@
-adat<- tables(4)
-adat<-subset(adat, !(is.na(basin)))
-saveRDS(adat,"./output/adat.RDS")
-adat<- readRDS("./output/adat.RDS")
+# DATA TABLE TO FIT FABENS MODEL
+adat<- tables(4) 
+val<- adat$val
+adat<- adat$out
+
 ni<- 500000	#	n.iter
 nb<- 200000	#	n.burnin
-adat$basin_id<-ifelse(adat$basin=="lower",1,2)
-
-
-
 
 ## MODEL 4a ln(k)~a+b*ln(linf)
 upper<- subset(adat,basin=="upper")
@@ -15,7 +12,12 @@ linf_ini<- log(tapply(upper$l2, upper$ind_id,max)*1.25)
 upper<- list(L1=upper$l1,
 	Y=upper$l2,
 	dY=upper$dy,
-	ind_id=upper$ind_id, N_inds= max(upper$ind_id),N=nrow(upper))	
+    val_age=val$age,
+    val_length=val$length,
+    n_val=nrow(val),
+	ind_id=upper$ind_id, 
+    N_inds= max(upper$ind_id),
+    N=nrow(upper))	
 inits<- function(t)
 	{	
 	list(a=0,b=0,Linf=1500,sigma_obs=.25,Linfi=linf_ini,sigma_Linf=.25)
@@ -54,9 +56,7 @@ inits<- function(t)
 		sigma_obs=runif(2),
 		Linfi=log(tapply(dat$Y, dat$ind[,1],max)*1.25),
 		Linf=c(6.5,6.5),		
-		sigma_Linf=runif(2))
-	
-		
+		sigma_Linf=runif(2))		
 	}
 params<- c("a","b","Linf","prec_obs","sigma_Linf")
 out_upper <-  jags.parallel(data=dat,

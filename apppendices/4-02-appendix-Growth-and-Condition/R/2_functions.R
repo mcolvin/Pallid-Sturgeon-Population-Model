@@ -112,12 +112,23 @@ mod4a<- function()
 		# LIKLIHOOD
 		Y[i]~dnorm(L2[i],prec_obs)
 		}
-	# INDVIDUALS	
+	# LIINDVIDUALS	
 	for(j in 1:N_inds)
 		{
 		Linfi[j]~dnorm(Linf,prec_Linf)%_%T(,2000) # INDVIDUAL Linf
 		}
 	
+    # PREDICT AGE OF PS  
+    t0<- -6.2021 #-2.056 RPMA 4; -6.2021 RPMA 2 SHUMAN   
+    for(i in 1:n_val)
+        {
+        k_val[i]<-(exp(a + b*Linf))
+        Linf_val[i]<- Linf
+        
+        age[i]<-log(1-((val_length[i]/Linf_val[i])))/-k_val[i] + t0
+        }
+    
+    # PRIORS
 	Linf~dunif(1000,2000)
 	sigma_Linf ~ dunif (0, 10)		
 	prec_Linf <-  pow(sigma_Linf,-2)

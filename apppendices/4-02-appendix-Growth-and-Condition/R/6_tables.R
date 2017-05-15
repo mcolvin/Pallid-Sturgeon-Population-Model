@@ -144,62 +144,76 @@ if(n==4)
 	{
 	# DATASET FOR FABENS ANALYSIS
 	tags<-aggregate(tmp~tagnumber,dat,sum)
+    
+    ## GET RID OF UNUSABLE DATA
 	tags<- subset(tags, tmp>1)
 	tags<- subset(tags,  !(tagnumber %in% toupper(c("N/A", "nofishscan","xxxxxxxxxx", "XXXXXXXXXX","0000000000"))))
 	tags<- subset(tags,  !is.na(tagnumber))
 	tmp<- subset(dat, tagnumber %in% tags$tagnumber)
-	tmp<- tmp[order(tmp$tagnumber,tmp$setdate),]
+	# SUBSET OUT TRAINING DATA
+    tmp<- subset(dat, validate==0)
+    ## ORDER BY TAG AND DATE
+    tmp<- tmp[order(tmp$tagnumber,tmp$setdate),]
+    ## CREATE A SEQUENTIAL INDEX FOR EACH FISH
+    ## TO LOOP WITHIN IN JAGS
 	tmp$win<-1
 	for(i in 2:nrow(tmp))
 		{
 		tmp$win[i]<- ifelse(tmp$tagnumber[i]==tmp$tagnumber[i-1],tmp$win[i-1]+1,1)
 		}
 	indx<- match(c("basin","tagnumber","setdate","length","weight"),names(tmp))
-	# 1,2
+	
+    # CALCULATE CHANGIN IN LENGTH
+    ## 1,2
 	x1<- tmp[tmp$win==1,indx]
 	names(x1)<-c("basin","tagnumber","setdate1","l1","w1")
 	x2<- tmp[tmp$win==2,indx]	
 	names(x2)<-c("basin","tagnumber","setdate2","l2","w2")
 	out<- merge(x1,x2, by="tagnumber",all.y=TRUE)
-	# 2,3		
+	## 2,3		
 	x1<- tmp[tmp$win==2,indx]
 	names(x1)<-c("basin","tagnumber","setdate1","l1","w1")
 	x2<- tmp[tmp$win==3,indx]	
 	names(x2)<-c("basin","tagnumber","setdate2","l2","w2")
 	out<- rbind(out,merge(x1,x2, by="tagnumber",all.y=TRUE))	
-	# 3,4		
+	## 3,4		
 	x1<- tmp[tmp$win==3,indx]
 	names(x1)<-c("basin","tagnumber","setdate1","l1","w1")
 	x2<- tmp[tmp$win==4,indx]	
 	names(x2)<-c("basin","tagnumber","setdate2","l2","w2")
 	out<- rbind(out,merge(x1,x2, by="tagnumber",all.y=TRUE))	
-	# 4,5		
+	## 4,5		
 	x1<- tmp[tmp$win==4,indx]
 	names(x1)<-c("basin","tagnumber","setdate1","l1","w1")
 	x2<- tmp[tmp$win==5,indx]	
 	names(x2)<-c("basin","tagnumber","setdate2","l2","w2")
 	out<- rbind(out,merge(x1,x2, by="tagnumber",all.y=TRUE))		
-	# 5,6		
+	## 5,6		
 	x1<- tmp[tmp$win==5,indx]
 	names(x1)<-c("basin","tagnumber","setdate1","l1","w1")
 	x2<- tmp[tmp$win==6,indx]	
 	names(x2)<-c("basin","tagnumber","setdate2","l2","w2")
 	out<- rbind(out,merge(x1,x2, by="tagnumber",all.y=TRUE))	
-	# 6,7		
+	## 6,7		
 	x1<- tmp[tmp$win==6,indx]
 	names(x1)<-c("basin","tagnumber","setdate1","l1","w1")
 	x2<- tmp[tmp$win==7,indx]	
 	names(x2)<-c("basin","tagnumber","setdate2","l2","w2")
 	out<- rbind(out,merge(x1,x2, by="tagnumber",all.y=TRUE))	
-	# 7,8		
+	## 7,8		
 	x1<- tmp[tmp$win==7,indx]
 	names(x1)<-c("basin","tagnumber","setdate1","l1","w1")
 	x2<- tmp[tmp$win==8,indx]	
 	names(x2)<-c("basin","tagnumber","setdate2","l2","w2")
 	out<- rbind(out,merge(x1,x2, by="tagnumber",all.y=TRUE))	
-	out$dl<- out$l2-out$l1
+	
+    ## CALCULATE DL
+    out$dl<- out$l2-out$l1
+    ## CALCULATE DT
 	out$dt<- as.numeric(out$setdate2-out$setdate1)/86400
 	out$dy<- out$dt/365.25
+    
+    ## FLAG VALUES WHERE DL IS NEGATIVE
 	out$flag<- ifelse(out$dl>0,0,1)
 	
 	# leave in fish with negative growth
@@ -219,6 +233,17 @@ if(n==4)
 	out<- merge(out, tmp, by=c("basin.y","tagnumber"), all.x=TRUE)
 	out<- out[,-3]
 	names(out)[1]<-"basin"
+    out<-subset(out, !(is.na(basin)))
+    # FOR INDEXING IN JAGS
+    out$basin_id<-ifelse(out$basin=="lower",1,2)
+    
+    # MAKE VALIDATION DATASET
+    val<- subset(dat,validate==1)
+    val<- val[,match(c("tagnumber","basin","setdate",
+        "segment_id","age","length","weight"),names(val))]
+     # FOR INDEXING IN JAGS
+    val$basin_id<-ifelse(val$basin=="lower",1,2)       
+    out<- list(out=out,val=val)
 	return(out)
 	}
 	
