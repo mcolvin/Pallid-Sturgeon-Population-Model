@@ -6,13 +6,73 @@ adat<- adat$out
 ni<- 500000	#	n.iter
 nb<- 200000	#	n.burnin
 
+
+
+upper<- subset(adat,basin=="upper")
+linf_ini<- log(tapply(upper$l2, upper$ind_id,max)*1.25)  
+upper<- list(L1=upper$l1,
+	Y=upper$l2,
+	maxY=max(upper$l2)+1,
+	dY=upper$dy,
+    #val_age=val$age,
+    val_length=val$length,
+    n_val=nrow(val),
+	#ind_id=upper$ind_id, 
+    #N_inds= max(upper$ind_id),
+    N=nrow(upper),
+    l_age=rep(NA,25))	
+## MODEL 0 FIXED LINF AND VARYING K
+inits<- function(t)
+	{	
+	list(k=0.1,Linf=1600,sigma_obs=1.25)#,sigma_k=.25)
+	list(k=0.05,Linf=2000,sigma_obs=2.25)#,sigma_k=.25)
+	list(k=0.01,Linf=1800,sigma_obs=.25)#,sigma_k=.25)
+	}
+params<- c("k","Linf","sigma_obs","age","l_age")	
+
+out_lower <- jags(data=upper,
+	inits=inits,
+	parameters=params,	
+	model.file=mod00,
+	n.chains = 3,	
+	n.iter = 500,	
+	n.burnin = 300,
+	n.thin=2,
+	working.directory=getwd())
+
+ppp<- data.frame( 
+    parameter= colnames(out_lower$BUGSoutput$sims.matrix),
+    lci=apply(out_lower$BUGSoutput$sims.matrix,2,quantile, 0.025),
+    est=apply(out_lower$BUGSoutput$sims.matrix,2,quantile, 0.5),
+    uci=apply(out_lower$BUGSoutput$sims.matrix,2,quantile, 0.975))
+
+pdat<- ppp[grep("l_age",ppp$parameter),]
+pdat$age<-c(1:nrow(pdat))  
+    
+    
+plot(est~age,pdat)
+points(lci~age,pdat,type='l',lty=2)
+points(uci~age,pdat,type='l',lty=2)
+
+
+out_lower$BUGSoutput$summary
+plot(val$age~out_lower$BUGSoutput$mean$age,ylim=c(0,25),xlim=c(0,25))
+abline(0,1,lty=2)
+
+
+
+plot(length~age,dat, subset=basin=="lower")
+points(est~age,pdat,col="red")
+
+
+
 ## MODEL 4a ln(k)~a+b*ln(linf)
 upper<- subset(adat,basin=="upper")
-linf_ini<- log(tapply(upper$l2, upper$ind_id,max)*1.25)
+linf_ini<- log(tapply(upper$l2, upper$ind_id,max)*1.25)  
 upper<- list(L1=upper$l1,
 	Y=upper$l2,
 	dY=upper$dy,
-    val_age=val$age,
+    #val_age=val$age,
     val_length=val$length,
     n_val=nrow(val),
 	ind_id=upper$ind_id, 
@@ -24,16 +84,19 @@ inits<- function(t)
 	list(a=0,b=0,Linf=1500,sigma_obs=.25,Linfi=linf_ini,sigma_Linf=.25)
 	list(a=0,b=0,Linf=1500,sigma_obs=.25,Linfi=linf_ini,sigma_Linf=.25)
 	}
-params<- c("a","b","Linf","prec_obs","sigma_Linf")
-out_upper <-  jags.parallel(data=upper,
+params<- c("a","b","Linf","prec_obs","sigma_Linf","k_val")
+out_upper <-  jags(data=upper,
 	inits=inits,
 	parameters=params,	
-	model.file=mod4,
+	model.file=mod4a,
 	n.chains = 3,	
-	n.iter = 3009,	
-	n.burnin = 1000,
+	n.iter = 300,	
+	n.burnin = 100,
 	n.thin=2,
-	export_obj_names=c("linf_ini","upper","inits","params"),
+	#export_obj_names=c("linf_ini",# need this because it is called in inits
+    #    "upper",
+    #    "inits",
+    #    "params"),# export to cores
 	working.directory=getwd())
 	
 save(out_upper, file = "./output/out_upper-mod3b.RData")

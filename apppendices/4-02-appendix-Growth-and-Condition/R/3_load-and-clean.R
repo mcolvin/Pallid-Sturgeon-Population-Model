@@ -29,7 +29,7 @@ stocked[which(is.na(stocked$hatchery)==TRUE),]$hatchery<- "UNKNOWN"
 
 ## ADD STOCKING DATA TO FIELD DATA
 dat<-rbind.fill(dat,stocked)
-dat<- subset(dat, length>=0)
+dat<- subset(dat, length>0)
 dat$tagnumber<- ifelse(dat$tagnumber %in% c("","..........","\\…",
 	"0000000000","N/A","NOFISHSCAN","unknown","XXXXXXXXXX"),
 	"unknown",dat$tagnumber)
@@ -52,6 +52,8 @@ sapply(2:nrow(dat),function(x)
 	}))
 dat$lw_type<- ifelse(dat$tmp==0,"stocking","capture")
 dat$tmp<-1
+
+
 
 # ASSIGN BIRTHDAY TO CAPTURED FISH BY PIT TAG
 tmp<- aggregate(birthday~tagnumber,dat,min)
@@ -86,30 +88,3 @@ indx<- unlist(lapply(1:nrow(n), function(x)
 ## ASSIGN VALIDATION STATUS    
 dat$validate<-0 # TRAINING
 dat[which(dat$indx %in% indx),]$validate<-1 # VALIDATION
-
-
-# LOAD BUGS OUTPUT FROM PREVIOUS MODEL RUNS
-load("./output/out_lower-mod1.RData")
-m1<- out_lower
-load("./output/out_lower-mod1-gomp.RData")
-m2<- out_lower
-load("./output/out_lower-mod2.RData")
-m3<- out_lower
-load("./output/out_lower-mod2-gomp.RData")
-m4<- out_lower
-load("./output/out_upper-mod1.RData")
-m5<- out_upper
-load("./output/out_upper-mod1-gomp.RData")
-m6<- out_upper
-load("./output/out_upper-mod2.RData")
-m7<- out_upper
-load("./output/out_upper-mod2-gomp.RData")
-m8<- out_upper
-
-# VBGF with correlated k and linf
-load("./output/out_lower-mod3.RData")
-low_cor_vbgf<- out_lower
-load("./output/out_upper-mod3.RData")
-upp_cor_vbgf<- out
-
-

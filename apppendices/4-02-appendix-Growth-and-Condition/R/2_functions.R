@@ -10,6 +10,125 @@
 # POWER
 # 
 
+mod0 <- function()
+	{# FABENS MODEL WITH VARYING K
+	for(i in 1:N)
+		{
+		# MODEL	
+		Lki[i]~dlnorm(LLk,prec_k)  # draw k      
+		L2[i]<- (Linf-L1[i])*(1-exp(-Lki[i]*dY[i]))+L1[i]
+		LL2[i]<-log(L2[i])	# 
+
+		# LIKLIHOOD
+        ## ASSUMES LOG NORMAL
+		Y[i]~dlnorm(LL2[i],prec_obs)
+
+		}
+
+        
+    # PREDICT AGE OF PS  
+    t0<- -6.2021 #-2.056 RPMA 4; -6.2021 RPMA 2 SHUMAN 
+    for(i in 1:n_val)
+       {
+       age[i]<- -1/k*log(1-val_length[i]/Linf) + t0
+       }    
+       
+    # PRIORS    
+	## HYPER PARAMETER PRIORS
+	k~dunif(0.001,0.2)
+	LLk<- log(k)
+	sigma_k ~ dunif(0, 10)		
+	prec_k <-  pow(sigma_k,-2)	
+	
+	## Linfinity
+	Linf~dunif(maxY,2500)# truncate to largest fish
+	
+	## OBSERVATION
+	sigma_obs  ~ dunif(0, 10)	
+	prec_obs <-pow(sigma_obs,-2)
+	}
+
+mod00 <- function()
+	{# FABENS MODEL WITH VARYING K
+	for(i in 1:N)
+		{
+		# MODEL	
+		L2[i]<- (Linf-L1[i])*(1-exp(-k*dY[i]))+L1[i]
+		LL2[i]<-log(L2[i])	# assume log normal error
+
+		# LIKLIHOOD
+        ## ASSUMES LOG NORMAL
+		Y[i]~dlnorm(LL2[i],prec_obs)
+
+		}
+    for(age in 1:25)
+        {
+        l_age[age]<- Linf * (1 - exp(-k * (age-t0))) 
+        }
+        
+    # PREDICT AGE OF PS  
+    t0<- -6.2021 #-2.056 RPMA 4; -6.2021 RPMA 2 SHUMAN 
+    for(i in 1:n_val)
+       {
+       age[i]<- -1/k*log(1-val_length[i]/Linf) + t0
+       }    
+       
+    # PRIORS    
+	## HYPER PARAMETER PRIORS
+	k~dunif(0.001,0.2)
+		
+	## Linfinity
+	Linf~dunif(maxY,2500)# truncate to largest fish
+	
+	## OBSERVATION
+	sigma_obs  ~ dunif(0, 10)	
+	prec_obs <-pow(sigma_obs,-2)
+	}
+    
+    
+  
+
+
+mod00 <- function()
+	{# FABENS MODEL WITH VARYING K
+	for(i in 1:N)
+		{
+		# MODEL	
+		L2[i]<- (Linf-L1[i])*(1-exp(-k*dY[i]))+L1[i]
+		LL2[i]<-log(L2[i])	# assume log normal error
+
+		# LIKLIHOOD
+        ## ASSUMES LOG NORMAL
+		Y[i]~dlnorm(LL2[i],prec_obs)
+
+		}
+
+        
+    # PREDICT AGE OF PS  
+    t0<- -6.2021 #-2.056 RPMA 4; -6.2021 RPMA 2 SHUMAN 
+    for(i in 1:n_val)
+       {
+       age[i]<- -1/k*log(1-val_length[i]/Linf) + t0
+       }    
+       
+    # PRIORS    
+	## HYPER PARAMETER PRIORS
+	k~dunif(0.001,0.2)
+		
+	## Linfinity
+	Linf~dunif(maxY,2500)# truncate to largest fish
+	
+	## OBSERVATION
+	sigma_obs  ~ dunif(0, 10)	
+	prec_obs <-pow(sigma_obs,-2)
+	}
+    
+    
+
+
+
+
+  
 mod1<- function()
 	{# FABENS MODEL WITH RANDOM L_INF	
 	for(i in 1:N)
@@ -78,16 +197,32 @@ mod3<- function()
 		# LIKLIHOOD
 		Y[i]~dnorm(L2[i],prec_obs)
 		}
-	# INDVIDUALS	
+ 	## INDVIDUAL K AND LINF	
 	for(j in 1:N_inds)
 		{
 		#Linfi[i]~dnorm(Linf,prec_Linf) # INDVIDUAL Linf
 		#Lki[i]~dnorm(lnk,prec_k)# INDIVIDUAL K		
 		v[j,1:2] ~ dmnorm(beta[], prec.Sigma[,]) # 1 = lint, 2 = k
-		}
+		} 
+
+        
+    # PREDICT AGE OF PS  
+    t0<- -6.2021 #-2.056 RPMA 4; -6.2021 RPMA 2 SHUMAN 
+    Linf_val<- exp(beta[1])
+    k_val<- exp(beta[2])
+    #for(i in 1:n_val)
+    #    {
+     #   age[i]<- -1/k_val*log(1-val_length[i]/Linf_val) + t0
+     #   }    
+   
+    # DERIVED
+    Linf_hat<- exp(beta[1])
+    k_hat<- exp(beta[2])   
+    
+    
+    # PRIORS    
 	beta[1] ~ dnorm(0.0,1.0E-3)# overall mean ln(LINF)
 	beta[2] ~ dnorm(0.0,1.0E-3)# overall mean ln(k)
-
 	
 	Sigma[1:2,1:2] <- inverse(prec.Sigma[,])
 	prec.Sigma[1:2, 1:2] ~ dwish(Omega[,], 2)	
@@ -97,8 +232,8 @@ mod3<- function()
 	Omega[2,1] <- 0		
 		
 	# OBSERVATION
-	sigma_obs  ~ dgamma(0.001,0.001)
-	prec_obs <-pow(sigma_obs,-2)
+	sigma_obs ~ dgamma(0.001,0.001)
+	prec_obs <- pow(sigma_obs,-2)
 	}	
 		
 mod4a<- function()
@@ -119,13 +254,13 @@ mod4a<- function()
 		}
 	
     # PREDICT AGE OF PS  
-    t0<- -6.2021 #-2.056 RPMA 4; -6.2021 RPMA 2 SHUMAN   
+    t0<- -6.2021 #-2.056 RPMA 4; -6.2021 RPMA 2 SHUMAN 
+
     for(i in 1:n_val)
         {
-        k_val[i]<-(exp(a + b*Linf))
-        Linf_val[i]<- Linf
-        
-        age[i]<-log(1-((val_length[i]/Linf_val[i])))/-k_val[i] + t0
+        Linf_val[i]<- max(Linf, 1.1*val_length[i])
+        k_val[i]<- exp(a + b*Linf_val[i])
+       # age[i]<- -1/k_val[i]*log(1-val_length[i]/Linf_val[i]) + t0
         }
     
     # PRIORS

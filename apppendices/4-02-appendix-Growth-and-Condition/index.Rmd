@@ -10,7 +10,8 @@ output:
 ---
 
 <!--
-need to assign birthday to recpatures by pit tag...
+* need to account for repeated captures within fish...
+* need a way to estimate t0
 
 -->
 
