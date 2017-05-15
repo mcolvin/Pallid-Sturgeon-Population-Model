@@ -54,16 +54,17 @@ mod00 <- function()
 		{
 		# MODEL	
 		L2[i]<- (Linf-L1[i])*(1-exp(-k*dY[i]))+L1[i]
-		LL2[i]<-log(L2[i])	# assume log normal error
+
 
 		# LIKLIHOOD
         ## ASSUMES LOG NORMAL
-		Y[i]~dlnorm(LL2[i],prec_obs)
+		Y[i]~dnorm(L2[i],tau)
 
 		}
     for(age in 1:25)
         {
-        l_age[age]<- Linf * (1 - exp(-k * (age-t0))) 
+        l_age_mu[age]<- Linf * (1 - exp(-k * (age-t0))) # PREDICTED LENGTH AT AGE
+        l_age[age]~dnorm(l_age_mu[age],tau) # FOR PREDICTION INTERVAL
         }
         
     # PREDICT AGE OF PS  
@@ -81,8 +82,8 @@ mod00 <- function()
 	Linf~dunif(maxY,2500)# truncate to largest fish
 	
 	## OBSERVATION
-	sigma_obs  ~ dunif(0, 10)	
-	prec_obs <-pow(sigma_obs,-2)
+	sigma2  ~ dunif(0, 1000)	
+	tau <-pow(sigma2,-2)
 	}
     
     

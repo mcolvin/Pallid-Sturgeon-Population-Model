@@ -24,9 +24,9 @@ upper<- list(L1=upper$l1,
 ## MODEL 0 FIXED LINF AND VARYING K
 inits<- function(t)
 	{	
-	list(k=0.1,Linf=1600,sigma_obs=1.25)#,sigma_k=.25)
-	list(k=0.05,Linf=2000,sigma_obs=2.25)#,sigma_k=.25)
-	list(k=0.01,Linf=1800,sigma_obs=.25)#,sigma_k=.25)
+	list(k=0.1,Linf=1600,sigma_obs=100.25)#,sigma_k=.25)
+	list(k=0.05,Linf=2000,sigma_obs=200.25)#,sigma_k=.25)
+	list(k=0.01,Linf=1800,sigma_obs=500.25)#,sigma_k=.25)
 	}
 params<- c("k","Linf","sigma_obs","age","l_age")	
 
