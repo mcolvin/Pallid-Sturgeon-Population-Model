@@ -26,6 +26,7 @@ names(stocked)<- tolower(names(stocked))
 stocked$hatchery<-as.character(stocked$hatchery)
 names(stocked)[5]<-'setdate' # assign stocking data to set date
 stocked[which(is.na(stocked$hatchery)==TRUE),]$hatchery<- "UNKNOWN"
+stocked$headstart<- stocked$setdate
 
 ## ADD STOCKING DATA TO FIELD DATA
 dat<-rbind.fill(dat,stocked)
@@ -55,12 +56,16 @@ dat$tmp<-1
 
 
 
-# ASSIGN BIRTHDAY TO CAPTURED FISH BY PIT TAG
+# ASSIGN BIRTHDAY AND STOCKDATE TO CAPTURED FISH BY PIT TAG
 tmp<- aggregate(birthday~tagnumber,dat,min)
 names(tmp)[2]<- "birthdate"
+tmp2<- aggregate(headstart~tagnumber,dat,min)
+names(tmp2)[2]<- "stockdate"
+tmp<- merge(tmp, tmp2, by="tagnumber", all.x=TRUE)
 dat<- merge(dat, tmp,by="tagnumber",all.x=TRUE)
 ## CALCULATE THAT AGE FOR HATCHERY FISH
 dat$age<- as.numeric(dat$setdate-dat$birthdate)/365
+dat$headstart<- as.numeric(dat$stockdate-dat$birthdate)/365# years
 ## FISH TO ESTIMATE AGE FOR 
 ## STRATIFIED INTO FIRST 5 YEARS AND THEN 6-10, 11-15, 16-20, 20+
 ## AND BY BASIN
@@ -88,3 +93,4 @@ indx<- unlist(lapply(1:nrow(n), function(x)
 ## ASSIGN VALIDATION STATUS    
 dat$validate<-0 # TRAINING
 dat[which(dat$indx %in% indx),]$validate<-1 # VALIDATION
+

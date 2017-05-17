@@ -24,11 +24,11 @@ upper<- list(L1=upper$l1,
 ## MODEL 0 FIXED LINF AND VARYING K
 inits<- function(t)
 	{	
-	list(k=0.1,Linf=1600,sigma_obs=100.25)#,sigma_k=.25)
-	list(k=0.05,Linf=2000,sigma_obs=200.25)#,sigma_k=.25)
-	list(k=0.01,Linf=1800,sigma_obs=500.25)#,sigma_k=.25)
+	list(k=0.1,Linf=1600,sigma2=0.25)#,sigma_k=.25)
+	list(k=0.05,Linf=2000,sigma2=0.25)#,sigma_k=.25)
+	list(k=0.01,Linf=1800,sigma2=0.25)#,sigma_k=.25)
 	}
-params<- c("k","Linf","sigma_obs","age","l_age")	
+params<- c("k","Linf","sigma2","age","l_age")	
 
 out_lower <- jags(data=upper,
 	inits=inits,
@@ -50,19 +50,52 @@ pdat<- ppp[grep("l_age",ppp$parameter),]
 pdat$age<-c(1:nrow(pdat))  
     
     
+plot(length~age,dat, subset=basin=="lower", xlab="True age",
+    ylab="Length (mm)")
+points(est~age,pdat,col="red",type='l',lwd=2) 
+points(lci~age,pdat,type='l',lty=2,col='red')
+points(uci~age,pdat,type='l',lty=2,col='red')
+legend("topleft", c("Expected value (median)","95% BCI"),
+    col="red",lty=c(1,2))
+   
+   
 plot(est~age,pdat)
 points(lci~age,pdat,type='l',lty=2)
 points(uci~age,pdat,type='l',lty=2)
 
-
-out_lower$BUGSoutput$summary
-plot(val$age~out_lower$BUGSoutput$mean$age,ylim=c(0,25),xlim=c(0,25))
+## HOW DOES THE MODEL DO PREDICTING 
+## AGE FROM A GIVEN LENGTH?
+pdat<- ppp[grep("age",ppp$parameter),]
+pdat<- pdat[-grep("l_age",pdat$parameter),]
+pdat$age<-val$age  
+plot(age~est,pdat,ylim=c(0,25),xlim=c(0,25),
+    ylab="True age", xlab="Predicted age")
+segments(pdat$est, pdat$lci, pdat$est, pdat$uci)
 abline(0,1,lty=2)
 
 
+## SAMPLE THE POSTERIOR TO 
+## CALCULATE CONDITONAL PROBABILITIES  
+ppp<- data.frame( 
+    parameter= colnames(out_lower$BUGSoutput$sims.matrix),
+    lci=apply(out_lower$BUGSoutput$sims.matrix,2,quantile, 0.025),
+    est=apply(out_lower$BUGSoutput$sims.matrix,2,quantile, 0.5),
+    uci=apply(out_lower$BUGSoutput$sims.matrix,2,quantile, 0.975))
 
-plot(length~age,dat, subset=basin=="lower")
-points(est~age,pdat,col="red")
+pdat<- ppp[grep("l_age",ppp$parameter),]
+pdat$age<-c(1:nrow(pdat))  
+    
+
+
+
+
+library(lattice)
+xyplot(length~age|as.factor(year),dat, subset=basin=="upper", xlab="True age",
+    ylab="Length (mm)")
+xyplot(length~age|as.factor(year),dat, subset=basin=="lower", xlab="True age",
+    ylab="Length (mm)")
+
+
 
 
 
