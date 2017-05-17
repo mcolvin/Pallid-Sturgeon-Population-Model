@@ -38,58 +38,146 @@ Questions and follow up
 
 Analysis of length weight data for Missouri River Pallid Sturgeon
 
-Data from the Pallid Sturgeon Population Assessment Project (PSPAP) provided by C. Hubert on 4 January 2016.
+Data from the Pallid Sturgeon Population Assessment Project (PSPAP) 
+provided by C. Hubert on 4 January 2016. 
+
 
 The objectives of this analysis are to:
 
 Estimate k and L∞ for upper and lower basin using recaptured Pallid Sturgeon
 Evaluate Pallid Sturgeon condition over time.
 Link Pallid Sturgeon condition to fecundity
-The primary function of these objectives are to parametrize the individual based growth model and links to fecundity in the population model.
+The primary function of these objectives are to parametrize the 
+individual based growth model and links to fecundity in the population 
+model. 
+
 
 Data overview
 Spatial extent of the Pallid Sturgeon Captures
-Pallid Sturgeon were captured and tagged as part of the Pallid Sturgeon Population Assessment Program since 2006. Fish were captured througout the upper and lower Missouri River basins (Figure 1).
+Pallid Sturgeon were captured and tagged as part of the Pallid Sturgeon 
+Population Assessment Program since 2006. Fish were captured througout 
+the upper and lower Missouri River basins (Figure 1). 
+
 
 Figure 1. Spatial extent of Pallid Sturgeon captures and recaptures in the upper and lower Missouri River basins.
 
-Pallid Sturgeon Length-Weight Relationship
-Overview
-Initially length was modelled using a von Bertalanffy growth function predicting mean length at age. As the model has transitioned to an individual based model, growth (i.e., change in length) will occur on an individual level. This will allow the model to integrate the results of bioenergetic models. A critical aspect of this development is predicting weight from length. The relationship between length and weight also dictates fish condition which may have implications reproductive status.
+# Pallid Sturgeon Length-Weight Relationship
 
-Preliminary results
-Upper basin Pallid Sturgeon weigh more than similar sized fish from the lower basin (Figure 2). Fitting an allometric scaling equation (W = a ⋅ Lb) were different between the two basins, although differences among years was not evaluated here. See table 1 for preliminary estimates of a and b for the upper and lower basin for use in the population model.
+## Overview
+Initially length was modeled using a von Bertalanffy growth function 
+predicting mean length at age. As the model has transitioned to an 
+individual based model, growth (i.e., change in length) will occur on an 
+individual level. This will allow the model to integrate the results of 
+bioenergetic models. A critical aspect of this development is predicting 
+weight from length. The relationship between length and weight also 
+dictates fish condition which may have implications reproductive status. 
+
+
+## Preliminary results
+Upper basin Pallid Sturgeon weigh more than similar sized fish from the 
+lower basin (Figure 2). Fitting an allometric scaling equation 
+(W = a ⋅ Lb) were different between the two basins, although 
+differences among years was not evaluated here. See table 1 for 
+preliminary estimates of a and b for the upper and lower basin for use 
+in the population model. 
+
+
+
 Figure 2. Relationship of length with weight for upper and lower Missouri River Basin Pallid Sturgeon.
 
 Table 1. Estimated a and b parameters for upper and lower Missouri River Pallid Sturgeon. Values in parentheses are 95% confidence intervals.
 
-Pallid Sturgeon Condition
-Overview
-Pallid Sturgeon condition was calculated as Kn = W/Ws, where Kn is the relative condition, W is the observed weight, and Ws is the standard weight. Standard weight was estimated by Shuman et al. (2011) for Pallid Sturgeon as Ws = 10 − 6.2561 ⋅ FL3.2932, where Ws is as described above and FL is fork length in mm.
+# Pallid Sturgeon Condition
 
-Preliminary results
-Figure 3 presents Pallid Sturgeon condition since the begining of the PSPAP. Upper basin fish appear to have higher condition than lower basin fish, although it should be recognized that the equation used to calculate relative condition might be basin specific. Overall relative condition is variable in both basins. Patterns in relative condition appear to decline since 2011, however it is unclear what is biological versus statistically significant.
+## Overview
 
-Figure 3. Estimated relative condition over time for Pallid Sturgeon captured in the upper and lower Missouri River basins.
-
-Individual growth
-Overview
-Because the model has moved to a individual based framework it makes sense to model growth as individuals rather than as a population von Bertalanffy growth function (vggf). In this analysis we estimated the parameters k and L∞ given initial size at capture and size at recapture. Therefore only fish with 2 or more reaptures were used for this analysis. The parameters k and L∞ can be estiamted using the Fabans methods and extensions. This approach estimates the change in length over the time at recapture. Is is reasonable because the vbgf, in ordinary differential equation form is dL/dt = k(L∞ − Lt). There are limitations to this approach resulting in bias that should be recognized. One benefit of this appraoch is that the equation governing the change in length over time is linear, which might allow the analysis to account for among individual variability.
+Pallid Sturgeon condition was calculated as Kn = W/Ws, where Kn is 
+the relative condition, W is the observed weight, and Ws is the standard 
+weight. Standard weight was estimated by Shuman et al. (2011) for Pallid 
+Sturgeon as Ws = 10 − 6.2561 ⋅ FL3.2932, where Ws is as 
+described above and FL is fork length in mm. 
 
 
-Figure 4. Plot of change in length (y-axis) and change in length (x-axis) for Pallid Sturgeon that were captured and recaptured in the upper and lower Missouri River basins.
+## Preliminary results
 
-Preliminary results
-There is substantial variation in growth trajectories among individuals. Additionally there are individuals that lose weight rapidly over a short period of time. Changes in length are lower in the upper basin varying from -100 to 400 mm over over time, which varied from 0 to almost 10 years since tagging. This is likely due to the effect of initial size on change in length, specifically larger fish tend not to change length as much as smaller fish.
+Figure 3 presents Pallid Sturgeon condition since the beginning of the 
+PSPAP. Upper basin fish appear to have higher condition than lower basin 
+fish, although it should be recognized that the equation used to 
+calculate relative condition might be basin specific. Overall relative 
+condition is variable in both basins. Patterns in relative condition 
+appear to decline since 2011, however it is unclear what is biological 
+versus statistically significant. 
 
-How precise are lengths of Pallid Sturgeon
-The ability to precisely measure length and weight is an important component of monitoring and detecting changes in condition.
-Figure 5. Plot of proportional change in length for individual Pallid Sturgeon with more than 1 length recorded within 30 days.
+
+Figure 3. Estimated relative condition over time for Pallid Sturgeon 
+captured in the upper and lower Missouri River basins. 
 
 
-Figure 6. Plot of proportional change in weight for individual Pallid Sturgeon with more than 1 length recorded within 30 days. ## Individual Pallid Sturgeon Growth
+#Individual growth
 
-Using the data for Pallid Sturgeon with 2 or more captures, I fit a Fabens type model to estimate k and L∞. Some data massaging was need to figure out fish with what I assume was data entry errors. Specifically, observations were filtered based on these criteria: 1) change in length over time was constrained to be > 0, 2) Excessively large growth rates were removed (G<0.5 and daily growth < 4). The Fabens model was recast as L2, i = ((L∞ − L1, i) * (1 − e − k ⋅ Ti)) ⋅ ϵi where L2 is length at recapture, L1 is length at capture, L∞ is length at infinity, k is the how fast length approaches L∞ and T is time between capture and recapture in years. A hiearchical model was used allowing L∞ and k to vary among individuals as:
+## Overview
+
+Because the model has moved to a individual based framework it makes 
+sense to model growth as individuals rather than as a population von 
+Bertalanffy growth function (vggf). In this analysis we estimated the 
+parameters k and L∞ given initial size at capture and size at 
+recapture. Therefore only fish with 2 or more reaptures were used for 
+this analysis. The parameters k and L∞ can be estiamted using the 
+Fabans methods and extensions. This approach estimates the change in 
+length over the time at recapture. Is is reasonable because the vbgf, in 
+ordinary differential equation form is dL/dt = k(L∞ − Lt). 
+There are limitations to this approach resulting in bias that should be 
+recognized. One benefit of this appraoch is that the equation governing 
+the change in length over time is linear, which might allow the analysis 
+to account for among individual variability. 
+
+
+ Figure 4. Plot of change in length (y-axis) and change in length 
+(x-axis) for Pallid Sturgeon that were captured and recaptured in the 
+upper and lower Missouri River basins. 
+
+
+## Preliminary results
+
+There is substantial variation in growth trajectories among individuals. 
+Additionally there are individuals that lose weight rapidly over a short 
+period of time. Changes in length are lower in the upper basin varying 
+from -100 to 400 mm over over time, which varied from 0 to almost 10 
+years since tagging. This is likely due to the effect of initial size on 
+change in length, specifically larger fish tend not to change length as 
+much as smaller fish. 
+
+
+## How precise are lengths of Pallid Sturgeon
+
+The ability to precisely measure length and weight is an important 
+component of monitoring and detecting changes in condition. 
+
+
+
+Figure 5. Plot of proportional change in length for individual Pallid 
+Sturgeon with more than 1 length recorded within 30 days. 
+
+
+
+Figure 6. Plot of proportional change in weight for individual Pallid 
+Sturgeon with more than 1 length recorded within 30 days. ## Individual 
+Pallid Sturgeon Growth 
+
+
+Using the data for Pallid Sturgeon with 2 or more captures, I fit a 
+Fabens type model to estimate k and L∞. Some data massaging was need 
+to figure out fish with what I assume was data entry errors. 
+Specifically, observations were filtered based on these criteria: 1) 
+change in length over time was constrained to be > 0, 2) Excessively 
+large growth rates were removed (G<0.5 and daily growth < 4). The Fabens 
+model was recast as 
+L2, i = ((L∞ − L1, i) * (1 − e − k ⋅ 
+ Ti)) ⋅ ϵi where L2 is length at recapture, L1 is length at 
+capture, L∞ is length at infinity, k is the how fast length approaches 
+L∞ and T is time between capture and recapture in years. A hiearchical 
+model was used allowing L∞ and k to vary among individuals as: 
+
 
 
 L∞, i ∼ Lognormal(μL∞, σL∞)
@@ -129,10 +217,21 @@ Pallid Sturgeon capture-recapture data
 ## Methods
 
 ### Study area
-Pallid Sturgeon were captured and tagged as part of the Pallid Sturgeon Population Assessment Program since 2006.  Fish were captured throughout the upper and lower Missouri River basins (Figure 1).  
+Pallid Sturgeon were captured and tagged as part of the Pallid Sturgeon 
+Population Assessment Program since 2006. Fish were captured throughout 
+the upper and lower Missouri River basins (Figure 1). 
+
 
 ### Data collection
-Fish captured during part of Pallid Sturgeon Population Assessment Program (PSPAP) were used for analysis.  The PSPAP is a long-term monitoring program targetting Pallid Sturgeon using a variety of gear (i.e., otter trawls and trotlines).  See Welker and Drobish (2012) for full details.  Captured Pallid Sturgeon were evaluated measured for length and weight and examined for the presence of a passive integrated transponder (PIT) tag.  Similar capture-recapture efforts occurred on the upper and lower Missouri River (Figure 1).  
+Fish captured during part of Pallid Sturgeon Population Assessment 
+Program (PSPAP) were used for analysis. The PSPAP is a long-term 
+monitoring program targetting Pallid Sturgeon using a variety of gear 
+(i.e., otter trawls and trotlines). See Welker and Drobish (2012) for 
+full details. Captured Pallid Sturgeon were evaluated measured for 
+length and weight and examined for the presence of a passive integrated 
+transponder (PIT) tag. Similar capture-recapture efforts occurred on the 
+upper and lower Missouri River (Figure 1). 
+
 
 ### Growth model
 
@@ -167,11 +266,18 @@ assumed to be multivariate normally distributed as
 \end{matrix} \right] \right)\], 	(xx)
 
 where
- ${{\theta }_{j}}$ is a vector representing the population mean ${{L}_{\infty }}$ and $k$ on natural log scale
-\[\sigma _{\log {{L}_{\infty }}}^{2}\] is the variance of ${{\mu }_{\log {{L}_{\infty }}}}$,
-\[\sigma _{\log k}^{2}\] is the variance of ${{\mu }_{\log k}}$,
-\[\sigma _{\log {{L}_{\infty }}\log k}^{{}}\] is the covariance of the estimated means
-The correlation of ${{L}_{\infty }}$ and $k$ was calculated as \[\sigma _{\ln k\ln {{L}_{\infty }}}^{{}}/(\sigma _{\ln {{L}_{\infty }}}^{{}}\cdot \sigma _{\ln k}^{{}})\].  The model was fit to the data assuming observations were normally distributed as:
+
+* ${{\theta }_{j}}$ is a vector representing the population mean 
+* ${{L}_{\infty }}$ and $k$ on natural log scale
+* \[\sigma _{\log {{L}_{\infty }}}^{2}\] is the variance of ${{\mu }_{\log {{L}_{\infty }}}}$,
+* \[\sigma _{\log k}^{2}\] is the variance of ${{\mu }_{\log k}}$,
+* \[\sigma _{\log {{L}_{\infty }}\log k}^{{}}\] is the covariance of the estimated means
+
+The correlation of ${{L}_{\infty }}$ and $k$ was calculated as \[\sigma 
+_{\ln k\ln {{L}_{\infty }}}^{{}}/(\sigma _{\ln {{L}_{\infty 
+}}}^{{}}\cdot \sigma _{\ln k}^{{}})\]. The model was fit to the data 
+assuming observations were normally distributed as: 
+
 
 	\[{{L}_{t+\Delta t,ij}}\tilde{\ }Normal\text{(}{{\hat{L}}_{t+\Delta t,ij}},{{\sigma }_{observation}})\] 	(xx)
 
@@ -179,10 +285,34 @@ where
 \[{{L}_{t+\Delta t,ij}}\] was the observed length at recapture, 
 \[{{\hat{L}}_{t+\Delta t,ij}}\] was the predicted length of the the ith observation in the jth individual fish, and 
 \[{{\sigma }_{observation}}\] was observation error.  
-Priors and model fitting.—We specified non-informative priors for estimated parameters.    ${{\mu }_{\log {{L}_{\infty }}}}$, ${{\mu }_{\log k}}$, \[\sigma _{\log {{L}_{\infty }}}^{2}\], \[\sigma _{\log k}^{2}\], \[\sigma _{\log {{L}_{\infty }}\log k}^{{}}\], $\sigma _{observation}^{{}}$ to fit the model to the data.  Overall average values, ${{\mu }_{\log {{L}_{\infty }}}}$ and ${{\mu }_{\log k}}$, were specified as a normal distribution with mean 0 and variance of 1000. The prior for $\Sigma $was specified as an inverted Wishart distribution with mean values along the diagonal of the 2 x 2 matrix equal 0.1 and precision of 10 for off diagonal covariance elements of the matrix (Helser and Lai 2004).  Observation error, $\sigma _{\varepsilon }^{2}$, was specified as gamma distributed with scale and shape parameters equal to 0.001.  The model was fit to data using JAGS (Plummer 2003) using the R2jags package in R (R Development Core Team 2010, Su and Yajima 2013).  The model was fit by initializing 3 chains and simulating 500k iterations, with the first 200k were discarded as burn-in samples.  The Gelman-Rubin convergence statistic and visual inspection of the 3 MCMC chains were used to ensure adequate chain mixing was achieved (Gelman and Rubin 1992).  
+
+Priors and model fitting.—We specified non-informative priors for 
+estimated parameters. ${{\mu }_{\log {{L}_{\infty }}}}$, ${{\mu }_{\log 
+k}}$, \[\sigma _{\log {{L}_{\infty }}}^{2}\], \[\sigma _{\log k}^{2}\], 
+\[\sigma _{\log {{L}_{\infty }}\log k}^{{}}\], $\sigma 
+_{observation}^{{}}$ to fit the model to the data. Overall average 
+values, ${{\mu }_{\log {{L}_{\infty }}}}$ and ${{\mu }_{\log k}}$, were 
+specified as a normal distribution with mean 0 and variance of 1000. The 
+prior for $\Sigma $was specified as an inverted Wishart distribution 
+with mean values along the diagonal of the 2 x 2 matrix equal 0.1 and 
+precision of 10 for off diagonal covariance elements of the matrix 
+(Helser and Lai 2004). Observation error, $\sigma _{\varepsilon }^{2}$, 
+was specified as gamma distributed with scale and shape parameters equal 
+to 0.001. The model was fit to data using JAGS (Plummer 2003) using the 
+R2jags package in R (R Development Core Team 2010, Su and Yajima 2013). 
+The model was fit by initializing 3 chains and simulating 500k 
+iterations, with the first 200k were discarded as burn-in samples. The 
+Gelman-Rubin convergence statistic and visual inspection of the 3 MCMC 
+chains were used to ensure adequate chain mixing was achieved (Gelman 
+and Rubin 1992). 
+
 
 ### Weight model
-	A length-weight model was estimated for upper and lower basin Pallid Sturgeon.  The standard allometric scaling equation was used and linearize by taking the log of both sides as:
+
+A length-weight model was estimated for upper and lower basin Pallid 
+Sturgeon. The standard allometric scaling equation was used and 
+linearize by taking the log of both sides as: 
+
 
 	\[\ln Weigh{{t}_{ij}}={{a}_{j}}+{{b}_{j}}\cdot \ln Lengt{{h}_{ij}}+{{\epsilon }_{ij}}\] 	(1)
 
@@ -200,7 +330,10 @@ separately for upper and lower basin Pallid Sturgeon populations.
 
 
 ## Results
-Data.—Data available for analysis varied between basins. Pallid 
+
+### Data
+
+Data available for analysis varied between basins. Pallid 
 Sturgeon with length and corresponding weights spanned 2003-2016 and 
 2005-2015 for the lower and upper Missouri River basins respectively. 
 Collectively, there were 12,312 fish used to fit the length-weight 
@@ -223,6 +356,7 @@ upper basins.
 
 
 ### Growth
+
 Change in length and growth trajectories varied among individuals and 
 basins. A linear relationship of change in length with time between 
 captures was observed for the upper and lower basin (Figure 2). Absolute 
@@ -238,6 +372,7 @@ basins that exceeded 0.75.
 
 
 ### Length-weight relationship
+
 Length and weight varied between upper and lower basin Pallid Sturgeon. 
 The maximum length was higher for the upper basin fish as well as upper 
 basin fish weighed more than similar sized fish from the lower basin 
@@ -247,7 +382,16 @@ equation varied between the two basins (Table 3).
 
 
 ## Discussion
-Change in length was modelled using a von Bertalanffy growth function predicting mean length at age.  As the model has transitioned to an individual based model, growth (i.e., change in length) will occur on an individual level.  This will allow the model to integrate the results of bioenergetic models.  A critical aspect of this development is predicting weight from length.  The relationship between length and weight also dictates fish condition which may have implications reproductive status.  
+
+Change in length was modeled using a von Bertalanffy growth function 
+predicting mean length at age. As the model has transitioned to an 
+individual based model, growth (i.e., change in length) will occur on an 
+individual level. This will allow the model to integrate the results of 
+bioenergetic models. A critical aspect of this development is predicting 
+weight from length. The relationship between length and weight also 
+dictates fish condition which may have implications reproductive status. 
+
+
 Shuman…., Wildhaber, ect relationships
 No aging error….
 Plugin for bioenergetics model…

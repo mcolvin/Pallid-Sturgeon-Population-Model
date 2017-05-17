@@ -75,8 +75,8 @@ dat$age_validation_bin<- cut(dat$age,
     right=FALSE,
     labels=c("0-1","1-2","2-3","3-4","4-5","5-10",
         "10-15","15-20","20+"))
-n<-aggregate(age~age_validation_bin+basin,dat,length, subset=age>0)
-n$n_to_sample<- floor(n$age*0.05)
+n<-aggregate(age~age_validation_bin+basin,dat,length, subset=age>0 & age <5)
+n$n_to_sample<- floor(n$age*0.1)
 dat$indx<-1:nrow(dat)
 ## SUBSET INVIDUALS TO VALIDATE
 set.seed(1232)
@@ -94,3 +94,4 @@ indx<- unlist(lapply(1:nrow(n), function(x)
 dat$validate<-0 # TRAINING
 dat[which(dat$indx %in% indx),]$validate<-1 # VALIDATION
 
+  

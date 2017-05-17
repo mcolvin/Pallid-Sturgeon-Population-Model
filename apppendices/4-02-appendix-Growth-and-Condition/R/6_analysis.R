@@ -1,36 +1,55 @@
-# DATA TABLE TO FIT FABENS MODEL
-adat<- tables(4) 
-val<- adat$val
-adat<- adat$out
-
-ni<- 500000	#	n.iter
-nb<- 200000	#	n.burnin
 
 
 
-upper<- subset(adat,basin=="upper")
-linf_ini<- log(tapply(upper$l2, upper$ind_id,max)*1.25)  
-upper<- list(L1=upper$l1,
-	Y=upper$l2,
-	maxY=max(upper$l2)+1,
-	dY=upper$dy,
-    #val_age=val$age,
-    val_length=val$length,
-    n_val=nrow(val),
-	#ind_id=upper$ind_id, 
-    #N_inds= max(upper$ind_id),
-    N=nrow(upper),
-    l_age=rep(NA,25))	
+
+mod00 <- function()
+	{
+    # INVERSE VBGF FOR FISH OF KNOWN AGE
+    for(i in 1:n)
+        {
+        La_hat[i]<- Linf*(1-exp(-k*(age[i]-t0)))
+        ln_La_hat[i]<- log(La_hat[i])
+        La[i]~dlnorm(ln_La_hat[i], tau)
+        }
+    # PREDICT VALIDATION HOLDOUTS AGE 0 TO 5
+    for(i in 1:v)
+        {
+        age_val[i]<- t0 - 1/k * log(1-La_val[i]/Linf)
+        }    
+    
+    # PRIORS    
+	k~dunif(0.001,0.2)
+	Linf~dunif(800,2500)# truncate to largest fish
+    t0~ dunif(-10,10)	
+	
+    ## OBSERVATION
+	sigma2  ~ dunif(0, 20)	
+	tau <-pow(sigma2,-2)
+    
+
+	}
+    
+ndat<- subset(dat, basin=="lower"& validate==0 & age>0 & age < 20 & length > 200)
+vdat<- subset(dat, basin=="lower"& validate==1 & age>0)
+
+d<- list(
+    n=nrow(ndat),
+    v=nrow(vdat),
+    age=ndat$age,
+    age_val=rep(NA,nrow(vdat)),
+	La=ndat$length,
+	La_val=vdat$length)	
+
 ## MODEL 0 FIXED LINF AND VARYING K
 inits<- function(t)
 	{	
-	list(k=0.1,Linf=1600,sigma2=0.25)#,sigma_k=.25)
-	list(k=0.05,Linf=2000,sigma2=0.25)#,sigma_k=.25)
-	list(k=0.01,Linf=1800,sigma2=0.25)#,sigma_k=.25)
+	list(k=0.1,Linf=1600,sigma2=0.25,t0=0)
+	list(k=0.05,Linf=2000,sigma2=0.25,t0=0)
+	list(k=0.01,Linf=1800,sigma2=0.25,t0=0)
 	}
-params<- c("k","Linf","sigma2","age","l_age")	
+params<- c("t0","k","Linf","age_val")	
 
-out_lower <- jags(data=upper,
+out_lower <- jags(data=d,
 	inits=inits,
 	parameters=params,	
 	model.file=mod00,
@@ -40,17 +59,27 @@ out_lower <- jags(data=upper,
 	n.thin=2,
 	working.directory=getwd())
 
+
 ppp<- data.frame( 
     parameter= colnames(out_lower$BUGSoutput$sims.matrix),
     lci=apply(out_lower$BUGSoutput$sims.matrix,2,quantile, 0.025),
     est=apply(out_lower$BUGSoutput$sims.matrix,2,quantile, 0.5),
     uci=apply(out_lower$BUGSoutput$sims.matrix,2,quantile, 0.975))
 
-pdat<- ppp[grep("l_age",ppp$parameter),]
+pdat<- ppp[grep("age_val",ppp$parameter),]
+plot(vdat$age~pdat$est);abline(0,1)
+
+# CONFUSION MATRIX
+table(floor(vdat$age),floor(pdat$est))
+
+plot(length~age,ndat)
+points(c(1:20),vbgf(linf= 1.731773e+03,t0=-4.989, k=3.412913e-02, age=c(1:20)),col='red')
+
+
 pdat$age<-c(1:nrow(pdat))  
     
     
-plot(length~age,dat, subset=basin=="lower", xlab="True age",
+plot(length~age,ndat, xlab="True age",
     ylab="Length (mm)")
 points(est~age,pdat,col="red",type='l',lwd=2) 
 points(lci~age,pdat,type='l',lty=2,col='red')
