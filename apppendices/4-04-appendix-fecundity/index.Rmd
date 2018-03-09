@@ -198,9 +198,9 @@ lower (reduced sigma rpma4), but length only performs better in upper
 Ovary amount versus released, they may get more, or less out at the hatchery…
 Effect of length and weight… skinny fish…energetics
 Chicken and egg…   prediction for recover and AM experiments \...
-•	This is a bit of chicken and egg thing.  
-•	Does a fish produce more eggs because it weighs more or does it weigh more because it has more eggs?
-•	Larger fish may have fewer eggs per kg because they produce bigger eggs!
+* This is a bit of chicken and egg thing.  
+* Does a fish produce more eggs because it weighs more or does it weigh more because it has more eggs?
+* Larger fish may have fewer eggs per kg because they produce bigger eggs!
 
 ## Model plugin
 The link to the population model is that the effect of management 
