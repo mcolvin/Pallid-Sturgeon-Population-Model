@@ -1,6 +1,7 @@
 # ignore output folder
 output/
 _archive/
+_Appendix-Augmentation/_dat
 _literature
 *.docx
 *.zip
