@@ -1,0 +1,11 @@
+library(RODBC)
+library(maps)
+library(rgeos)
+library(maptools)
+library(rgdal)
+library(knitr)
+library(R2jags)	
+
+library(plyr)
+library(reshape)
+library(reshape2)

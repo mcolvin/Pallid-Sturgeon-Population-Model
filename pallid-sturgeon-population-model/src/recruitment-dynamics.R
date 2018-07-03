@@ -15,7 +15,7 @@
 				#dyn<- recruitment_to_population(spatial=inputs$spatial)
 				#}
 			
-			### UPDATE SPAWNING [NO|YEST]
+			### UPDATE SPAWNING [NO|YES]
 			### GIVEN SEXUAL MATURITY AND 
 			### TIME SINCE LAST SPAWNING EVENT
 			### STATUS: DONE
