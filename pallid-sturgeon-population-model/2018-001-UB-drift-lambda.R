@@ -1,29 +1,23 @@
 
-	setwd("C:/Users/mcolvin/Documents/projects/Pallid Sturgeon/Analysis/Pallid-Sturgeon-Population-Model/Pallid-Sturgeon-Population-Model/")
-	source("global.R")
-	input$version<- "01"
-	input$output_name<- "2016-002" #AFS-KC ANALYSIS
- 	input$commit<- "0df8618"   
-	input$output_name<- "2018-001" #AFS-KC ANALYSIS
-	input$commit<- "05e80b7"
-	print(shell("git rev-parse --short HEAD", intern = TRUE))
-    
-    library(git2r)
+    repo <- git2r::repository("..")## REPO IS 1 LEVEL UP; USE ".." FOR 1 UP
 
-repo <- repository(".")
-print(head(repo))
+    ## SOURCE THE GLOBAL SCRIPT FOR THE WEB APPLICATION
+    source("global.R")
+	input$output_name<- "2018-001" 
+ 	input$commit<- capture.output(git2r::summary(repo))[3] ## GET THE GIT COMMIT ID FROM REPO FOR REPRODUCABILITY
+	input$basin<-"upper"  
     
 	# CREATE DIRECTORY IF NOT ALREADY THERE
 	dir.create(file.path(paste0(getwd(),"/output/",input$output_name)), showWarnings = FALSE) 
-	input$basin<-"upper"
 	
-	# PREPARE INPTUS FOR MODEL
+	# PREPARE INPUTS FOR MODEL
 	inputs<- modelInputs(input,spatial=FALSE)
 	inputs$nreps=5
 	inputs$daug_H=60000	
 	inputs$daug_N=20000	
 	inputs$nyears<- 10
-	dyn<- initialize(inputs=inputs) # INITIALIZE OBJECTS NEEDED FOR SIMUALTION
+    # INITIALIZE OBJECTS NEEDED FOR SIMUALTION
+	dyn<- initialize(inputs=inputs) 
 	dyn2<-dyn
 	
 
