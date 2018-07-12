@@ -131,8 +131,8 @@ initialize<- function(inputs)
 	## INITIALIZE SPATIAL COMPONENTS
 	if(inputs$spatial==FALSE)
 		{
-		dyn$AGE_0_N_BND<-matrix(inputs$n_bends,nrow=1,ncol=inputs$nreps)
-		dyn$AGE_0_H_BND<-matrix(inputs$n_bends,nrow=1,ncol=inputs$nreps)
+		dyn$AGE_0_N_BND<-matrix(inputs$natural_age0,nrow=1,ncol=inputs$nreps)
+		dyn$AGE_0_H_BND<-matrix(inputs$hatchery_age0,nrow=1,ncol=inputs$nreps)
 		}
 	if(inputs$spatial==TRUE)
 		{

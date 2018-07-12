@@ -15,20 +15,36 @@
 	inputs$nreps=5
 	inputs$daug_H=60000	
 	inputs$daug_N=20000	
-	inputs$nyears<- 10
+	inputs$nyears<- 20
     # INITIALIZE OBJECTS NEEDED FOR SIMUALTION
 	dyn<- initialize(inputs=inputs) 
 	dyn2<-dyn
 	
+    
+    
+    dyn$AGE_0_N_BND[]<-0 ## ZERO OUT ANY NATURAL AGE-0 IN THE SYSTEMS
+    ## AGE-0 SURVIVAL [EGGS--> AGE-1]
+    p<-0.8
+    inputs$pr_embryo<-p/4   
+    inputs$phi_embryo<-p/4 
+    inputs$phi_free_embryo<-p/4
+    inputs$p_retained<-1 ## proportion retained in basin
+    inputs$phi0 <-p/4   
 
 	ptm <- proc.time()
 	out<- sim(inputs=inputs,
 		dyn=dyn,
-		recruitmentFreq=0) #
+		recruitmentFreq=1,
+        sizeStructure=FALSE) # 0 IS FIXED RECRUITMENT
 	proc.time() - ptm 
-	saveSimulationOutput(out)
-	
-	
+	#saveSimulationOutput(out)
+
+    NN<-out$total_N+out$total_H
+    matplot(NN/1000,type='l',ylim=c(0,max(NN)/1000),las=1,
+        ylab="Abundance (x1000)",xlab="Time (months)",cex.lab=1.3)
+    
+    
+    
 	
 	# WORKING ON SPACE
 	input$basin<-"upper"

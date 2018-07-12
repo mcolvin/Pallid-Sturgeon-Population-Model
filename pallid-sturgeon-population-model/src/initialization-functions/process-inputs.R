@@ -4,8 +4,8 @@ modelInputs<- function(input,spatial=FALSE)
 	{
 	tmp<-list()
 	tmp$basin_inp=ifelse(input$basin=="Lower",0,1)	
-	
-	
+
+    
 	## POPULATION CHARACTERISTICS
 	tmp$basin= input$basin
 	tmp$maxage=input[[input$basin]]$maxage
@@ -62,7 +62,7 @@ modelInputs<- function(input,spatial=FALSE)
 			length_sd=input$stockingInput$fingerling_sd	,	
 			number=input$stockingInput$fingerling,
 			age=input$stockingInput$fingerling_age,
-			bend=nput$stockingInput$bend)
+			bend=NA)#input$stockingInput$bend)
 	
 	### YEARLINGS
 	tmp$yearling<-data.frame(
@@ -71,7 +71,7 @@ modelInputs<- function(input,spatial=FALSE)
 		length_sd=input$stockingInput$yearling_sd	,	
 		number=input$stockingInput$yearling,
 		age=input$stockingInput$yearling_age,
-		bend=nput$stockingInput$bend)
+		bend=NA)#input$stockingInput$bend)
 
 	# SIMULATION STUFF
 	tmp$nreps=input$simulationInput$nreps

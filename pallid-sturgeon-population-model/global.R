@@ -8,11 +8,6 @@ library(distr)
 library(compiler)
 
 
-
-
-
-
-
 # LOAD BEND METADATA 
 bend_meta<-readRDS("./inputs/bend_data.rds")
 bend_meta$lower$irc<- runif(nrow(bend_meta$lower),0,3)

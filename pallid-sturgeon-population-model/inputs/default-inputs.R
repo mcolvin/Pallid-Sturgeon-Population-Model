@@ -99,8 +99,10 @@ input$upper$phi_age2_er<-0.01
 ### FINGERLINGS
 input$stockingInput$fingerling<-c(0)
 input$stockingInput$fingerling_month<-c(5)
-#input$stockingInput$fingerling_mn<-c(30)
-#input$stockingInput$fingerling_sd<-c(0.1)
+input$stockingInput$fingerling_month<- 9
+input$stockingInput$fingerling_mn<- 100
+input$stockingInput$fingerling_sd<- 15
+input$stockingInput$fingerling_age<- 3 # months
 input$stockingInput$fingerling_stocking_rkm<-c(50)
 ### YEARLINGS
 input$stockingInput$yearling<- 0

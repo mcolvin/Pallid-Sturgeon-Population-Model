@@ -93,30 +93,51 @@ sim<- function(inputs,dyn,recruitmentFreq=0,sizeStructure=FALSE)
 
 	# PROGRESS BAR
 	pb<-txtProgressBar(min=1,max=length(m),initial=0,char="*",style=3)
-	
-	#Rprof("out.out") # for profiling in for loop
 
+    
+    
+    
+    
 	# SIMULATE POPULATION DYNAMICS GIVEN INITIAL STATES
 	for(i in 1:length(m)) 
 		{
 		setTxtProgressBar(pb, i)
-		
+        
 		Z_H[indx_H]<- dSurvival(phi_age=inputs$phi,
 			age=AGE_H[indx_H],
 			maxAge=inputs$maxage)
+		AGE_H<- (AGE_H+1/12)*Z_H ### UPDATE AGE FOR SURVIVORS		
 		
-		Z_N[indx_N]<- dSurvival(phi_age=inputs$phi,
+        
+        Z_N[indx_N]<- dSurvival(phi_age=inputs$phi,
 			age=AGE_N[indx_N],
 			maxAge=inputs$maxage)
-		
+		AGE_N<- (AGE_N+1/12)*Z_N ### UPDATE AGE FOR SURVIVORS
 		
 		### ZERO OUT FISH THAT DIED
 		LEN_H<- LEN_H*Z_H
 		LEN_N<- LEN_N*Z_N
+        
 		WGT_H<- WGT_H*Z_H
 		WGT_N<- WGT_N*Z_N	
 
-		
+		### ADD IN AGE-1 RECRUITS
+        if(sum(AGE_0_N_BND)>0 & m[i]==6)
+            {
+            indx_0<- lapply(1:inputs$nreps,function(x)
+                {
+                which(Z_N[,x]==0)[1:AGE_0_N_BND[,x]]
+                }) # ROW INDICES
+            tmp<- unlist(lapply(1:inputs$nreps,
+                function(x) rep(x,length(indx_0[[x]])))) # COLUMN INDICES
+            indx_0<- cbind(unlist(indx_0),tmp)#row,column
+            ## ADD NEW AGE-1 RECRUITS TO THE POPULATION    
+            Z_N[indx_0]<-1    #####FIXME##### NEED TO ADD LENGTH AND SO ON
+            AGE_N[indx_0]<-12  
+            print(AGE_0_N_BND)
+            }
+
+
 		### INDICES FOR FISH THAT ARE ALIVE
 		### AND SUBJECT TO DEMOGRAPHIC PROCESSES
 		indx_H<- lapply(1:inputs$nreps,
@@ -156,18 +177,22 @@ sim<- function(inputs,dyn,recruitmentFreq=0,sizeStructure=FALSE)
 			a=inputs$a,
 			b=inputs$b,
 			er=inputs$lw_er)
-		if(inputs$recruitmentFreq>0 & m[i]%in% c(6,7,8))
-			{
-			source("./src/recruitment-dynamics.R")
-			}
+            
+            
+        ## RECRUITMENT    
+		source("./src/recruitment-dynamics.R")
+
+            
 		if(inputs$spatial==TRUE)
 			{	
 			source("./src/spatial-dynamics.R")
 			}
-		if(inputs$stocking==TRUE)
+		if(!(is.null(inputs$stocking)))  #####fixme#####
 			{
 			source("./src/stocking-dynamics.R")
 			}
+            
+        
 		# END POPULATION DYNAMICS
 		
 	
@@ -234,11 +259,11 @@ sim<- function(inputs,dyn,recruitmentFreq=0,sizeStructure=FALSE)
 		post_length=c(LEN_H[LEN_H[,1]>0,1],LEN_N[LEN_N[,1]>0,1]), # LENGTH DISTRIBUTION POST SIMULATION
 		post_weight=c(WGT_H[WGT_H[,1]>0,1],WGT_N[WGT_N[,1]>0,1]), # WEIGHT DISTRIBUTION POST SIMULATION
 		years=inputs$startYear+cumsum(rep(1,length(m))/12),
-		init_summary=init_summary,
+		#init_summary=init_summary, ####fixme#####
 		inputs=inputs)
 		
 	# COMPILE UP ANNUAL SIZE STRUCTURE TALLIES FOR OUTPUT
-	out$size_structure<- do.call("rbind",ss)
+	##out$size_structure<- do.call("rbind",ss)
 	
 	return(out)	
 	}
