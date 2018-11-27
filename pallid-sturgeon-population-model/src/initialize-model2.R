@@ -108,13 +108,11 @@ initialize<- function(inputs)
 				maxAge=inputs$maxage)				
 					
 				
-		dyn$MAT_H[,j]<-dyn$Z_H[,j]*ini_maturity(k=inputs$mat_k,	
-				len=dyn$LEN_H[,j],
-				age_mat=inputs$age_mat)
-		dyn$MAT_N[,j]<-dyn$Z_N[,j]*ini_maturity(k=inputs$mat_k,	
-				len=dyn$LEN_N[,j],
-				age_mat=inputs$age_mat)				
 		## [7] INITIALIZE WHETHER A FISH IS SEXUALLY MATURE	
+		tmp_H<-ini_maturity(age=dyn$AGE_H[,j], mat_cdf=inputs$mat_cdf)
+		dyn$MAT_H[,j]<-dyn$Z_H[,j]*tmp_H$mature
+		tmp_N<-ini_maturity(age=dyn$AGE_N[,j], mat_cdf=inputs$mat_cdf)
+		dyn$MAT_N[,j]<-dyn$Z_N[,j]*tmp_N$mature				
 				
 				
 		## [8] INITIALIZE TIME SINCE SPAWNING	
@@ -124,8 +122,14 @@ initialize<- function(inputs)
 			mature=dyn$MAT_N[,j])
 		
 
-	# SPN_H  ####fixme####
 	  ## [9] INITIALIZE IF A FISH WILL SPAWN ONCE CONDITIIONS ARE MET
+	  dyn$SPN_H <- dyn$Z_H[,j]*spawn(mps=dyn$MPS_H[,j],
+	                                 mature=dyn$MAT_H[,j], 
+	                                 FirstSpawn=tmp_H$FirstSpawn)
+	  dyn$SPN_N <- dyn$Z_N[,j]*spawn(mps=dyn$MPS_N[,j],
+	                                 mature=dyn$MAT_N[,j], 
+	                                 FirstSpawn=tmp_N$FirstSpawn)
+	}
 	
 
 	## [10] INITIALIZE SPATIAL COMPONENTS

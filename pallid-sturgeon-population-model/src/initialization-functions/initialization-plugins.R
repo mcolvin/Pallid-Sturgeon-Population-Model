@@ -16,8 +16,10 @@ ini_mps<- function(n,mature)
 	
 ini_wgt<- function(a,b,len,er)
 	{
-	rlnorm(length(len),log(a*len^b),er)
-	}
+    ypred<- log(a)+b*log(len)
+    out<-exp(rnorm(length(len),ypred,er))
+    return(out)
+  }
 	
 	
 ini_sex<- function(n,ratio)

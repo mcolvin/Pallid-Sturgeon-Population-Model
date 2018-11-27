@@ -93,6 +93,7 @@ modelInputs<- function(input,spatial=FALSE)
 		tmp$bend_meta<- bend_meta[[input$basin]]
 		tmp$n_bends<- nrow(bend_meta[[input$basin]])	
 		tmp$bend_lengths<- diff(c(0,bend_meta[[input$basin]]$bend_start_rkm))
+		  #Same as $Length.RKM (w/in error)
 		
 		
 		## MONTHLY MOVEMENT MATRIX
@@ -122,4 +123,4 @@ modelInputs<- function(input,spatial=FALSE)
 		
 		
 	return(tmp)
-	}
+}
