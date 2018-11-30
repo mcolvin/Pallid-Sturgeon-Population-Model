@@ -18,7 +18,7 @@ a=-3
 b=0.3
 bend_meta$upper$irc_p<- plogis(a+b*bend_meta$upper$irc)
 bend_meta$lower$irc_p<- plogis(a+b*bend_meta$lower$irc)
-source("./inputs/default-inputs.R")
+source("./inputs/default-inputs2.R")
 
 
 ## LOAD FUNCTION TO PROCESS INPUTS
@@ -40,7 +40,7 @@ source("./src/dynamics-functions/dynamics-plugins2.R")
 #source("./src/dynamics-functions/008-adult-movement.R")
 
 ## LOAD INITIALIZATON FUNCTION
-source("./src/initialize-model.R")	
+source("./src/initialize-model2.R")	
 
 ## LOAD SIMULATION FUNCTION
 source("./src/simulation.R")

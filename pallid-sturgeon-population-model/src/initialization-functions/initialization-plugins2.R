@@ -82,7 +82,7 @@ ini_sex<- function(n,ratio)
 }
 
 
-##[6] AGE 
+##[6] AGE IN MONTHS 
 ini_age<- function(len,linf,k,sizeAtHatch=7,maxAge)
 {
   age<-ifelse(len==0,0,log(-1*(len-sizeAtHatch)/(linf-sizeAtHatch)+1)/-k)
@@ -95,21 +95,25 @@ ini_age<- function(len,linf,k,sizeAtHatch=7,maxAge)
 ini_maturity<- function(age, mat_cdf)  ##INCLUDE LENGTH IN FUTURE? DO LARGER YOUNGER FISH MATURE FIRST?
 {
   # IS A FISH SEXUALLY MATURE; CONDITIONAL ON BEING ALIVE
-  pr<-mat_cdf[age] #BE SURE AGE IS IN THE CORRECT FORM
-  M2<- rbinom(length(age),1,pr) #GIVES A 1 FOR MATURE FISH
+  a<-floor(age/12) #AGE IN YEARS
+  mat_cdf<-c(0, mat_cdf) #ADD IN ZERO MATURATIONS FOR AGE-0 FISH
+  pr<-mat_cdf[a+1]
+  M2<- rbinom(length(a),1,pr) #GIVES A 1 FOR MATURE FISH
   # WHICH OF THE MATURE FISH ARE FIRST SPAWNERS?
-  pr<-ifelse(mat_cdf[age]==0, 0, 
-             M2*(mat_cdf[age]-mat_cdf[age-1])/mat_cdf[age])
+  pr<-sapply(a, FUN=function(x)
+    {
+      ifelse(mat_cdf[x+1]==0,0,(mat_cdf[x+1]-mat_cdf[x])/mat_cdf[x+1])
+    })
   FS<-rbinom(length(M2), 1, pr) #GIVES A 1 IF THE FISH JUST BECAME MATURE
-  M2[which(FS==1)]<-0 #ZEROS OUT NEWLY MATURE FISH AND LEAVES A 1 FOR RECRUDECENT MATURE FISH
   return(list(mature=M2, FirstSpawn=FS))				
 }
 
 
 ##[8] INITIAL TIME SINCE SPAWNING
-ini_mps<- function(n,mature)
+ini_mps<- function(n, mature, FirstSpawn)
 	{# months since spawning
 	out<-sample(c(1:4),size=n,replace=TRUE)*mature*12
+	out[which(FirstSpawn==1)]<-0
 	return(out)
 }
 

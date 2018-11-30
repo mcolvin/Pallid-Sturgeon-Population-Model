@@ -1,6 +1,6 @@
 
 ### PROCESS INPUTS TO INITILIZE AND SIMULATE POPULATION	
-modelInputs2<- function(input=NULL, 
+modelInputs<- function(input=NULL, 
                         basin=NULL, 
                         spatial=FALSE,
                         bend_meta=NULL)

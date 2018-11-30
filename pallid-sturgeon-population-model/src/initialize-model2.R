@@ -117,18 +117,22 @@ initialize<- function(inputs)
 				
 		## [8] INITIALIZE TIME SINCE SPAWNING	
 		dyn$MPS_H[,j]<-dyn$Z_H[,j]*ini_mps(n=inputs$daug_H,
-			mature=dyn$MAT_H[,j])
+			mature=dyn$MAT_H[,j],
+			FirstSpawn=tmp_H$FirstSpawn)
 		dyn$MPS_N[,j]<-dyn$Z_N[,j]*ini_mps(n=inputs$daug_N,
-			mature=dyn$MAT_N[,j])
+			mature=dyn$MAT_N[,j],
+			FirstSpawn=tmp_N$FirstSpawn)
+		
+		
 		
 
-	  ## [9] INITIALIZE IF A FISH WILL SPAWN ONCE CONDITIIONS ARE MET
-	  dyn$SPN_H <- dyn$Z_H[,j]*spawn(mps=dyn$MPS_H[,j],
-	                                 mature=dyn$MAT_H[,j], 
-	                                 FirstSpawn=tmp_H$FirstSpawn)
-	  dyn$SPN_N <- dyn$Z_N[,j]*spawn(mps=dyn$MPS_N[,j],
-	                                 mature=dyn$MAT_N[,j], 
-	                                 FirstSpawn=tmp_N$FirstSpawn)
+	  ## [9] INITIALIZE IF A FISH SPAWNED
+	  dyn$SPN_H[,j] <- dyn$Z_H[,j]*spawn(mps=dyn$MPS_H[,j],
+	                                     mature=dyn$MAT_H[,j], 
+	                                     FirstSpawn=tmp_H$FirstSpawn)
+	  dyn$SPN_N[,j] <- dyn$Z_N[,j]*spawn(mps=dyn$MPS_N[,j],
+	                                     mature=dyn$MAT_N[,j], 
+	                                     FirstSpawn=tmp_N$FirstSpawn)
 	}
 	
 

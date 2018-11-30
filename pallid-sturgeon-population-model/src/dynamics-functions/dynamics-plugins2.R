@@ -5,12 +5,12 @@
 ## [1] MONTHLY SURVIVAL
 dSurvival<- function(phi_age,age,maxAge)
 {
-  # phi_age: vector of age specific survival
+  # phi_age: vector of age specific survival from age 1 to maxAge
   # age: vector of age in months for live individuals
-  phi<- c(phi_age^(1/12))# convert annual to monthly, add 0 to zero out survival of unalive fish
+  phi<- c(0,phi_age^(1/12))# convert annual to monthly, add age-0 survival
   a<- floor(age/12)
-  out<- rbinom(length(a),1,phi[a])
-  out<- ifelse(a+out>maxAge,0,out) #SENESCENCE, WHAT DO WE WANT TO TRACK, MAY NEED TO CHANGE???
+  out<- rbinom(length(a),1,phi[a+1])
+  #out<- ifelse(a+out>maxAge,0,out) #SENESCENCE, WHAT DO WE WANT TO TRACK, MAY NEED TO CHANGE???
   #MAY NEED TO ZERO OUT UNALIVE FISH W/ AGE ZERO... PERHAPS USE AGE???
   return(out)
 }
@@ -52,10 +52,10 @@ dMaturity<- function(mature, age, live, mat_dist)
   return(list(mature=M2, FirstSpawn=FS))
 }
 
-## [8] TIME SINCE SPAWNING
+## [8] TIME IN MONTHS SINCE SPAWNING
 dMPS<- function(mps,spawn,mature)
 {
-  (mps*(1-spawn)+1)*mature*live
+  (mps*(1-spawn)+12)*mature*live
 }
 #dMPS<- function(x,mps,mature,live) 
 #	{
@@ -69,7 +69,7 @@ spawn<- function(mps,a=-5,b=2.55,mature,FirstSpawn)
   # FUNCTION RETURNING A 1 IF A FISH SPAWNS
   pr<- plogis(a+b*mps/12)
   # IF WE ARE CAPPING AT 4 THEN:
-  # pr[which(mps==4)]<-1
+  # pr[which(ceiling(mps/12)==4)]<-1
   pr[which(FirstSpawn==1)]<-1
   out<- rbinom(length(mps),1, pr*mature)
   return(out)	
