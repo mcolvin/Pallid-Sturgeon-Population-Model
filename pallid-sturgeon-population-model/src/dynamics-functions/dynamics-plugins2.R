@@ -7,11 +7,14 @@ dSurvival<- function(phi_age,age,maxAge)
 {
   # phi_age: vector of age specific survival from age 1 to maxAge
   # age: vector of age in months for live individuals
-  phi<- c(0,phi_age^(1/12))# convert annual to monthly, add age-0 survival
+  phi<- phi_age^(1/12)# convert annual to monthly
   a<- floor(age/12)
-  out<- rbinom(length(a),1,phi[a+1])
-  #out<- ifelse(a+out>maxAge,0,out) #SENESCENCE, WHAT DO WE WANT TO TRACK, MAY NEED TO CHANGE???
-  #MAY NEED TO ZERO OUT UNALIVE FISH W/ AGE ZERO... PERHAPS USE AGE???
+    #WE SHOULD NOT HAVE ANY AGE ZERO FISH IN THE VECTOR FOR WHICH THIS
+    #FUNCTION IS APPLIED IS USED
+  if(any(a==0)){return(print("Age-0 Fish Present in Vector."))}
+  out<- rbinom(length(a),1,phi[a])
+  out<- ifelse(age+out>maxAge*12,0,out) 
+    #FISH OLDER THAN MAXAGE ARE REMOVED FROM THE POPULATION
   return(out)
 }
 
@@ -38,16 +41,23 @@ dWeight<- function(len,a=0.0001,b=3,er=0.1)
 ## [6] CHANGE IN AGE
 
 
-## [7] MATURATION
+## [7] MATURATION OF LIVING FISH
 dMaturity<- function(mature, age, live, mat_dist)
 {
   # RETURNS A LIST OF 2 VECTORS OF 0'S AND 1'S:
   ## mature (1 if mature and 0 if not)
   ## FirstSpawn (1 if the fish just matured, i.e. first spawning, and 0 otherwise)
+  a <- floor(age/12)
+    #WE SHOULD NOT HAVE ANY AGE ZERO FISH OR FISH GREATER THAN MAXAGE 
+    #IN THE VECTOR FOR WHICH THIS FUNCTION IS APPLIED
+  if(any(a==0)){return(print("Age-0 Fish Present in Vector."))}
+  if(any(a>inputs$maxage)){return(print("Senescent Fish Present in Vector."))}
+  pr<-mat_dist[a]
+    #ALL FISH FOR WHICH THIS FUNCTION IS USED SHOULD BE ALIVE
+  if(any(live!=1)){return(print("Dead fish included."))}
   indx<-which(mature==1)
-  pr<-mat_dist[age]
   pr[indx]<-1
-  M2<- rbinom(length(age),1,pr*live)
+  M2<- rbinom(length(age),1,pr)
   FS<-ifelse(M2-mature==1,1,0)
   return(list(mature=M2, FirstSpawn=FS))
 }
@@ -55,19 +65,18 @@ dMaturity<- function(mature, age, live, mat_dist)
 ## [8] TIME IN MONTHS SINCE SPAWNING
 dMPS<- function(mps,spawn,mature)
 {
-  (mps*(1-spawn)+12)*mature*live
+  (mps*(1-spawn)+12)*mature
 }
-#dMPS<- function(x,mps,mature,live) 
-#	{
-#	(mps[,x]+1)*mature[,x]*live[,x]
-#	}
 
 
 ## [9] SPAWNING
 spawn<- function(mps,a=-5,b=2.55,mature,FirstSpawn)
 {
-  # FUNCTION RETURNING A 1 IF A FISH SPAWNS
-  pr<- plogis(a+b*mps/12)
+  # FUNCTION RETURNING A 1 IF A FISH SPAWNS  
+  ## THIS CAN BE THOUGHT OF AS THE FEMALE PROBABILITY, 
+  ## AS ONLY THE FEMALES THAT SPAWN ADD TO THE POPULATION,
+  ## AND THE NUMBER OF MALES IS ARBITRARY AND ASSUMED TO BE ENOUGH
+  pr<- plogis(a+b*mps/12) 
   # IF WE ARE CAPPING AT 4 THEN:
   # pr[which(ceiling(mps/12)==4)]<-1
   pr[which(FirstSpawn==1)]<-1
@@ -111,6 +120,7 @@ fecundity<- function(fl,a,b,er,sex,spawn,mature)
   #yy<- exp(a + b*fl_normalized) + exp(rnorm(N,0,er))
   #y<- exp(rnorm(N,a + b*fl_normalized,er))
   #eggs<- rpois(N,y)*spawn*sex*mature
+  if(spawn==1 & mature!=1){return(print("Spawn-Mature Mismatch!"))}
   eggs<- rpois(N,exp(rnorm(N,a + b*fl_normalized,er)))*spawn*sex*mature
   return(eggs)
 }

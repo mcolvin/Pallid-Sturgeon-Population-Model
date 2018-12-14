@@ -187,53 +187,31 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  {
 	    setTxtProgressBar(pb, i)
 	    
+	    #[1] UPDATE SURVIVAL
 	    Z_H[indx_H]<- dSurvival(phi_age=inputs$phi,
 	                            age=AGE_H[indx_H],
 	                            maxAge=inputs$maxage)
-	    AGE_H<- (AGE_H+1/12)*Z_H ### UPDATE AGE FOR SURVIVORS	
-	      #AGE=0 IF DEAD
-	    
-	    
 	    Z_N[indx_N]<- dSurvival(phi_age=inputs$phi,
 	                            age=AGE_N[indx_N],
 	                            maxAge=inputs$maxage)
-	    AGE_N<- (AGE_N+1/12)*Z_N ### UPDATE AGE FOR SURVIVORS
 	    
-	    ### ZERO OUT FISH THAT DIED
-	    LEN_H<- LEN_H*Z_H
-	    LEN_N<- LEN_N*Z_N
 	    
-	    if(weightCalc)
-	    {
-	      WGT_H<- WGT_H*Z_H
-	      WGT_N<- WGT_N*Z_N
-	    }
+	    #[6] UPDATE AGE (AND ZERO OUT DEAD FISH)
+	    AGE_H[indx_H]<- (AGE_H[indx_H]+1/12)*Z_H[indx_H]
+	    AGE_N[indx_N]<- (AGE_N[indx_N]+1/12)*Z_N[indx_N]
 	    
-	    ### ADD IN AGE-1 RECRUITS
-	    if(sum(AGE_0_N_BND)>0 & m[i]==6)
-	    {
-	      indx_0<- lapply(1:inputs$nreps,function(x)
-	      {
-	        which(Z_N[,x]==0)[1:AGE_0_N_BND[,x]] #OVERWRITES DEAD FISH AND UTILIZES NEW ROWS
-	      }) # ROW INDICES
-	      tmp<- unlist(lapply(1:inputs$nreps,
-	                          function(x) rep(x,length(indx_0[[x]])))) # COLUMN INDICES
-	      indx_0<- cbind(unlist(indx_0),tmp)#row,column
-	      ## ADD NEW AGE-1 RECRUITS TO THE POPULATION    
-	      Z_N[indx_0]<-1    #####FIXME##### NEED TO ADD LENGTH AND SO ON
-	      AGE_N[indx_0]<-12  
-	      ###ALL ROWS NEED LENGTH, WEIGHT, AND SEX
-	      ###NEW ROWS WILL HAVE MAT, MPS, SPN = 0, AS DESIRED
-	      ###NEW ROWS WILL HAVE A UNIQUE, RANDOM VB k AND Linf, AS DESIRED
-	      ###OVERWRITTEN ROWS NEED NEW VB GROWTH PARAMS AND ZEROED OUT MAT, MPS, AND SPN 
-	      print(AGE_0_N_BND)
-	      ### WHAT WOULD BE FASTER TO WORK WITH indx_0 FOR ALL CATEGORIES, OR TO KEEP A COUNTER SO
-	      ### THAT ONLY NEW ROWS ARE UTILIZED???
-	    }
-	    ## SO EACH YEAR THE INPUT AMOUNT IS ADDED...PROBABLY WANT TO ADD SOME VARIATION TO THIS!!!
 	    
-	    ### INDICES FOR FISH THAT ARE ALIVE
-	    ### AND SUBJECT TO DEMOGRAPHIC PROCESSES
+	    #[3] UPDATE TOTAL LENGTH (AND ZERO OUT DEAD FISH) 
+	    LEN_H[indx_H]<-dLength(k=k_H[indx_H],
+	                           linf=Linf_H[indx_H],
+	                           dT=1/12,
+	                           length1=LEN_H[indx_H])*Z_H[indx_H]
+	    LEN_N[indx_N]<-dLength(k=k_N[indx_N],
+	                           linf=Linf_N[indx_N],
+	                           dT=1/12,
+	                           length1=LEN_N[indx_N])*Z_N[indx_N]	
+	    
+	    ### UPDATE INDICES FOR FISH THAT ARE ALIVE
 	    indx_H<- lapply(1:inputs$nreps,
 	                    function(x){which(Z_H[,x]==1)}) # ROW INDICES
 	    tmp<- unlist(lapply(1:inputs$nreps,
@@ -246,26 +224,16 @@ sim<- function(inputs=NULL, dyn=NULL,
 	                        function(x) rep(x,length(indx_N[[x]])))) # COLUMN INDICES
 	    indx_N<- cbind(unlist(indx_N),tmp)#row,column
 	    
-	    
-	    
-	    
-	    ### UPDATE TOTAL LENGTH 
-	    LEN_H[indx_H]<-dLength(k=k_H[indx_H],
-	                           linf=Linf_H[indx_H],
-	                           dT=1/12,
-	                           length1=LEN_H[indx_H])
-	    LEN_N[indx_N]<-dLength(k=k_N[indx_N],
-	                           linf=Linf_N[indx_N],
-	                           dT=1/12,
-	                           length1=LEN_N[indx_N])			
-	    
-	    
-	    
-	    ### UPDATE WEIGHT
+
+	    #[4] UPDATE WEIGHT
 	    ###	GIVEN NEW LENGTH
 	    ### STATUS: DONE BUT SLOW
 	    if(weightCalc)
 	    {
+	      ### ZERO OUT FISH THAT DIED
+	      WGT_H<- WGT_H*Z_H
+	      WGT_N<- WGT_N*Z_N
+	      ### UPDATE LIVING FISH
 	      WGT_H[indx_H]<-dWeight(len=LEN_H[indx_H],
 	                             a=inputs$a,
 	                             b=inputs$b,
@@ -276,10 +244,127 @@ sim<- function(inputs=NULL, dyn=NULL,
 	                             er=inputs$lw_er)
 	    }
 	    
-	    ## RECRUITMENT
-	    #month<<-m[i]
-	    #source("./src/recruitment-dynamics.R")
-	    ### WAIT A SECOND WE JUST HAD RECRUITMENT ABOVE...CHECK ON THIS!!!
+      
+	    ### RECRUITMENT AND SPAWNING
+	    if(inputs$recruitmentFreq>0 & m[i]==6)
+	    {
+	      ### AGE-1 RECRUITMENT
+	      #### SURVIVAL FROM AGE-0 TO AGE-1    
+	      AGE_0_N_BND<- rbinom(inputs$nreps,
+	                             AGE_0_N_BND,
+	                             inputs$phi0)
+	      AGE_0_H_BND[]<- rbinom(inputs$nreps,
+	                             AGE_0_H_BND,
+	                             inputs$phi0) #SHOULD phi0_H DIFFER FROM phi0_N????
+	      #### ADD IN NATURAL AND HATCHERY ORIGIN (THOSE STOCKED
+	      #### DURING AGE-0) AGE-1 RECRUITS  
+	      dyn<-recruit_to_population(inputs=inputs,
+	                                 current=dyn,
+	                                 spatial=FALSE)
+	      
+	      ### SPAWNING AND NATURAL RECRUITMENT TO AGE-0
+	      ### ZERO OUT FISH THAT DIED
+	      MAT_H<-MAT_H*Z_H 
+	      MAT_N<-MAT_N*Z_N
+	      
+	      MPS_H<-MPS_H*Z_H 
+	      MPS_N<-MPS_N*Z_N 
+	      
+	      SPN_H<-SPN_H*Z_H
+	      SPN_N<-SPN_N*Z_N
+	      
+	      #### UPDATE MATURITY OF LIVE FISH GIVEN AGE
+	      tmp_H<-dMaturity(mature = MAT_H[indx_H],
+	                       age = AGE_H[indx_H],
+	                       live = Z_H[indx_H],
+	                       mat_dist = inputs$mat_dist)
+	      tmp_N<-dMaturity(mature = MAT_N[indx_N],
+	                       age = AGE_N[indx_N],
+	                       live = Z_N[indx_N],
+	                       mat_dist = inputs$mat_dist)
+	      
+	      MAT_H[indx_H] <- tmp_H$mature
+	      MAT_N[indx_N] <- tmp_N$mature
+	      
+	      ### UPDATE MONTHS SINCE SPAWNING
+	      MPS_H[indx_H] <- dMPS(mps = MPS_H[indx_H],
+	                            spawn = SPN_H[indx_H],
+	                            mature = MAT_H[indx_H])
+	      MPS_N[indx_N] <- dMPS(mps = MPS_N[indx_N],
+	                            spawn = SPN_N[indx_N],
+	                            mature = MAT_N[indx_N])
+	      
+	      ### UPDATE SPAWNING [NO|YES]
+	      ### GIVEN SEXUAL MATURITY AND 
+	      ### TIME SINCE LAST SPAWNING EVENT
+	      SPN_H[indx_H] <- spawn(mps = MPS_H[indx_H],
+	                             a=-5,b=2.55,
+	                             mature = MAT_H[indx_H],
+	                             FirstSpawn = tmp_H$FirstSpawn)
+	      SPN_N[indx_N] <- spawn(mps = MPS_N[indx_N],
+	                             a=-5,b=2.55,
+	                             mature = MAT_N[indx_N],
+	                             FirstSpawn = tmp_N$FirstSpawn)
+	      
+	      ### UPDATE THE NUMBER OF EGGS IN A FEMALE 
+	      ### GIVEN SEX AND SPAWNING STATUS
+	      EGGS_H[indx_H]<-fecundity(fl=LEN_H[indx_H],
+	                                a=inputs$fec_a,
+	                                b=inputs$fec_b,
+	                                er=inputs$fec_er,
+	                                sex=SEX_H[indx_H],
+	                                spawn=SPN_H[indx_H],
+	                                mature=MAT_H[indx_H])	
+	      EGGS_N[indx_N]<-fecundity(fl=LEN_N[indx_N],
+	                                a=inputs$fec_a,
+	                                b=inputs$fec_b,
+	                                er=inputs$fec_er,
+	                                sex=SEX_N[indx_N],
+	                                spawn=SPN_N[indx_N],
+	                                mature=MAT_N[indx_N])
+	     
+	      ## NUMBER OF EGGS IN EACH BEND
+	      AGE_0_N_BND<- matrix(colSums(EGGS_N)+colSums(EGGS_H),nrow=1) 
+	      
+	      
+	      ### eggs --> embryos	
+	      ### STATUS: DONE NEEDS TO BE MODIFIED WITH DENSITY
+	      AGE_0_N_BND <- rbinom(inputs$nreps,
+	                           AGE_0_N_BND,
+	                           inputs$pr_embryo) 
+	      
+	      ### embryos --> free embryos
+	      AGE_0_N_BND <- rbinom(inputs$nreps,
+	                            AGE_0_N_BND,
+	                            inputs$phi_embryo)
+	      ### free embryos --> age0
+	      AGE_0_N_BND <- rbinom(inputs$nreps,
+	                            AGE_0_N_BND,
+	                            inputs$phi_free_embryo) 
+	      
+	      
+	      ### ADJUST FOR THE AGE-0 THAT WERE INTERCEPTED AND RETAINED IN
+	      ### THE BASIN
+	      if(!is.null(inputs$p_retained))
+	      {
+	        AGE_0_N_BND <- rbinom(inputs$nreps,
+	                              AGE_0_N_BND,
+	                              inputs$p_retained)           
+	      }
+	      
+	      ### UPDATE INDICES TO INCLUDE NEW AGE-1 RECRUITS
+	      indx_H<- lapply(1:inputs$nreps,
+	                      function(x){which(Z_H[,x]==1)}) # ROW INDICES
+	      tmp<- unlist(lapply(1:inputs$nreps,
+	                          function(x) rep(x,length(indx_H[[x]])))) # COLUMN INDICES
+	      indx_H<- cbind(unlist(indx_H),tmp)#row,column
+	      
+	      indx_N<- lapply(1:inputs$nreps,
+	                      function(x){which(Z_N[,x]==1)}) # ROW INDICES
+	      tmp<- unlist(lapply(1:inputs$nreps,
+	                          function(x) rep(x,length(indx_N[[x]])))) # COLUMN INDICES
+	      indx_N<- cbind(unlist(indx_N),tmp)#row,column
+	    }
 	    
 	    
 	    if(inputs$spatial==TRUE)

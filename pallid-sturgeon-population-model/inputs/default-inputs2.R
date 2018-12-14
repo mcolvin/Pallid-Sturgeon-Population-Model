@@ -18,7 +18,7 @@ input$upper$hatchery<- round(91.57*355,-2)
   # 32500, matches PSPSP Report density multiplied by UB river length of
   # 355rkms and rounded to the nearest hundred
 
-## THESE ARE USED WHEN SPATIAL = TRUE... USED OTHERWISE???
+
 input$lower$natural_age0<- 200
 input$upper$natural_age0<- 200
 
@@ -124,6 +124,13 @@ input$upper$phi_age2_er<-0.01
 
 input$lower$maxage<-41  #OKAY?
 input$upper$maxage<-60
+
+## RECRUITMENT
+input$lower$recruit_mean_length <- 200    #FIX!!!
+input$upper$recruit_mean_length <- 200    #FIX!!!
+
+input$lower$recruit_length_sd <- 25  #FIX!!!
+input$upper$recruit_length_sd <- 25  #FIX!!!
 
 
 

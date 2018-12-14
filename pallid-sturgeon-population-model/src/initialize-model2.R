@@ -86,7 +86,6 @@ initialize<- function(inputs)
 				er=inputs$lw_er)				
 	
 				
-				
 		## [5] INITIALIZE SEX
 		dyn$SEX_H[,j]<-dyn$Z_H[,j]*
 			ini_sex(n=inputs$daug_H,
@@ -95,6 +94,7 @@ initialize<- function(inputs)
 			ini_sex(n=inputs$daug_N,
 				ratio=inputs$sexratio)				
 				
+		
 		## [6] INITIALIZE AGE IN MONTHS
 		dyn$AGE_H[,j]<-ini_age(len=dyn$LEN_H[,j],
 				linf=dyn$Linf_H[,j],
@@ -108,14 +108,14 @@ initialize<- function(inputs)
 				maxAge=inputs$maxage)				
 					
 				
-		## [7] INITIALIZE WHETHER A FISH IS SEXUALLY MATURE	
+		## [7] INITIALIZE WHETHER A FISH IS SEXUALLY MATURE (DURING INITIAL YEAR)	
 		tmp_H<-ini_maturity(age=dyn$AGE_H[,j], mat_cdf=inputs$mat_cdf)
 		dyn$MAT_H[,j]<-dyn$Z_H[,j]*tmp_H$mature
 		tmp_N<-ini_maturity(age=dyn$AGE_N[,j], mat_cdf=inputs$mat_cdf)
 		dyn$MAT_N[,j]<-dyn$Z_N[,j]*tmp_N$mature				
 				
 				
-		## [8] INITIALIZE TIME SINCE SPAWNING	
+		## [8] INITIALIZE TIME SINCE SPAWNING	(FOR INTIAL YEAR PRIOR TO SPAWNING)
 		dyn$MPS_H[,j]<-dyn$Z_H[,j]*ini_mps(n=inputs$daug_H,
 			mature=dyn$MAT_H[,j],
 			FirstSpawn=tmp_H$FirstSpawn)
@@ -123,17 +123,30 @@ initialize<- function(inputs)
 			mature=dyn$MAT_N[,j],
 			FirstSpawn=tmp_N$FirstSpawn)
 		
-		
-		
 
-	  ## [9] INITIALIZE IF A FISH SPAWNED
+	  ## [9] INITIALIZE IF A FISH SPAWNED (DURING INITIAL YEAR) 
 	  dyn$SPN_H[,j] <- dyn$Z_H[,j]*spawn(mps=dyn$MPS_H[,j],
 	                                     mature=dyn$MAT_H[,j], 
 	                                     FirstSpawn=tmp_H$FirstSpawn)
 	  dyn$SPN_N[,j] <- dyn$Z_N[,j]*spawn(mps=dyn$MPS_N[,j],
 	                                     mature=dyn$MAT_N[,j], 
 	                                     FirstSpawn=tmp_N$FirstSpawn)
-	}
+	  ## [??] INITIALIZE THE NUMBER OF NATURAL AGE-0 RECRUITS PRODUCED (DURING INTIAL YEAR)
+	  dyn$EGGS_H[,j]<-fecundity(fl=dyn$LEN_H[,j],
+	                            a=inputs$fec_a,
+	                            b=inputs$fec_b,
+	                            er=inputs$fec_er,
+	                            sex=dyn$SEX_H[,j],
+	                            spawn=dyn$SPN_H[,j],
+	                            mature=dyn$MAT_H[,j])	
+	  dyn$EGGS_N[,j]<-fecundity(fl=dyn$LEN_N[,j],
+	                            a=inputs$fec_a,
+	                            b=inputs$fec_b,
+	                            er=inputs$fec_er,
+	                            sex=dyn$SEX_N[,j],
+	                            spawn=dyn$SPN_N[,j],
+	                            mature=dyn$MAT_N[,j])	
+	 }
 	
 
 	## [10] INITIALIZE SPATIAL COMPONENTS

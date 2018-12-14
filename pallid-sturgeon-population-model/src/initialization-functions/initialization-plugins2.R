@@ -28,39 +28,31 @@ ini_growth<- function(n,mu_ln_Linf,mu_ln_k,vcv, maxLinf=2100)
 
 
 ##[3] LENGTH
-ini_length<-function(n=10, basin="lower",origin=1, spatial=FALSE,linf=2000)
+ini_length<-function(n, basin, origin, spatial=FALSE)
 {# A FUNCTION TO INITIALIZE LENGTHS OF INDIVIDUAL FISH
   # origin [0 for natural, 1 for hatchery]
   # CALLS r WHICH IS AN EMPRICAL DISTRIBUTION
   if(tolower(basin)=="lower" & spatial==FALSE)
   {
-    tmp<- r(len_ini_low_hatchery_nospace)(n)*origin + # hatchery
-      r(len_ini_low_natural_nospace)(n)*(1-origin) # natural
+    tmp<- len_ini_low_hatchery_nospace(runif(n))*origin + # hatchery
+      len_ini_low_natural_nospace(runif(n))*(1-origin) # natural
   }
   if(tolower(basin)=="upper" & spatial==FALSE)
   {
-    tmp<- r(len_ini_upp_hatchery_nospace)(n)*origin + # hatchery
-      r(len_ini_upp_natural_nospace)(n)*(1-origin) # natural
+    tmp<- len_ini_upp_hatchery_nospace(runif(n))*origin + # hatchery
+      len_ini_upp_natural_nospace(runif(n))*(1-origin) # natural
   }
   # SPATIAL COMPONENT
   if(tolower(basin)=="lower" & spatial==TRUE )
   {####fixme####
-    tmp<- r(len_ini_low_hatchery_nospace)(n)*origin + # hatchery
-      r(len_ini_low_natural_nospace)(n)*(1-origin) # natural				
-    
-    
-    # tmp<- r(len_ini_low_hatchery_nospace)(n)*origin + # hatchery
-    #        r(len_ini_low_natural_nospace)(n)*(1-origin) # natural
+    tmp<- len_ini_low_hatchery_spatial(runif(n))*origin + # hatchery
+      len_ini_low_natural_spatial(runif(n))*(1-origin) # natural				
   }
   if(tolower(basin)=="upper" & spatial==TRUE )
   {####fixme####
-    tmp<- r(len_ini_upp_hatchery_nospace)(n)*origin + # hatchery
-      r(len_ini_upp_natural_nospace)(n)*(1-origin) # natural
-    
-    #tmp<-  r(len_ini_upp_hatchery_nospace)(n)*origin + # hatchery
-    #       r(len_ini_upp_natural_nospace)(n)*(1-origin) # natural
+    tmp<- len_ini_upp_hatchery_spatial(runif(n))*origin + # hatchery
+      len_ini_upp_natural_spatial(runif(n))*(1-origin) # natural
   }
-  tmp<- ifelse(tmp> linf,0.99*linf,tmp)
   return(tmp)
 }
 

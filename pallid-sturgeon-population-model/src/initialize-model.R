@@ -124,8 +124,9 @@ initialize<- function(inputs)
 			mature=dyn$MAT_N[,j])
 		
 
-	# SPN_H  ####fixme####
-	  ## [9] INITIALIZE IF A FISH WILL SPAWN ONCE CONDITIIONS ARE MET
+		## [9] INITIALIZE IF A FISH WILL SPAWN ONCE CONDITIIONS ARE MET
+		# SPN_H  ####fixme####
+	  
 	
 
 	## [10] INITIALIZE SPATIAL COMPONENTS
