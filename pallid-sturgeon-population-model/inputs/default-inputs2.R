@@ -2,21 +2,21 @@ input<-list()
 ## INPUT
 ### USED IN INITIALIZATION OF THE MODEL
 #[1] NUMBER OF LIVING FISH
-input$lower$natural<- round(5.7*689+0.93*587,-2)
-  # 4500, matches PSPSP Report density multiplied by segments 7-9 river 
-  # length of 689rkm and segments 10,13,14 river length of 587rkm,
-  # rounded to the nearest hundred
-input$upper$natural<- round(0.28*355,-2)
-  # 100, matches PSPSP Report density multiplied by UB river length of 
-  # 355rkms and rounded to the nearest hundred
+input$lower$natural<- round(5.5*689+0.93*587,0)
+  # 4335, matches Steffensen et al. (2017a) mean density (see 2017 AM 
+  # Report for full citation) multiplied by segments 7-9 river length of 
+  # 689rkm and Steffensen et al. (2014) segments 10,13,14 river length 
+  # of 587rkm, rounded to the nearest fish
+input$upper$natural<- 125
+  # Jaeger et al. (2009) 2017 AM Report Table 3-1
 
-input$lower$hatchery<- round(32.3*689+5.53*587,-2)
-  # 25500, matches PSPSP Report density multiplied by segments 7-9 river 
-  # length of 689rkm and segments 10,13,14 river length of 587rkm,
-  # rounded to the nearest hundred
-input$upper$hatchery<- round(91.57*355,-2) 
-  # 32500, matches PSPSP Report density multiplied by UB river length of
-  # 355rkms and rounded to the nearest hundred
+input$lower$hatchery<- round(12.9*689+5.53*587,0)
+  # 12134, matches Steffensen et al. (2017a)  mean density (see 2017 AM 
+  # Report for full citation) multiplied by segments 7-9 river length of 
+  # 689rkm and Steffensen et al. (2014) segments 10,13,14 river length 
+  # of 587rkm, rounded to the nearest fish
+input$upper$hatchery<- 16444
+  # Rotella (2017)  2017 AM Report Table 3-1
 
 
 input$lower$natural_age0<- 200
@@ -27,24 +27,33 @@ input$upper$hatchery_age0<- 0
 
 
 #[2] GROWTH PARAMETERS
+  # SOURCE:  FIT TO PSPAP DATA BY BASIN FOR THE YEARS ??-??
+  # SEE <FILE NAME HERE> FOR DETAILS
 input$lower$maxLinf<-1800
 input$lower$ln_Linf_mu<-6.982160
 input$lower$ln_k_mu<- -2.382711
-input$lower$vcv<- matrix(c(0.0894,-0.1327,-0.1327,0.3179),nrow=2,ncol=2, byrow=TRUE)
+input$lower$vcv<- matrix(c(0.0894,-0.1327,-0.1327,0.3179),
+                         nrow=2, ncol=2, byrow=TRUE)
 
 input$upper$maxLinf<-2100
 input$upper$ln_Linf_mu<-7.136028770
 input$upper$ln_k_mu<- -3.003764445
-input$upper$vcv<- matrix(c(0.2768,-0.364,-0.364,0.6342),nrow=2,ncol=2, byrow=TRUE)
+input$upper$vcv<- matrix(c(0.2768,-0.364,-0.364,0.6342), nrow=2, 
+                         ncol=2, byrow=TRUE)
 
 
 
 #[3] INITIAL LENGTH DISTRIBUTIONS
+  # SOURCE:  FIT TO PSPAP DATA BY BASIN FOR THE YEARS 2016-EARLY 2018
+  # FOR DETAILS SEE "./src/initialization-functions/initial-dists/
+  #                     initialize-length-distributions.R" 
 load("./src/initialization-functions/initialize-length-functions.Rdata")
 
 
 
+
 #[4] WEIGHT-LENGTH PARAMETERS
+  # SOURCE:
 input$lower$a_prime<- -13.84
 input$upper$a_prime<- -14.09
 
@@ -56,34 +65,47 @@ input$upper$lw_er<-0.165
 
 
 
+
 #[5] SEX RATIO
-input$lower$sexratio<-0.33  #MATCH TO PSPAP???
-input$upper$sexratio<-0.5
+input$lower$sexratio<-0.33
+  # SOURCE: 
+input$upper$sexratio<-0.32 
+  # SOURCE: THE 40:85 ADULT F:M RATIO ESTIMATED BY JAEGER ET AL. (2009) 
+  # IN THE 2017 AM REPORT (TABLE 3-1)   
 
 
 
-#[7] MATURATION PARAMETERS  
-input$lower$age_mat_50<-8  ####fixme#### make it work for lower and upper
-input$upper$age_mat_50<-8  ####fixme#### make it work for lower and upper
+#[7] MATURATION PARAMETERS 
+  # SOURCE: 
+  #################################################
+  #   NEEDS TO BE BASED ON BASIN-SPECIFIC DATA    #
+  #################################################
+input$lower$age_mat_50<-8  
+input$upper$age_mat_50<-8  
 
-input$lower$age_mat_min<-8  ####fixme#### make it work for lower and upper
-input$upper$age_mat_min<-8  ####fixme#### make it work for lower and upper
+input$lower$age_mat_min<-8  
+input$upper$age_mat_min<-8  
 
-input$lower$mat_k<-0.2 	####fixme#### make it work for lower and upper
-input$upper$mat_k<-0.2 	####fixme#### make it work for lower and upper
+input$lower$mat_k<-0.2 	
+input$upper$mat_k<-0.2 	
 
 
 
 #[8] TIME SINCE SPAWNING PARAMETERS
-input$lower$spn_a<- -5  ####fixme#### make it work for lower and upper
-input$upper$spn_a<- -5  ####fixme#### make it work for lower and upper
+  # SOURCE: 
+  #################################################
+  #   NEEDS TO BE BASED ON BASIN-SPECIFIC DATA    #
+  #################################################
+input$lower$spn_a<- -5  
+input$upper$spn_a<- -5  
 
-input$lower$spn_b<- 2.5 ####fixme#### make it work for lower and upper
-input$upper$spn_b<- 2.5 ####fixme#### make it work for lower and upper
+input$lower$spn_b<- 2.5 
+input$upper$spn_b<- 2.5 
 
 
 
 # FECUNITY-LENGTH
+  # SOURCE:
 input$lower$fec_a<-10.77
 input$upper$fec_a<-11.26
 
@@ -92,45 +114,65 @@ input$upper$fec_b<-0.57
 
 input$lower$fec_er<-0.30
 input$upper$fec_er<-0.39
+    
 
 
 ## SURVIVAL
 input$lower$pr_embryo<- 0.0001
 input$upper$pr_embryo<- 0.0001
+  # SOURCE: WAG
+  # MOTIVATION: LIKELY VERY SMALL
 
 input$lower$phi_embryo<- 0.0001
 input$upper$phi_embryo<- 0.0001
+  # SOURCE: WAG
+  # MOTIVATION: LIKELY VERY SMALL
 
 input$lower$phi_free_embryo<- 0.0001
 input$upper$phi_free_embryo<- 0.0001
+  # SOURCE: WAG
+  # MOTIVATION: LIKELY VERY SMALL
 
 input$lower$phi_age0_mean<-0.0001
 input$upper$phi_age0_mean<-0.0001
+  # SOURCE: WAG
+  # MOTIVATION: LIKELY VERY SMALL
 
 input$lower$phi_age0_er<-0.01
 input$upper$phi_age0_er<-0.01
+  # SOURCE: WAG
+  # MOTIVATION: GIVES A LARGE RSD: 100  
 
 input$lower$phi_age1_mean<-0.68
+  # SOURCE:
 input$upper$phi_age1_mean<-0.95
+  # SOURCE:
 
 input$lower$phi_age1_er<-0.1
 input$upper$phi_age1_er<-0.1
 
 input$lower$phi_age2_mean<-0.92
+  # SOURCE:
 input$upper$phi_age2_mean<-0.95
+  # SOURCE:
 
 input$lower$phi_age2_er<-0.01
 input$upper$phi_age2_er<-0.01
 
 input$lower$maxage<-41  #OKAY?
+  # SOURCE:  Keenlyne et al. (1992) 
 input$upper$maxage<-60
+  # SOURCE:
 
 ## RECRUITMENT
-input$lower$recruit_mean_length <- 200    #FIX!!!
-input$upper$recruit_mean_length <- 200    #FIX!!!
+  #################################################
+  #   NEEDS TO BE BASED ON BASIN-SPECIFIC DATA    #
+  #################################################
+input$lower$recruit_mean_length <- 200    
+input$upper$recruit_mean_length <- 200    
 
-input$lower$recruit_length_sd <- 25  #FIX!!!
-input$upper$recruit_length_sd <- 25  #FIX!!!
+input$lower$recruit_length_sd <- 25  
+input$upper$recruit_length_sd <- 25  
 
 
 

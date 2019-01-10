@@ -28,6 +28,10 @@ modelInputs<- function(input=NULL,
 	                        "phi_age2_mean"))]<-c("phi0", "phi1", "phi2") #parameter name change
 	tmp$phi <- c(tmp$phi1,rep(tmp$phi2,tmp$maxage-1))
 	### MATURATION
+	  #####################################################################
+	  #   CHOOSE BEST FORMAT DEPENDENT ON WHAT IS EASIER TO ESTIMATE      #
+	  #   ADJUST RELATED INPUTS & FUNCTIONS AS NEEDED BASED ON ESTIMATES  #              #
+	  #####################################################################
 	#### INPUT PROBABILITY OF FIRST SPAWN AT EACH AGE
 	tmp$mat_dist<- 1/(1+exp(-tmp$mat_k*(1:tmp$maxage-tmp$age_mat_50)))
 	tmp$mat_dist[1:(tmp$age_mat_min-1)]<-0
@@ -67,7 +71,7 @@ modelInputs<- function(input=NULL,
 		age=input$stockingInput[[basin]]$yearling_age,
 		bend=NA)#input$stockingInput$bend)
 
-	# SIMULATION STUFF    NOTE: size_indices NOT USED!!!
+	# SIMULATION STUFF
 	tmp <- c(tmp, input$simulationInput)
 	tmp$spatial <- spatial
 	

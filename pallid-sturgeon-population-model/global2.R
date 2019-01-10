@@ -26,18 +26,9 @@ source("./src/initialization-functions/process-inputs2.R")
 
 ## LOAD INITIALIZATION PLUGINS
 source("./src/initialization-functions/initialization-plugins2.R")
-#source("./src/initialization-functions/ini_growth.R")
-
-
-### FUNCTION TO INIITIALIZE LENGTH DISTRIBUTION
-#load("./src/initialization-functions/initialize-length-functions.Rdata")
-#source("./src/initialization-functions/initialize-spatial-location.R")
 
 ## LOAD DYNAMIC PLUGINS
 source("./src/dynamics-functions/dynamics-plugins2.R")
-#source("./src/dynamics-functions/001-adult-survival.R")
-#source("./src/dynamics-functions/003-length-weight.R")
-#source("./src/dynamics-functions/008-adult-movement.R")
 
 ## LOAD INITIALIZATON FUNCTION
 source("./src/initialize-model2.R")	
