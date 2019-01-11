@@ -18,6 +18,7 @@ a=-3
 b=0.3
 bend_meta$upper$irc_p<- plogis(a+b*bend_meta$upper$irc)
 bend_meta$lower$irc_p<- plogis(a+b*bend_meta$lower$irc)
+rm(a,b)
 source("./inputs/default-inputs2.R")
 
 
@@ -34,7 +35,8 @@ source("./src/dynamics-functions/dynamics-plugins2.R")
 source("./src/initialize-model2.R")	
 
 ## LOAD SIMULATION FUNCTION
-source("./src/simulation.R")
+#source("./src/simulation.R")
+source("./src/simulation2.R")
 
 ## LOAD SIMULATION MODULES
 source("./src/modules/recruitment-module.R")

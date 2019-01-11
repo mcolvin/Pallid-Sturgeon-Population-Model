@@ -56,8 +56,7 @@ initialize<- function(inputs)
 		dyn$LEN_H[,j]<-dyn$Z_H[,j]*ini_length(n=inputs$daug_H, 
 				basin=inputs$basin,
 				origin=1, # 1 FOR HATCHERY, 0 FOR NATURAL
-				spatial=FALSE,
-				linf= dyn$Linf_H[,j])
+				spatial=FALSE)
 		dyn$Linf_H[,j]<-ifelse(dyn$LEN_H[,j]<dyn$Linf_H[,j],
 			dyn$Linf_H[,j], 
 			dyn$LEN_H[,j]*1.1)
@@ -65,8 +64,7 @@ initialize<- function(inputs)
 		dyn$LEN_N[,j]<-dyn$Z_N[,j]*ini_length(n=inputs$daug_N, 
 				basin=inputs$basin,
 				origin=0, # 1 FOR HATCHERY, 0 FOR NATURAL
-				spatial=FALSE,
-				linf= dyn$Linf_N[,j])
+				spatial=FALSE)
 		dyn$Linf_N[,j]<-ifelse(dyn$LEN_N[,j]<dyn$Linf_N[,j],
 			dyn$Linf_N[,j], 
 			dyn$LEN_N[,j]*1.1)		
@@ -88,11 +86,11 @@ initialize<- function(inputs)
 				
 		## [5] INITIALIZE SEX
 		dyn$SEX_H[,j]<-dyn$Z_H[,j]*
-			ini_sex(n=inputs$daug_H,
-				ratio=inputs$sexratio)
+		  ini_sex(n=inputs$daug_H,
+		          prob_F=inputs$sexratio)
 		dyn$SEX_N[,j]<-dyn$Z_N[,j]*
 			ini_sex(n=inputs$daug_N,
-				ratio=inputs$sexratio)				
+			        prob_F=inputs$sexratio)				
 				
 		
 		## [6] INITIALIZE AGE IN MONTHS

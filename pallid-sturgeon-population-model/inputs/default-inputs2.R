@@ -47,7 +47,7 @@ input$upper$vcv<- matrix(c(0.2768,-0.364,-0.364,0.6342), nrow=2,
   # SOURCE:  FIT TO PSPAP DATA BY BASIN FOR THE YEARS 2016-EARLY 2018
   # FOR DETAILS SEE "./src/initialization-functions/initial-dists/
   #                     initialize-length-distributions.R" 
-load("./src/initialization-functions/initialize-length-functions.Rdata")
+load("./src/initialization-functions/initialize-length-functions2.Rdata")
 
 
 
@@ -66,7 +66,7 @@ input$upper$lw_er<-0.165
 
 
 
-#[5] SEX RATIO
+#[5] SEX RATIO CONVERTED TO PROBABILITY A FISH IS FEMALE
 input$lower$sexratio<-0.33
   # SOURCE: 
 input$upper$sexratio<-0.32 
@@ -125,16 +125,22 @@ input$upper$pr_embryo<- 0.0001
 
 input$lower$phi_embryo<- 0.0001
 input$upper$phi_embryo<- 0.0001
+#input$lower$phi_embryo<- 0.1
+#input$upper$phi_embryo<- 0.1
   # SOURCE: WAG
   # MOTIVATION: LIKELY VERY SMALL
 
 input$lower$phi_free_embryo<- 0.0001
 input$upper$phi_free_embryo<- 0.0001
+#input$lower$phi_free_embryo<- 0.9
+#input$upper$phi_free_embryo<- 0.9
   # SOURCE: WAG
   # MOTIVATION: LIKELY VERY SMALL
 
 input$lower$phi_age0_mean<-0.0001
 input$upper$phi_age0_mean<-0.0001
+#input$lower$phi_age0_mean<-0.9
+#input$upper$phi_age0_mean<-0.9
   # SOURCE: WAG
   # MOTIVATION: LIKELY VERY SMALL
 

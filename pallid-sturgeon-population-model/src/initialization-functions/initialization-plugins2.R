@@ -67,9 +67,9 @@ ini_wgt<- function(a,b,len,er)
 
 
 ##[5] SEX
-ini_sex<- function(n,ratio)
+ini_sex<- function(n,prob_F)
 {
-  out<-rbinom(n,1,ratio)
+  out<-rbinom(n,1,prob_F)  #0=M, 1=F
   return(out)
 }
 

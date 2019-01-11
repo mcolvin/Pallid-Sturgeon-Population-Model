@@ -48,13 +48,11 @@ dMaturity<- function(mature, age, live, mat_dist)
   ## mature (1 if mature and 0 if not)
   ## FirstSpawn (1 if the fish just matured, i.e. first spawning, and 0 otherwise)
   a <- floor(age/12)
-    #WE SHOULD NOT HAVE ANY AGE ZERO FISH OR FISH GREATER THAN MAXAGE 
+    #WE SHOULD NOT HAVE ANY FISH GREATER THAN MAXAGE 
     #IN THE VECTOR FOR WHICH THIS FUNCTION IS APPLIED
-  if(any(a==0)){return(print("Age-0 Fish Present in Vector."))}
   if(any(a>inputs$maxage)){return(print("Senescent Fish Present in Vector."))}
-  pr<-mat_dist[a]
-    #ALL FISH FOR WHICH THIS FUNCTION IS USED SHOULD BE ALIVE
-  if(any(live!=1)){return(print("Dead fish included."))}
+  mat_dist<-c(0, mat_dist) #ADD IN ZERO MATURATIONS FOR AGE-0 FISH
+  pr<-mat_dist[a+1]*live
   indx<-which(mature==1)
   pr[indx]<-1
   M2<- rbinom(length(age),1,pr)
@@ -117,10 +115,6 @@ fecundity<- function(fl,a,b,er,sex,spawn,mature)
 {
   N<-length(fl)
   fl_normalized<- (fl - 1260.167)/277.404
-  #yy<- exp(a + b*fl_normalized) + exp(rnorm(N,0,er))
-  #y<- exp(rnorm(N,a + b*fl_normalized,er))
-  #eggs<- rpois(N,y)*spawn*sex*mature
-  if(spawn==1 & mature!=1){return(print("Spawn-Mature Mismatch!"))}
   eggs<- rpois(N,exp(rnorm(N,a + b*fl_normalized,er)))*spawn*sex*mature
   return(eggs)
 }
