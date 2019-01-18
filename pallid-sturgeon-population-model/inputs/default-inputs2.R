@@ -170,6 +170,10 @@ input$lower$maxage<-41  #OKAY?
 input$upper$maxage<-60
   # SOURCE:
 
+### DRIFT SURVIVAL (NON-SPATIAL)
+input$lower$p_retained<- 0.5
+input$upper$p_retained<- 0.5
+
 ## RECRUITMENT
   #################################################
   #   NEEDS TO BE BASED ON BASIN-SPECIFIC DATA    #
@@ -236,7 +240,13 @@ input$stockingInput$lower$yearling_stocking_rkm<- 50
 input$spatialInput$adult_spatial_structure<- "Uniform" # "Emperical"
 input$spatialInput$age0_n_spatial_structure<- "Uniform"# "Emperical"
 input$spatialInput$age0_h_spatial_structure<- "Uniform"# "Emperical"
-### SPAWNING HOTSPOTS
+### SPAWNING HOTSPOTS  <!-- fix: improve inputs -->
+input$spatialInput$upper$spn_bends<- c(154, 156) 
+input$spatialInput$lower$spn_bends<- c(316)
+### DRIFT DYNAMICS   <!-- fix: improve inputs -->
+#### CAN ALSO JUST USE EMPERICAL DRIFT MATRIX... 
+input$spatialInput$upper$p_retained<- rep(0.5, 156)
+input$spatialInput$lower$p_retained<- rep(0.5, 316)
 ## END SPATIAL INPUTS ##
 
 

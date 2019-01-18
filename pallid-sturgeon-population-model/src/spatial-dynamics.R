@@ -2,16 +2,22 @@
 		if(inputs$spatial==TRUE)
 			{		
 			### SIMULATE ADULT MOVEMENT AMONG BENDS 
-			### DEPENDING ON WHAT BEND FISH IS IN 
+			### DEPENDING ON WHAT BEND FISH IS IN
+		  ### AND IF FISH IS SPAWNING
 			### STATUS:  DONE BUT SLOW
 			BEND_H[indx_H]<- adultMovement(
 				previousLocation=BEND_H[indx_H],
-				fromToMatrix=inputs$adult_prob)
+				month=m[i],
+				spn=SPN_H[indx_H],
+				fromToMatrix=inputs$adult_mov_prob,
+				spnMatrix=inputs$spn_mov_prob)
 			BEND_N[indx_N]<- adultMovement(
 				previousLocation=BEND_N[indx_N],
-				fromToMatrix=inputs$adult_prob)
-				
-				
+				month=m[i],
+				spn=SPN_N[indx_N],
+				fromToMatrix=inputs$adult_mov_prob,
+				spnMatrix=inputs$spn_mov_prob)
+			
 			### MOVEMENT OF AGE-0
 			### ASSUMES NOT MOVEMENT ONCE INTERCEPTED IN A BEND
 			### STATUS: DONE
