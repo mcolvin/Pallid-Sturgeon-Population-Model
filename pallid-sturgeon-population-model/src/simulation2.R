@@ -77,14 +77,21 @@ sim<- function(inputs=NULL, dyn=NULL,
 	C2<-pnorm(L_max, L_mu, L_sig)-pnorm(L_min, L_mu, L_sig)
 	fec<-C1/C2*(pnorm((L_max-L_sig^2*inputs$fec_b-L_mu)/L_sig)-
 	              pnorm((L_min-L_sig^2*inputs$fec_b-L_mu)/L_sig))
+	if(!inputs$spatial){ret<-inputs$p_retained}
+	if(inputs$spatial)
+	{
+	  ret<-rep(0, length(inputs$bend_lengths))
+	  ret[inputs$spn_bends]<-inputs$spn_bnd_probs
+	  ret<-sum(ret*inputs$p_retained)
+	}
+	
 	#NOTE THIS FECUNDITY ALIGNS WITH FECUNDITY FUNCTION BUT GIVES A 
 	#HIGHER VALUE THAN THE AVERAGE EGGS INPUT FOR THE UB DRIFT 
 	#ANALYSES--MAY NEED TO ADJUST INPUT FECUNDITY VALUES IF THIS IS 
 	#NOT DESIRED
-	#### BY AGE CLASS
-	#TO DO
+	#### BY AGE CLASS: TO DO
 	A[1,inputs$age_mat_50:inputs$maxage] <- inputs$sexratio*PropSpawn*fec*
-	  inputs$pr_embryo*inputs$phi_embryo*inputs$phi_free_embryo*
+	  inputs$pr_embryo*inputs$phi_embryo*inputs$phi_free_embryo*ret*
 	  inputs$phi0
 	## RETURN LEADING EIGENPAIR
 	lambda<-as.numeric(eigen(A)$values[1])
@@ -137,10 +144,45 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  m<-dyn$m
 	  
 	  
-	  if(inputs$spatial==TRUE)
+	  if(inputs$spatial)
 	  {
 	    BEND_N <- dyn$BEND_N
 	    BEND_H <- dyn$BEND_H
+	    
+	    # INITIAL SUMMARIES
+	    N_BND_HAT_INI<- aggregate(Z_H[,1], by=list(id=BEND_H[,1]), sum)
+	    names(N_BND_HAT_INI)[2]<-"rep_1"
+	    for(i in 2:inputs$nreps)
+	    {
+	      app<- aggregate(Z_H[,i], by=list(id=BEND_H[,i]), sum)
+	      names(app)[2]<- paste("rep", i, sep="_")
+	      N_BND_HAT_INI<- merge(N_BND_HAT_INI,app, by="id", all=TRUE)
+	    }
+	    N_BND_HAT_INI<- merge(N_BND_HAT_INI, 
+	                          data.frame(id=0:length(inputs$bend_lengths)),
+	                          by="id", all=TRUE)
+	    N_BND_HAT_INI<- N_BND_HAT_INI[order(N_BND_HAT_INI$id),]
+	    N_BND_HAT_INI<- matrix(unname(unlist(c(N_BND_HAT_INI[-1,-1]))), 
+	                           nrow=length(inputs$bend_lengths),
+	                           ncol=inputs$nreps)
+	    N_BND_HAT_INI[is.na(N_BND_HAT_INI)]<-0
+	    
+	    N_BND_NAT_INI<- aggregate(Z_N[,1], by=list(id=BEND_N[,1]), sum)
+	    names(N_BND_NAT_INI)[2]<-"rep_1"
+	    for(i in 2:inputs$nreps)
+	    {
+	      app<- aggregate(Z_N[,i], by=list(id=BEND_N[,i]), sum)
+	      names(app)[2]<- paste("rep", i, sep="_")
+	      N_BND_NAT_INI<- merge(N_BND_NAT_INI,app, by="id", all=TRUE)
+	    }
+	    N_BND_NAT_INI<- merge(N_BND_NAT_INI, 
+	                          data.frame(id=0:length(inputs$bend_lengths)),
+	                          by="id", all=TRUE)
+	    N_BND_NAT_INI<- N_BND_NAT_INI[order(N_BND_NAT_INI$id),]
+	    N_BND_NAT_INI<- matrix(unname(unlist(c(N_BND_NAT_INI[-1,-1]))), 
+	                           nrow=length(inputs$bend_lengths),
+	                           ncol=inputs$nreps)
+	    N_BND_NAT_INI[is.na(N_BND_NAT_INI)]<-0
 	  }
 	  
 	  #rm(list='dyn')	
@@ -283,10 +325,12 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        SEX_H[indxr]<-ini_sex(n=length(indxr[,1]),
 	                              prob_F=inputs$sexratio)
 	        # ASSIGN LOCATION OF RECRUITS
-	        if(inputs$spatial==TRUE)
+	        if(inputs$spatial)
 	        {
-	          RKM[indxr]<- bend2rkm(c(unlist(sapply(1:inputs$nreps,
-	                                                    function(x){rep(1:inputs$n_bends,AGE_0_H_BND[,x])}))))
+	          indxB<-which(AGE_0_H_BND!=0, arr.ind=TRUE)
+	          BEND_H[indxr]<-rep(indxB[,1], AGE_0_H_BND[indxB])
+	          #RKM[indxr]<- bend2rkm(c(unlist(sapply(1:inputs$nreps,
+	          #                                      function(x){rep(1:inputs$n_bends,AGE_0_N_BND[,x])}))))
 	        }	
 	      }
 	      ##### NATURALLY SPAWNED FISH
@@ -328,10 +372,12 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        SEX_N[indxr]<-ini_sex(n=length(indxr[,1]),
 	                              prob_F=inputs$sexratio)
 	        # ASSIGN LOCATION OF RECRUITS
-	        if(inputs$spatial==TRUE)
+	        if(inputs$spatial)
 	        {
-	          RKM[indxr]<- bend2rkm(c(unlist(sapply(1:inputs$nreps,
-	                                                function(x){rep(1:inputs$n_bends,AGE_0_N_BND[,x])}))))
+	          indxB<-which(AGE_0_N_BND!=0, arr.ind=TRUE)
+	          BEND_N[indxr]<-rep(indxB[,1], AGE_0_N_BND[indxB])
+	          #RKM[indxr]<- bend2rkm(c(unlist(sapply(1:inputs$nreps,
+	          #                                      function(x){rep(1:inputs$n_bends,AGE_0_N_BND[,x])}))))
 	        }		
 	      }
 	      #### ZERO OUT AGE-0's AFTER THEY MOVE TO AGE-1
@@ -391,33 +437,77 @@ sim<- function(inputs=NULL, dyn=NULL,
 	                                spawn=SPN_N[indx_N],
 	                                mature=MAT_N[indx_N])
 	     
-	      ## NUMBER OF EGGS IN EACH BEND
-	      AGE_0_N_BND<- matrix(colSums(EGGS_N)+colSums(EGGS_H),nrow=1) 
-	      
+	      ## NUMBER OF EGGS
+	      if(!inputs$spatial)
+	      {
+	        AGE_0_N_BND<- matrix(colSums(EGGS_N)+colSums(EGGS_H),nrow=1)
+	      }
+	      if(inputs$spatial)
+	      {
+	        # EGGS OF NATURAL ORIGIN FISH BY BEND
+	        EGG_N_BND<- aggregate(EGGS_N[,1], by=list(id=BEND_N[,1]), sum)
+	        names(EGG_N_BND)[2]<-"rep_1"
+	        for(j in 2:inputs$nreps)
+	        {
+	          app<- aggregate(EGGS_N[,j], by=list(id=BEND_N[,j]), sum)
+	          names(app)[2]<- paste("rep", j, sep="_")
+	          EGG_N_BND<- merge(EGG_N_BND, app, by="id", all=TRUE)
+	        }
+	        EGG_N_BND<- merge(EGG_N_BND, 
+	                          data.frame(id=0:length(inputs$bend_lengths)),
+	                          by="id", all=TRUE)
+	        EGG_N_BND<- EGG_N_BND[order(EGG_N_BND$id),]
+	        EGG_N_BND<- matrix(unname(unlist(c(EGG_N_BND[-1,-1]))), 
+	                           nrow=length(inputs$bend_lengths),
+	                           ncol=inputs$nreps)
+	        EGG_N_BND[is.na(EGG_N_BND)]<-0
+	        # EGGS OF HATCHERY ORIGIN FISH BY BEND
+	        EGG_H_BND<- aggregate(EGGS_H[,1], by=list(id=BEND_H[,1]), sum)
+	        names(EGG_H_BND)[2]<-"rep_1"
+	        for(j in 2:inputs$nreps)
+	        {
+	          app<- aggregate(EGGS_H[,j], by=list(id=BEND_H[,j]), sum)
+	          names(app)[2]<- paste("rep", j, sep="_")
+	          EGG_H_BND<- merge(EGG_H_BND, app, by="id", all=TRUE)
+	        }
+	        EGG_H_BND<- merge(EGG_H_BND, 
+	                          data.frame(id=0:length(inputs$bend_lengths)),
+	                          by="id", all=TRUE)
+	        EGG_H_BND<- EGG_H_BND[order(EGG_H_BND$id),]
+	        EGG_H_BND<- matrix(unname(unlist(c(EGG_H_BND[-1,-1]))), 
+	                           nrow=length(inputs$bend_lengths),
+	                           ncol=inputs$nreps)
+	        EGG_H_BND[is.na(EGG_H_BND)]<-0
+	        # TOTAL EGGS BY BEND
+	        AGE_0_N_BND<- EGG_N_BND+EGG_H_BND
+	      }
 	      
 	      ### eggs --> embryos	
-	      ### STATUS: DONE NEEDS TO BE MODIFIED WITH DENSITY
-	      AGE_0_N_BND[]<- rbinom(inputs$nreps,
-	                           AGE_0_N_BND,
-	                           inputs$pr_embryo) 
+	      ### STATUS: DONE NEEDS TO BE MODIFIED WITH DENSITY<-DENSITY DEPENDENT SURVIVAL OR JUST BY BEND??? (NOW DONE BY BEND)
+	      AGE_0_N_BND[]<- rbinom(length(AGE_0_N_BND),
+	                             c(AGE_0_N_BND),
+	                             inputs$pr_embryo) 
 	      
 	      ### embryos --> free embryos
-	      AGE_0_N_BND[]<- rbinom(inputs$nreps,
-	                            AGE_0_N_BND,
-	                            inputs$phi_embryo)
-	      ### free embryos --> age0
-	      AGE_0_N_BND[]<- rbinom(inputs$nreps,
-	                            AGE_0_N_BND,
-	                            inputs$phi_free_embryo) 
+	      AGE_0_N_BND[]<- rbinom(length(AGE_0_N_BND),
+	                             c(AGE_0_N_BND),
+	                             inputs$phi_embryo)
+	      ### free embryos --> exogenously feeding age0's
+	      AGE_0_N_BND[]<- rbinom(length(AGE_0_N_BND),
+	                             c(AGE_0_N_BND),
+	                             inputs$phi_free_embryo) 
 	      
 	      
 	      ### ADJUST FOR THE AGE-0 THAT WERE INTERCEPTED AND RETAINED IN
 	      ### THE BASIN
-	      if(!is.null(inputs$p_retained))
+	      if(!spatial)
 	      {
-	        AGE_0_N_BND[]<- rbinom(inputs$nreps,
-	                              AGE_0_N_BND,
-	                              inputs$p_retained)           
+	        AGE_0_N_BND[]<- AGE_0_N_BND[]*inputs$p_retained
+	      }
+	      if(spatial)
+	      {
+	        AGE_0_N_BND[]<- freeEmbryoDrift(bendAbund=AGE_0_N_BND, 
+	                                        driftMatrix=inputs$drift_prob)
 	      }
 	    }
 	    
@@ -455,9 +545,28 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    }
 
 	    
-	    if(inputs$spatial==TRUE)
+	    if(inputs$spatial)
 	    {	
-	      source("./src/spatial-dynamics.R")
+	      ### ZERO OUT FISH THAT DIED
+	      BEND_H<- BEND_H*Z_H
+	      BEND_N<- BEND_N*Z_N
+	      ### SIMULATE ADULT MOVEMENT AMONG BENDS 
+	      ### DEPENDING ON WHAT BEND FISH IS IN
+	      ### AND IF FISH IS SPAWNING
+	      ### STATUS:  DONE BUT SLOW
+	      BEND_H[indx_H]<- adultMovement(
+	        previousLocation=BEND_H[indx_H],
+	        month=m[i],
+	        spn=SPN_H[indx_H],
+	        fromToMatrix=inputs$adult_mov_prob,
+	        spnMatrix=inputs$spn_mov_prob)
+	      BEND_N[indx_N]<- adultMovement(
+	        previousLocation=BEND_N[indx_N],
+	        month=m[i],
+	        spn=SPN_N[indx_N],
+	        fromToMatrix=inputs$adult_mov_prob,
+	        spnMatrix=inputs$spn_mov_prob)
+	      #source("./src/spatial-dynamics.R")
 	    }
 	    if(!(is.null(inputs$stocking)))  #####fixme#####
 	    {
@@ -519,6 +628,44 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    
 	  }# end i 
 	  
+	  if(inputs$spatial)
+	  {
+	    # ENDING BEND ABUNDANCE SUMMARIES
+	    N_BND_HAT_POST<- aggregate(Z_H[,1], by=list(id=BEND_H[,1]), sum)
+	    names(N_BND_HAT_POST)[2]<-"rep_1"
+	    for(j in 2:inputs$nreps)
+	    {
+	      app<- aggregate(Z_H[,j], by=list(id=BEND_H[,j]), sum)
+	      names(app)[2]<- paste("rep", j, sep="_")
+	      N_BND_HAT_POST<- merge(N_BND_HAT_POST,app, by="id", all=TRUE)
+	    }
+	    N_BND_HAT_POST<- merge(N_BND_HAT_POST, 
+	                           data.frame(id=0:length(inputs$bend_lengths)),
+	                           by="id", all=TRUE)
+	    N_BND_HAT_POST<- N_BND_HAT_POST[order(N_BND_HAT_POST$id),]
+	    N_BND_HAT_POST<- matrix(unname(unlist(c(N_BND_HAT_POST[-1,-1]))), 
+	                            nrow=length(inputs$bend_lengths),
+	                            ncol=inputs$nreps)
+	    N_BND_HAT_POST[is.na(N_BND_HAT_POST)]<-0
+	    
+	    N_BND_NAT_POST<- aggregate(Z_N[,1], by=list(id=BEND_N[,1]), sum)
+	    names(N_BND_NAT_POST)[2]<-"rep_1"
+	    for(j in 2:inputs$nreps)
+	    {
+	      app<- aggregate(Z_N[,j], by=list(id=BEND_N[,j]), sum)
+	      names(app)[2]<- paste("rep", j, sep="_")
+	      N_BND_NAT_POST<- merge(N_BND_NAT_POST,app, by="id", all=TRUE)
+	    }
+	    N_BND_NAT_POST<- merge(N_BND_NAT_POST, 
+	                           data.frame(id=0:length(inputs$bend_lengths)),
+	                           by="id", all=TRUE)
+	    N_BND_NAT_POST<- N_BND_NAT_POST[order(N_BND_NAT_POST$id),]
+	    N_BND_NAT_POST<- matrix(unname(unlist(c(N_BND_NAT_POST[-1,-1]))), 
+	                            nrow=length(inputs$bend_lengths),
+	                            ncol=inputs$nreps)
+	    N_BND_NAT_POST[is.na(N_BND_NAT_POST)]<-0
+	  }
+	  
 	  
 	  out<-list(
 	    total_N=N_NAT,
@@ -542,6 +689,13 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    out$mean_weight_h <- MEANWEIGHT_H
 	    out$mean_weight <- MEANWEIGHT
 	    out$post_weight <- c(WGT_H[WGT_H[,1]>0,1],WGT_N[WGT_N[,1]>0,1]) # WEIGHT DISTRIBUTION POST SIMULATION
+	  }
+	  if(inputs$spatial)
+	  {
+	    out$bend_N_initial<- N_BND_NAT_INI
+	    out$bend_H_initial<- N_BND_HAT_INI
+	    out$bend_N_post<- N_BND_NAT_POST
+	    out$bend_H_post<- N_BND_HAT_POST
 	  }
 	}
 	if(demographicOnly)

@@ -32,8 +32,12 @@ modelInputs<- function(input=NULL,
 	  #   CHOOSE BEST FORMAT DEPENDENT ON WHAT IS EASIER TO ESTIMATE      #
 	  #   ADJUST RELATED INPUTS & FUNCTIONS AS NEEDED BASED ON ESTIMATES  #              #
 	  #####################################################################
-	#### INPUT PROBABILITY OF FIRST SPAWN AT EACH AGE
+	#### INPUT PROBABILITY OF FIRST SPAWN AT AGE A, GIVEN FISH WAS 
+	#### IMMATURE AT AGE A-1 
 	tmp$mat_dist<- 1/(1+exp(-tmp$mat_k*(1:tmp$maxage-tmp$age_mat_50)))
+	  # THIS FUNCTIONAL FORM, MODIFIED BY AN AGE_MIN AND AGE_MAX, WOULD 
+	  # ALSO BE A GOOD MODEL FOR THE CDF PROBABLY GO WITH THIS AND OPTION
+	  # BELOW FOR CREATING MAT_DIST
 	tmp$mat_dist[1:(tmp$age_mat_min-1)]<-0
 	#### RESULTING CDF FOR MATURE FISH
 	tmp$mat_cdf<-rep(0, length(tmp$mat_dist))
@@ -61,7 +65,6 @@ modelInputs<- function(input=NULL,
 			number=input$stockingInput[[basin]]$fingerling,
 			age=input$stockingInput[[basin]]$fingerling_age,
 			bend=NA)#input$stockingInput$bend)
-	
 	### YEARLINGS
 	tmp$yearling<-data.frame(
 		month=input$stockingInput[[basin]]$yearling_month,
@@ -74,7 +77,6 @@ modelInputs<- function(input=NULL,
 	# SIMULATION STUFF
 	tmp <- c(tmp, input$simulationInput)
 	tmp$spatial <- spatial
-	
 	tmp$commit <- input$commit
 	tmp$output_name <- input$output_name	
 	tmp$version <- input$version	
@@ -89,16 +91,76 @@ modelInputs<- function(input=NULL,
 		tmp$bend_lengths <- bend_meta[[basin]]$Length.RKM
 		
 		## MONTHLY MOVEMENT MATRIX
-		
+
 		### FREE EMBRYOS
+		#### UNIFORM RANDOM DRIFT:  ENTRY ij IS THE PROBABILTY OF DRIFTING
+		####    FROM BEND i TO BEND j; ROW 1 IS FARTHEST DOWNSTREAM)
+		tmp$p_retained<- input$spatialInput[[basin]]$p_retained
 		tmp$drift_prob<- matrix(runif(tmp$n_bends*tmp$n_bends),nrow=tmp$n_bends,ncol=tmp$n_bends)
 		tmp$drift_prob[upper.tri(tmp$drift_prob)]<-0
-		tmp$drift_prob<- tmp$drift_prob/apply(tmp$drift_prob,1,sum)
+		tmp$drift_prob<- tmp$drift_prob/apply(tmp$drift_prob,1,sum)*tmp$p_retained
+		tmp$drift_prob<- cbind(tmp$drift_prob, 1-tmp$p_retained)
 
 		### ADULTS
+		#### NON-SPAWNING
+		## ORIGINAL:
 		tmp$adult_mov_prob<- matrix(runif(tmp$n_bends*tmp$n_bends,0,0.1),nrow=tmp$n_bends,ncol=tmp$n_bends)
 		diag(tmp$adult_mov_prob)<-0.7
-		tmp$adult_mov_prob<- tmp$adult_mov_prob/apply(tmp$adult_mov_prob,1,sum)		
+		tmp$adult_mov_prob<- tmp$adult_mov_prob/apply(tmp$adult_mov_prob,1,sum)
+		# ## IF YOU WANT A PARTICULAR PROBABILITY OF STAYING IN A GIVEN BEND:
+		# fidelity<-0.08 #PROBABILITY OF REMAINING IN THE SAME BEND 
+		#   #UPPER MEAN  WAS ORIGINALLY: 0.7/(0.05*(156-1)+0.7)~0.08
+		#   #fidelity<- 1/tmp$n_bends GIVES UNIFORM AMONG ALL BENDS INCLUDING 
+		#   #   THE SAME BEND
+		# tmp$adult_mov_prob<- matrix(runif(tmp$n_bends*tmp$n_bends),
+		#                             nrow=tmp$n_bends,ncol=tmp$n_bends)
+		# diag(tmp$adult_mov_prob)<-0
+		# tmp$adult_mov_prob<- 
+		#   tmp$adult_mov_prob*(1-fidelity)/apply(tmp$adult_mov_prob,1,sum)
+		# diag(tmp$adult_mov_prob)<-fidelity
+	#   ## IF YOU WANT A PARTICULAR PROBABILITY OF STAYING IN A GIVEN BEND 
+	#   ## AND MOVEMENT PROBABILITY UNIFORM IN DISTANCE:
+	#   fidelity<-0.08 #PROBABILITY OF REMAINING IN THE SAME BEND 
+	#     #UPPER MEAN  WAS ORIGINALLY: 0.7/(0.05*(156-1)+0.7)~0.08
+	#     #fidelity<- tmp$bend_lengths/sum(tmp$bend_lengths) GIVES UNIFORM
+	#     #   IN DISTANCE FOR ALL BENDS IN THE BASIN
+	#   tmp$adult_mov_prob<- matrix(rep(tmp$bend_lengths, each=tmp$n_bends), 
+	#                             nrow=tmp$n_bends,ncol=tmp$n_bends)
+	#   tmp$adult_mov_prob<- 
+	#     tmp$adult_mov_prob*(1-fidelity)/(sum(tmp$bend_lengths)-tmp$bend_lengths)
+	#   diag(tmp$adult_mov_prob)<-fidelity
+# 	## IF UPPER VS. LOWER MOVEMENT DOES NOT DEPEND ON WHICH BEND YOU ARE IN:
+# 		ust<-0.5 #PROBABILITY OF MOVING UPSTREAM GIVEN MOVEMENT
+# 		# UPSTREAM
+# 		adult_mov_probU<- matrix(0,nrow=tmp$n_bends,ncol=tmp$n_bends)
+# 		adult_mov_probU[upper.tri(adult_mov_probU)]<- 
+# 		  runif((tmp$n_bends^2-tmp$n_bends)/2)
+# 		adult_mov_probU<- 
+# 		  adult_mov_probU*ust*(1-fidelity)/apply(adult_mov_probU,1,sum)
+# 		adult_mov_probU[tmp$n_bends,]<- c(rep(0, tmp$n_bends-1), ust*(1-fidelity))
+# 		# DOWNSTREAM
+# 		adult_mov_probL<- matrix(0,nrow=tmp$n_bends,ncol=tmp$n_bends)
+# 		adult_mov_probL[lower.tri(adult_mov_probL)]<- 
+# 		  runif((tmp$n_bends^2-tmp$n_bends)/2)
+# 		adult_mov_probL<- 
+# 		  adult_mov_probL*(1-ust)*(1-fidelity)/apply(adult_mov_probL,1,sum)
+# 		adult_mov_probL[1,]<- c((1-ust)*(1-fidelity), rep(0, tmp$n_bends-1))
+# 		# MOVEMENT MATRIX 
+# 		tmp$adult_mov_prob<-adult_mov_probU+adult_mov_probL
+#     diag(tmp$adult_mov_prob)<-diag(tmp$adult_mov_prob)+fidelity
+#     rm(adult_mov_probL, adult_mov_probU)
+		#### SPAWNING
+		tmp$spn_bends<-input$spatialInput[[basin]]$spn_bends
+		tmp$spn_mov_prob<- matrix(0,nrow=tmp$n_bends,ncol=tmp$n_bends)
+		if(is.null(tmp$spn_bnd_probs))
+		{
+		  tmp$spn_bnd_probs<-runif(length(tmp$spn_bend))
+		  tmp$spn_bnd_probs<-tmp$spn_bnd_probs/sum(tmp$spn_bnd_probs)
+		}
+		tmp$spn_mov_prob[, tmp$spn_bends]<- rep(tmp$spn_bnd_probs,
+		                                        each=nrow(tmp$spn_mov_prob))
+		# TO ADD NOISE ADD OTHER INPUTS EARLIER AND UNCOMMENT:
+		#tmp$spn_mov_prob<- tmp$spn_mov_prob/apply(tmp$spn_mov_prob,1,sum)
 		
 		## SPATIAL STRUCTURE AGE-0
 		pp<- runif(tmp$n_bends)

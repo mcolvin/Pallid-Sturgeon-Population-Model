@@ -84,29 +84,111 @@ spawn<- function(mps,a=-5,b=2.55,mature,FirstSpawn)
 
 
 ## [10] LOCATION
-loc2<- function(loc1,er,month)
+loc2<- function(loc1, # LOCATIONS OF INDIVIDUALS
+                dist, # MOVEMENT DISTRIBUTION
+                er,   # SD OF DISTRIBUTION 
+                bend_lengths, # VECTOR BEND LENGTHS IN RKMs 
+                month, 
+                spn_months,   # VECTOR OF MONTHS WHEN SPAWNERS MOVE
+                spn)  # INDIVIDUAL SPAWNING STATUS
 {
+  library(truncnorm)
   # FUNCTION TO SIMULATE MOVEMENT FROM ONE MONTH TO THE NEXT
-  ## LOC1 IS LOCATIONS OF INDIVIDUALS
-  out<- rnorm(length(loc1),loc1,er)
+  # INDIVIDUALS W/O A LOCATION NEED CANNOT BE INPUT TO THIS FUNCTION
+  ## TRANSLATE BEND NUMBER TO RKM
+  vals<-c(0, cumsum(bend_lengths), Inf)
+  loc1<-runif(1, vals[i], vals[i+1])
+  ## UPDATE EACH INDIVIDUALS RKM 
+  #out<- rnorm(length(loc1),loc1,er)
+  out<-rtruncnorm(length(loc1), 0, sum(bend_lengths), loc1, er)
+    # CAN ADJUST BASED ON PROBABILITY OF LEAVING
+  ## UPDATE SPAWNING FISH LOCATION
+  if(month %in% SpawningMovMonths)
+  {
+    indx<-which(spn==1)
+    out[indx]<-SpnSite1
+  }
+  out<-sapply(out, function(x){return(min(which(vals>x))-1)})
+  out<-ifelse(out==0, "DS",
+              ifelse(out==length(bend_lengths)+1, "T", out))
   return(out)
 }	
 
 
-adultMovement<- function(previousLocation,fromToMatrix)
+adultMovement<- function(previousLocation=NULL, 
+                         month=NULL, 
+                         spn=NULL,
+                         fromToMatrix=NULL, 
+                         spnMatrix=NULL)
 {
-  out<-lapply(unique(previousLocation) ,function(x)
+  ## MONTHS WITHOUT SPAWNING MOVEMENT
+  if(!(month %in% c(6))) #TO EXPAND NEED TO CHANGE WHEN SPAWNING IS UPDATED
   {
-    indx<- which(previousLocation==x)
-    new<-sample(1:ncol(fromToMatrix),
-                length(indx),
-                prob=fromToMatrix[x,],
-                replace=TRUE)
-    return(cbind(indx,new))
-  })
-  out<-do.call("rbind",out)# convert list to dataframe
-  out<- out[order(out[,1]),]
+    out<-lapply(unique(previousLocation) ,function(x)
+    {
+      indx<- which(previousLocation==x)
+      new<-sample(1:ncol(fromToMatrix),
+                  length(indx),
+                  prob=fromToMatrix[x,],
+                  replace=TRUE)
+      return(cbind(indx,new))
+    })
+    out<-do.call("rbind",out)# convert list to dataframe
+    out<- out[order(out[,1]),]
+  }
+  if(month %in% c(6)) #TO EXPAND NEED TO CHANGE WHEN SPAWNING IS UPDATED
+  {
+    indxS<-which(spn==1)
+    locS<-previousLocation[indxS]
+    locNS<-previousLocation[-indxS]
+    outNS<-lapply(unique(locNS) ,function(x)
+    {
+      indx<- which(previousLocation==x & spn==0)
+      new<-sample(1:ncol(fromToMatrix),
+                  length(indx),
+                  prob=fromToMatrix[x,],
+                  replace=TRUE)
+      return(cbind(indx,new))
+    })
+    outNS<-do.call("rbind",outNS)# convert list to dataframe
+    outS<-lapply(unique(locS) ,function(x)
+    {
+      indx<- which(previousLocation==x & spn==1)
+      new<-sample(1:ncol(spnMatrix),
+                  length(indx),
+                  prob=spnMatrix[x,],
+                  replace=TRUE)
+      return(cbind(indx,new))
+    })
+    outS<-do.call("rbind",outS)# convert list to dataframe
+    out<-rbind(outNS, outS)
+    out<- out[order(out[,1]),]
+  }
   return(out[,2])
+}
+
+
+freeEmbryoDrift<- function(bendAbund=NULL, 
+                           driftMatrix=NULL)
+{
+  ## ERROR CHECK
+  if(nrow(driftMatrix)!=nrow(bendAbund) 
+     | ncol(driftMatrix)!=(ncol(bendAbund)+1))
+  {
+    return(print("driftMatrix must have 1 row for every bend, 1 column
+                 for every bend, plus a last additional column with the 
+                 probability of drifting out of the basin."))
+  }
+  indx<-which(rowSums(bendAbund)>0)
+  out<-lapply(indx, function(x)
+  {
+    new<-apply(bendAbund[x,,drop=FALSE], 2, 
+               rmultinom, n=1, 
+               prob=driftMatrix[x,])
+    return(new)
+  })
+  out<-Reduce('+', out)# combine drifting recruits from each spawning location
+  return(out[-nrow(out),])
 }
 
 
