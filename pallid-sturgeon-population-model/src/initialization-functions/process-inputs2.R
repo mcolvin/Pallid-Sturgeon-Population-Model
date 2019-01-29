@@ -28,34 +28,39 @@ modelInputs<- function(input=NULL,
 	                        "phi_age2_mean"))]<-c("phi0", "phi1", "phi2") #parameter name change
 	tmp$phi <- c(tmp$phi1,rep(tmp$phi2,tmp$maxage-1))
 	### MATURATION
-	  #####################################################################
-	  #   CHOOSE BEST FORMAT DEPENDENT ON WHAT IS EASIER TO ESTIMATE      #
-	  #   ADJUST RELATED INPUTS & FUNCTIONS AS NEEDED BASED ON ESTIMATES  #              #
-	  #####################################################################
-	#### INPUT PROBABILITY OF FIRST SPAWN AT AGE A, GIVEN FISH WAS 
-	#### IMMATURE AT AGE A-1 
-	tmp$mat_dist<- 1/(1+exp(-tmp$mat_k*(1:tmp$maxage-tmp$age_mat_50)))
-	  # THIS FUNCTIONAL FORM, MODIFIED BY AN AGE_MIN AND AGE_MAX, WOULD 
-	  # ALSO BE A GOOD MODEL FOR THE CDF PROBABLY GO WITH THIS AND OPTION
-	  # BELOW FOR CREATING MAT_DIST
-	tmp$mat_dist[1:(tmp$age_mat_min-1)]<-0
-	#### RESULTING CDF FOR MATURE FISH
-	tmp$mat_cdf<-rep(0, length(tmp$mat_dist))
-	tmp$mat_cdf[1]<-tmp$mat_dist[1]
-	for(i in 2:length(tmp$mat_cdf))
+	#### SIGMOID FUNCTION (PROPORTION OF AGE-A FISH THAT ARE MATURE)
+	tmp$propM<- 1/(1+exp(-tmp$mat_k*(1:tmp$maxage-tmp$age_mat_50)))
+	#### ADJUST FOR MIN AND MAX AGE OF MATURATION
+	tmp$propM[1:(tmp$age_mat_min-1)]<-0
+	tmp$propM[tmp$age_mat_max:tmp$maxage]<-1
+	#### PROBABILITY A FISH MATURES AT AGE A GIVEN THE FISH WAS IMMATURE 
+	#### AT AGE A-1 (GIVEN CONSTANT SURVIVAL)
+	tmp$pMatC<-rep(0, length(tmp$propM))
+	tmp$pMatC[1]<-tmp$propM[1]
+	for(i in 2:length(tmp$pMatC))
 	{
-	  tmp$mat_cdf[i]<-tmp$mat_cdf[i-1]+(1-tmp$mat_cdf[i-1])*tmp$mat_dist[i]
+	  tmp$pMatC[i]<-ifelse(tmp$propM[i-1]==1, 1, 
+	                      (tmp$propM[i]-tmp$propM[i-1])/(1-tmp$propM[i-1]))
 	}
-	# #### OR INPUT CDF FOR MATURE FISH AND GET TRANSITION PROBS OUT
-	# cdf<-c(rep(0,7), c(0.1, 0.6, 0.8, 0.9, 1), rep(1, 48))
-	# mat_dist<-rep(0, length(cdf))
-	# mat_dist[1]<-cdf[1]
-	# for(i in 2:length(mat_dist))
+	#### PROBABILITY A FISH MATURES AT AGE A (GIVEN CONSTANT SURVIVAL) 
+	tmp$pMat<-rep(0, length(tmp$propM))
+	tmp$pMat[1]<-tmp$propM[1]
+	for(i in 2:length(tmp$pMat))
+	{
+	  tmp$pMat[i]<-tmp$propM[i]-tmp$propM[i-1]
+	}
+	#####################################################################
+	#   CAN ALSO GO IN REVERSE IF ESTIMATING pMat (FISH MATURES AT AGE  #
+	#    A GIVEN IMMATURE AT AGE A-1) IS EASIER                         #
+	#####################################################################
+	# #### RESULTING propM FOR MATURE FISH
+	# tmp$propM<-rep(0, length(tmp$pMat))
+	# tmp$propM[1]<-tmp$pMat[1]
+	# for(i in 2:length(tmp$propM))
 	# {
-	#   mat_dist[i]<-ifelse(cdf[i-1]==1, 1, (cdf[i]-cdf[i-1])/(1-cdf[i-1]))
+	#   tmp$propM[i]<-tmp$propM[i-1]+(1-tmp$propM[i-1])*tmp$pMat[i]
 	# }
-	
-	
+
 	# STOCKING INPUTS
 	### FINGERGLINGS
 	tmp$fingerling<- data.frame(

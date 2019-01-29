@@ -107,19 +107,21 @@ initialize<- function(inputs)
 					
 				
 		## [7] INITIALIZE WHETHER A FISH IS SEXUALLY MATURE (DURING INITIAL YEAR)	
-		tmp_H<-ini_maturity(age=dyn$AGE_H[,j], mat_cdf=inputs$mat_cdf)
+		tmp_H<-ini_maturity(age=dyn$AGE_H[,j], 
+		                    mat_cdf=inputs$propM)
 		dyn$MAT_H[,j]<-dyn$Z_H[,j]*tmp_H$mature
-		tmp_N<-ini_maturity(age=dyn$AGE_N[,j], mat_cdf=inputs$mat_cdf)
+		tmp_N<-ini_maturity(age=dyn$AGE_N[,j], 
+		                    mat_cdf=inputs$propM)
 		dyn$MAT_N[,j]<-dyn$Z_N[,j]*tmp_N$mature				
 				
 				
 		## [8] INITIALIZE TIME SINCE SPAWNING	(FOR INTIAL YEAR PRIOR TO SPAWNING)
 		dyn$MPS_H[,j]<-dyn$Z_H[,j]*ini_mps(n=inputs$daug_H,
-			mature=dyn$MAT_H[,j],
-			FirstSpawn=tmp_H$FirstSpawn)
+		                                   mature=dyn$MAT_H[,j],
+		                                   FirstSpawn=tmp_H$FirstSpawn)
 		dyn$MPS_N[,j]<-dyn$Z_N[,j]*ini_mps(n=inputs$daug_N,
-			mature=dyn$MAT_N[,j],
-			FirstSpawn=tmp_N$FirstSpawn)
+			                                 mature=dyn$MAT_N[,j],
+			                                 FirstSpawn=tmp_N$FirstSpawn)
 		
 
 	  ## [9] INITIALIZE IF A FISH SPAWNED (DURING INITIAL YEAR) 

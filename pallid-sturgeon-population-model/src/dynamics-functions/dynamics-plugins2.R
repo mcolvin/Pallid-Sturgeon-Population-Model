@@ -42,7 +42,7 @@ dWeight<- function(len,a=0.0001,b=3,er=0.1)
 
 
 ## [7] MATURATION OF LIVING FISH
-dMaturity<- function(mature, age, live, mat_dist)
+dMaturity<- function(mature, age, live, cond_mat_dist)
 {
   # RETURNS A LIST OF 2 VECTORS OF 0'S AND 1'S:
   ## mature (1 if mature and 0 if not)
@@ -51,11 +51,11 @@ dMaturity<- function(mature, age, live, mat_dist)
     #WE SHOULD NOT HAVE ANY FISH GREATER THAN MAXAGE 
     #IN THE VECTOR FOR WHICH THIS FUNCTION IS APPLIED
   if(any(a>inputs$maxage)){return(print("Senescent Fish Present in Vector."))}
-  mat_dist<-c(0, mat_dist) #ADD IN ZERO MATURATIONS FOR AGE-0 FISH
-  pr<-mat_dist[a+1]*live
+  cond_mat_dist<-c(0, cond_mat_dist) #ADD IN ZERO MATURATIONS FOR AGE-0 FISH
+  pr<-cond_mat_dist[a+1]
   indx<-which(mature==1)
   pr[indx]<-1
-  M2<- rbinom(length(age),1,pr)
+  M2<- rbinom(length(age),1,pr*live)
   FS<-ifelse(M2-mature==1,1,0)
   return(list(mature=M2, FirstSpawn=FS))
 }

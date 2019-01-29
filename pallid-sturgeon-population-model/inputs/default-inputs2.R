@@ -81,13 +81,18 @@ input$upper$sexratio<-0.32
   #   NEEDS TO BE BASED ON BASIN-SPECIFIC DATA    #
   #################################################
 input$lower$age_mat_50<-8  
-input$upper$age_mat_50<-8  
-
-input$lower$age_mat_min<-8  
-input$upper$age_mat_min<-8  
+input$upper$age_mat_50<-8 
 
 input$lower$mat_k<-0.2 	
 input$upper$mat_k<-0.2 	
+
+input$lower$age_mat_min<-8  
+input$upper$age_mat_min<-8 
+
+input$lower$age_mat_max<-16  
+input$upper$age_mat_max<-16 
+
+
 
 
 
