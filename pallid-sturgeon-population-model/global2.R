@@ -6,6 +6,7 @@ library(knitr)
 library(pander)
 library(distr)
 library(compiler)
+library(plyr)
 
 setwd("C:/Users/sreynolds/Documents/GitHub/Pallid-Sturgeon-Population-Model/pallid-sturgeon-population-model")
 
@@ -39,9 +40,9 @@ source("./src/initialize-model2.R")
 source("./src/simulation2.R")
 
 ## LOAD SIMULATION MODULES
-source("./src/modules/recruitment-module.R")
-source("./src/modules/stocking-module.R")
+#source("./src/modules/recruitment-module.R")
+#source("./src/modules/stocking-module.R")
 
 ## LOAD FIGURES AND TABLES FUNCTIONS
-source("./src/tables.R")
+#source("./src/tables.R")
 source("./src/figures.R")

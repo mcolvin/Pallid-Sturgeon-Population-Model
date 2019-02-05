@@ -60,25 +60,7 @@ modelInputs<- function(input=NULL,
 	# {
 	#   tmp$propM[i]<-tmp$propM[i-1]+(1-tmp$propM[i-1])*tmp$pMat[i]
 	# }
-
-	# STOCKING INPUTS
-	### FINGERGLINGS
-	tmp$fingerling<- data.frame(
-			month=input$stockingInput[[basin]]$fingerling_month,
-			mean_length=input$stockingInput[[basin]]$fingerling_mn,
-			length_sd=input$stockingInput[[basin]]$fingerling_sd	,	
-			number=input$stockingInput[[basin]]$fingerling,
-			age=input$stockingInput[[basin]]$fingerling_age,
-			bend=NA)#input$stockingInput$bend)
-	### YEARLINGS
-	tmp$yearling<-data.frame(
-		month=input$stockingInput[[basin]]$yearling_month,
-		mean_length=input$stockingInput[[basin]]$yearling_mn,
-		length_sd=input$stockingInput[[basin]]$yearling_sd	,	
-		number=input$stockingInput[[basin]]$yearling,
-		age=input$stockingInput[[basin]]$yearling_age,
-		bend=NA)#input$stockingInput$bend)
-
+	
 	# SIMULATION STUFF
 	tmp <- c(tmp, input$simulationInput)
 	tmp$spatial <- spatial
@@ -179,6 +161,41 @@ modelInputs<- function(input=NULL,
 		pp<- runif(tmp$n_bends)
 		tmp$hatchery_age1plus_rel_dens<- pp/sum(pp)		 
 	}## END SPATIAL
+	
+	# STOCKING INPUTS
+	### FINGERGLINGS
+	tmp$fingerling<- input$stockingInput[[basin]]$fingerling
+	### YEARLINGS
+	tmp$yearling<- input$stockingInput[[basin]]$yearling
+	if(spatial)
+	{
+	  tmp$bend_meta$upper_rkm<-tmp$bend_meta$LOWER_RIVER_MILE[1]*1.60934+cumsum(tmp$bend_meta$Length.RKM)
+	  tmp$fingerling$bend<-unlist(lapply(1:nrow(tmp$fingerling),function(i)
+	    {
+	      return(min(which(tmp$bend_meta$upper>=tmp$fingerling$stocking_rkm[i])))
+	    }))
+	  tmp$yearling$bend<-unlist(lapply(1:nrow(tmp$yearling),function(i)
+	  {
+	    return(min(which(tmp$bend_meta$upper>=tmp$yearling$stocking_rkm[i])))
+	  }))
+	}
+	if(!spatial)
+	{
+	  tmp$fingerling<-ddply(tmp$fingerling, .(month), summarize,
+	                        age=mean(age),
+	                        length_mn=ifelse(sum(number)!=0,
+	                                         sum(length_mn*number)/sum(number),
+	                                         mean(length_mn)),
+	                        length_sd=max(length_sd),
+	                        number=sum(number))
+	  tmp$yearling<-ddply(tmp$yearling, .(month), summarize,
+	                        age=mean(age),
+	                        length_mn=ifelse(sum(number)!=0,
+	                                         sum(length_mn*number)/sum(number),
+	                                         mean(length_mn)),
+	                        length_sd=max(length_sd),
+	                        number=sum(number))
+	}
 		
 	return(tmp)
 }

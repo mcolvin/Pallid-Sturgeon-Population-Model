@@ -137,15 +137,13 @@ initialize<- function(inputs)
 	                            b=inputs$fec_b,
 	                            er=inputs$fec_er,
 	                            sex=dyn$SEX_H[,j],
-	                            spawn=dyn$SPN_H[,j],
-	                            mature=dyn$MAT_H[,j])	
+	                            spawn=dyn$SPN_H[,j])	
 	  dyn$EGGS_N[,j]<-fecundity(fl=dyn$LEN_N[,j],
 	                            a=inputs$fec_a,
 	                            b=inputs$fec_b,
 	                            er=inputs$fec_er,
 	                            sex=dyn$SEX_N[,j],
-	                            spawn=dyn$SPN_N[,j],
-	                            mature=dyn$MAT_N[,j])	
+	                            spawn=dyn$SPN_N[,j])	
 	 }
 	
 

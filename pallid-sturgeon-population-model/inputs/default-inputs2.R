@@ -125,6 +125,8 @@ input$upper$fec_er<-0.39
 ## SURVIVAL
 input$lower$pr_embryo<- 0.0001
 input$upper$pr_embryo<- 0.0001
+#input$lower$pr_embryo<- 0.001
+#input$upper$pr_embryo<- 0.001
   # SOURCE: WAG
   # MOTIVATION: LIKELY VERY SMALL
 
@@ -192,51 +194,36 @@ input$upper$recruit_length_sd <- 25
 
 
 ## STOCKING ##
-### OLD
-#### FINGERLINGS
-input$stockingInput$fingerling<-c(0)
-input$stockingInput$fingerling_month<-c(5)
-input$stockingInput$fingerling_mn<- 100
-input$stockingInput$fingerling_sd<- 15
-input$stockingInput$fingerling_age<- 3 # months
-input$stockingInput$fingerling_stocking_rkm<-c(50)
-#### YEARLINGS
-input$stockingInput$yearling<- 0
-input$stockingInput$yearling_month<- 9
-input$stockingInput$yearling_mn<- 100
-input$stockingInput$yearling_sd<- 15
-input$stockingInput$yearling_age<- 15 # months
-input$stockingInput$yearling_stocking_rkm<- 50
 ### UPPER BASIN
 #### FINGERLINGS
-input$stockingInput$upper$fingerling<-c(0)
-input$stockingInput$upper$fingerling_month<-c(5)
-input$stockingInput$upper$fingerling_mn<- 100
-input$stockingInput$upper$fingerling_sd<- 15
-input$stockingInput$upper$fingerling_age<- 3 # months
-input$stockingInput$upper$fingerling_stocking_rkm<-c(50)
+input$stockingInput$upper$fingerling<-data.frame(month=c(9),
+                                                 stocking_rkm=c(2500),
+                                                 number=c(0),
+                                                 age=c(3), # months
+                                                 length_mn=c(50),
+                                                 length_sd=c(5)) 
 #### YEARLINGS
-input$stockingInput$upper$yearling<- 0
-input$stockingInput$upper$yearling_month<- 9
-input$stockingInput$upper$yearling_mn<- 100
-input$stockingInput$upper$yearling_sd<- 15
-input$stockingInput$upper$yearling_age<- 15 # months
-input$stockingInput$upper$yearling_stocking_rkm<- 50
+input$stockingInput$upper$yearling<-data.frame(month=c(9),
+                                               stocking_rkm=c(2500),
+                                               number=c(0),
+                                               age=c(15), # months
+                                               length_mn=c(100),
+                                               length_sd=c(15))
 ### LOWER BASIN
 #### FINGERLINGS
-input$stockingInput$lower$fingerling<-c(0)
-input$stockingInput$lower$fingerling_month<-c(5)
-input$stockingInput$lower$fingerling_mn<- 100
-input$stockingInput$lower$fingerling_sd<- 15
-input$stockingInput$lower$fingerling_age<- 3 # months
-input$stockingInput$lower$fingerling_stocking_rkm<-c(50)
+input$stockingInput$lower$fingerling<-data.frame(month=c(9),
+                                                 stocking_rkm=c(50),
+                                                 number=c(0),
+                                                 age=c(3), # months
+                                                 length_mn=c(50),
+                                                 length_sd=c(5)) 
 #### YEARLINGS
-input$stockingInput$lower$yearling<- 0
-input$stockingInput$lower$yearling_month<- 9
-input$stockingInput$lower$yearling_mn<- 100
-input$stockingInput$lower$yearling_sd<- 15
-input$stockingInput$lower$yearling_age<- 15 # months
-input$stockingInput$lower$yearling_stocking_rkm<- 50
+input$stockingInput$lower$yearling<-data.frame(month=c(9),
+                                               stocking_rkm=c(50),
+                                               number=c(0),
+                                               age=c(15), # months
+                                               length_mn=c(100),
+                                               length_sd=c(15))
 ## END STOCKING INPUTS ##
 
 
@@ -258,7 +245,7 @@ input$spatialInput$lower$p_retained<- rep(0.5, 316)
 
 ## SIMULATION INPUTS
 input$simulationInput$nreps<- 10
-input$simulationInput$startYear<- 2015
+input$simulationInput$startYear<- 2018
 input$simulationInput$nyears<- 50
 input$simulationInput$daug_H<- 100000
 input$simulationInput$daug_N<- 100000

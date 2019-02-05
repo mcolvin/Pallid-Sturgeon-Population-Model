@@ -1,7 +1,29 @@
 figures<- function(n)
 	{
-	op <- par(no.readonly = TRUE) 	
+	op <- par(no.readonly = TRUE) 
+	if(n==0)
+	{# NATURAL ORIGIN ABUNDANCE 
+	  x<-out$years
+	  y<-(apply(out$total_N,1,mean))/1000 
+	  yup<-(apply(out$total_N,1,max))/1000
+	  ylo<-(apply(out$total_N,1,min))/1000
+	  plot(x,y,ylab="Natural-Origin Abundance (1000 fish)",
+	       xlab="Year",las=1,type='l',ylim=c(0,max(yup)))
+	  polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
+	  points(x,y,type='l')
+	}
 	if(n==1)
+	{# HATCHERY ORIGIN ABUNDANCE 
+	  x<-out$years
+	  y<-(apply(out$total_H,1,mean))/1000 
+	  yup<-(apply(out$total_H,1,max))/1000
+	  ylo<-(apply(out$total_H,1,min))/1000
+	  plot(x,y,ylab="Hatchery-Origin Abundance (1000 fish)",
+	       xlab="Year",las=1,type='l',ylim=c(min(ylo)-3,max(yup)))
+	  polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
+	  points(x,y,type='l')
+	}
+	if(n==2)
 		{# TOTAL ABUNDANCE 
 		x<-out$years
 		yy<- out$total_N+ out$total_H
@@ -9,11 +31,11 @@ figures<- function(n)
 		yup<-(apply(yy,1,max))/1000
 		ylo<-(apply(yy,1,min))/1000
 		plot(x,y,ylab="Total abundance (x1000)",
-			xlab="Year",las=1,type='l',ylim=c(0,max(yup)))
+			xlab="Year",las=1,type='l',ylim=c(min(ylo)-3,max(yup)))
 		polygon(c(x,rev(x)),c(ylo,rev(yup)),col="lightgrey",border="lightgrey")
 		points(x,y,type='l')
 		}
-	if(n==2)
+	if(n==3)
 		{# MEAN WEIGHT 
 		op <- par(no.readonly = TRUE) 
 		par(mfrow=c(2,1),mar=c(1,4,0.25,0),
@@ -42,7 +64,7 @@ figures<- function(n)
 		points(x,y,type='l')
 		}
 		
-	if(n==3)
+	if(n==4)
 		{# BIOMASS
 		op <- par(no.readonly = TRUE) 
 		x<-out$years
@@ -56,7 +78,7 @@ figures<- function(n)
 		points(x,y,type='l')
 
 		}
-	if(n==4)
+	if(n==5)
 		{# PSD
 		op <- par(no.readonly = TRUE) 
 		tmp<-data.frame(year=out$years,
@@ -79,7 +101,7 @@ figures<- function(n)
 		legend("top",legend=c("PSD-SQ","PSD-QP","PSD-PM","PSD-MT","PSD-T"),
 			bty="n",lty=c(1:5),col=c(1:5),horiz=TRUE,cex=0.8,lwd=2)
 		}
-	if(n==5)
+	if(n==6)
 		{
 		op <- par(no.readonly = TRUE) 
 		trans_grey<- rgb(0,0,0,
@@ -95,7 +117,7 @@ figures<- function(n)
 			ylab="Growth coefficient",
 			cex.lab=1.3)
 		}
-	if(n==6)
+	if(n==7)
 		{# PLOT OF INITIAL LENGTHS
 		op <- par(no.readonly = TRUE) 
 		par(oma=c(3,1,1,1),cex.lab=1.3)	
@@ -118,7 +140,7 @@ figures<- function(n)
 		box()
 		mtext(side=1, "Length group (mm)",line=1,cex=1.3,outer=TRUE)
 		}
-	if(n==7)
+	if(n==8)
 		{
 		# PLOT OF INITIAL AND FINAL LENGTHS
 		op <- par(no.readonly = TRUE) 

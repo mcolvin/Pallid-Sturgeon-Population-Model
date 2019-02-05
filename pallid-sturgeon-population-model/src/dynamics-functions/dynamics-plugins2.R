@@ -193,11 +193,11 @@ freeEmbryoDrift<- function(bendAbund=NULL,
 
 
 
-fecundity<- function(fl,a,b,er,sex,spawn,mature)
+fecundity<- function(fl,a,b,er,sex,spawn)
 {
   N<-length(fl)
   fl_normalized<- (fl - 1260.167)/277.404
-  eggs<- rpois(N,exp(rnorm(N,a + b*fl_normalized,er)))*spawn*sex*mature
+  eggs<- rpois(N,exp(rnorm(N,a + b*fl_normalized,er)))*spawn*sex
   return(eggs)
 }
 

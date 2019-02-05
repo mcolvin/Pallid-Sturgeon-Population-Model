@@ -8,6 +8,7 @@ _literature
 *.pdf
 *.pub
 *.SESSION
+*.rds
 
 # Windows image file caches
 Thumbs.db
