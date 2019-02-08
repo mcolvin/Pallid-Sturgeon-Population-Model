@@ -25,6 +25,15 @@ initialize<- function(inputs)
 		SPN_N = matrix(0L,inputs$daug_N,inputs$nreps),
 		EGGS_H = matrix(0L,inputs$daug_H,inputs$nreps),
 		EGGS_N = matrix(0L,inputs$daug_N,inputs$nreps))
+	if(inputs$genetics)
+	{
+	  dyn$MOM_H<- matrix(0L,inputs$daug_H,inputs$nreps)
+	  dyn$DAD_H<- matrix(0L,inputs$daug_H,inputs$nreps)
+	}
+	if(inputs$hatchery_name)
+	{
+	  dyn$HATCH<- matrix(0L,inputs$daug_H,inputs$nreps)
+	}
 
 	# INITIALIZATION
 	## [1] ASSIGN LIVE OR DEAD	
@@ -132,18 +141,32 @@ initialize<- function(inputs)
 	                                     mature=dyn$MAT_N[,j], 
 	                                     FirstSpawn=tmp_N$FirstSpawn)
 	  ## [??] INITIALIZE THE NUMBER OF NATURAL AGE-0 RECRUITS PRODUCED (DURING INTIAL YEAR)
-	  dyn$EGGS_H[,j]<-fecundity(fl=dyn$LEN_H[,j],
-	                            a=inputs$fec_a,
-	                            b=inputs$fec_b,
-	                            er=inputs$fec_er,
-	                            sex=dyn$SEX_H[,j],
-	                            spawn=dyn$SPN_H[,j])	
-	  dyn$EGGS_N[,j]<-fecundity(fl=dyn$LEN_N[,j],
-	                            a=inputs$fec_a,
-	                            b=inputs$fec_b,
-	                            er=inputs$fec_er,
-	                            sex=dyn$SEX_N[,j],
-	                            spawn=dyn$SPN_N[,j])	
+	  # dyn$EGGS_H[,j]<-ini_eggs(fl=dyn$LEN_H[,j],
+	  #                           a=inputs$fec_a,
+	  #                           b=inputs$fec_b,
+	  #                           er=inputs$fec_er,
+	  #                           sex=dyn$SEX_H[,j],
+	  #                           spawn=dyn$SPN_H[,j])	
+	  # dyn$EGGS_N[,j]<-ini_eggs(fl=dyn$LEN_N[,j],
+	  #                           a=inputs$fec_a,
+	  #                           b=inputs$fec_b,
+	  #                           er=inputs$fec_er,
+	  #                           sex=dyn$SEX_N[,j],
+	  #                           spawn=dyn$SPN_N[,j])	
+	  
+	  ## [??] INITIALIZE HATCHERY AND PARENTAL INFORMATION
+	  if(inputs$genetics | inputs$hatchery_name)
+	  {
+	    tmp<- ini_hatch_info(age=dyn$AGE_H[,j],
+	                         hatchery_info=inputs$hatchery_info, 
+	                         genetics=inputs$genetics) 
+	    dyn$HATCH[,j] <- tmp[,1]*dyn$Z_H[,j]
+	    if(inputs$genetics)
+	    {
+	      dyn$MOM_H[,j] <- tmp[,2]
+	      dyn$DAD_H[,j] <- tmp[,3]
+	    }
+	  }
 	 }
 	
 

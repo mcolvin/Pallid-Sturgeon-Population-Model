@@ -31,7 +31,6 @@ ini_growth<- function(n,mu_ln_Linf,mu_ln_k,vcv, maxLinf=2100)
 ini_length<-function(n, basin, origin, spatial=FALSE)
 {# A FUNCTION TO INITIALIZE LENGTHS OF INDIVIDUAL FISH
   # origin [0 for natural, 1 for hatchery]
-  # CALLS r WHICH IS AN EMPRICAL DISTRIBUTION
   if(tolower(basin)=="lower" & spatial==FALSE)
   {
     tmp<- len_ini_low_hatchery_nospace(runif(n))*origin + # hatchery
@@ -116,3 +115,39 @@ initialize_spatial_location<- function(n,nbends,relativeDensity)
   x<- sample(c(1:nbends),n,relativeDensity,replace=TRUE)
   return(x)
 }
+
+##[] INITIALIZE HATCHERY AND PARENTAL INFORMATION
+## NEEDS ADJUSTING
+ini_hatch_info<- function(age=NULL, 
+                          hatchery_info=NULL, 
+                          genetics=NULL)
+{
+  age<-floor(age/12)
+  setA<-setdiff(unique(age),0)
+  out<-lapply(setA, function(i)
+  {
+    indxA<-which(age==i)
+    indxH<-which(hatchery_info$age==i)
+    x<-NULL
+    if(length(indxH)>0)
+    {
+      x<-sample(indxH, size=length(indxA), replace=TRUE, 
+           prob=hatchery_info$no_stocked[indxH]/sum(hatchery_info$no_stocked[indxH]))
+      if(genetics)
+      {
+        x<-cbind(indxA, hatchery_info$hatchery[x], 
+                 hatchery_info$mother[x], hatchery_info$father[x])
+      }
+      if(!genetics)
+      {
+        x<-cbind(indxA, hatchery_info$hatchery[x])
+      }
+    }
+    return(x)
+  })
+  out<-do.call(rbind, out)
+  out<-out[order(out[,1]),]
+  out<-out[,-1]
+  return(out)
+}
+

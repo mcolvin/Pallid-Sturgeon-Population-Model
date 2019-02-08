@@ -1,9 +1,11 @@
 
 ### PROCESS INPUTS TO INITILIZE AND SIMULATE POPULATION	
 modelInputs<- function(input=NULL, 
-                        basin=NULL, 
-                        spatial=FALSE,
-                        bend_meta=NULL)
+                       basin=NULL, 
+                       spatial=FALSE,
+                       bend_meta=NULL,
+                       hatchery_name=FALSE,
+                       genetics=FALSE)
 	{
   ## ERROR HANDLING
   basin<-tolower(basin)
@@ -14,6 +16,21 @@ modelInputs<- function(input=NULL,
   if(spatial & is.null(bend_meta))
   {
     return(print("An input for bend_meta is required when spatial=TRUE.")) 
+  }
+  if(genetics)
+  { 
+    if(sum(input$stockingInput[[basin]]$fingerling$stocking_no)>sum(input$geneticsInput[[basin]]$fingerling$no_offspring)
+       | sum(input$stockingInput[[basin]]$yearling$stocking_no)>sum(input$geneticsInput[[basin]]$yearling$no_offspring))
+    {
+      return(print("More fish are to be stocked than genetic information is available for.")) 
+    }
+  }
+  if(genetics | hatchery_name)
+  {
+    if(sum(input$geneticsInput[[basin]]$age1plus$no_stocked)<input[[basin]]$hatchery)
+    {
+      return(print("More hatchery fish are initially present than hatchery information is available for.")) 
+    }
   }
   
   # POPULATION INPUTS FOR GIVEN BASIN
@@ -64,6 +81,8 @@ modelInputs<- function(input=NULL,
 	# SIMULATION STUFF
 	tmp <- c(tmp, input$simulationInput)
 	tmp$spatial <- spatial
+	tmp$genetics <- genetics
+	tmp$hatchery_name <- hatchery_name
 	tmp$commit <- input$commit
 	tmp$output_name <- input$output_name	
 	tmp$version <- input$version	
@@ -183,19 +202,42 @@ modelInputs<- function(input=NULL,
 	{
 	  tmp$fingerling<-ddply(tmp$fingerling, .(month), summarize,
 	                        age=mean(age),
-	                        length_mn=ifelse(sum(number)!=0,
-	                                         sum(length_mn*number)/sum(number),
+	                        length_mn=ifelse(sum(stocking_no)!=0,
+	                                         sum(length_mn*stocking_no)/sum(stocking_no),
 	                                         mean(length_mn)),
 	                        length_sd=max(length_sd),
-	                        number=sum(number))
+	                        stocking_no=sum(stocking_no))
 	  tmp$yearling<-ddply(tmp$yearling, .(month), summarize,
 	                        age=mean(age),
-	                        length_mn=ifelse(sum(number)!=0,
-	                                         sum(length_mn*number)/sum(number),
+	                        length_mn=ifelse(sum(stocking_no)!=0,
+	                                         sum(length_mn*stocking_no)/sum(stocking_no),
 	                                         mean(length_mn)),
 	                        length_sd=max(length_sd),
-	                        number=sum(number))
+	                        stocking_no=sum(stocking_no))
 	}
-		
+	
+	# GENETICS INPUTS
+	if(genetics)
+	{
+	  tmp$genetics_info$fingerling<-input$geneticsInput[[basin]]$fingerling
+	  tmp$genetics_info$yearling<-input$geneticsInput[[basin]]$yearling
+	## HATCHERY FISH INPUTS W/ GENETICS
+	  tmp$hatchery_info<- rbind(input$geneticsInput[[basin]]$age1plus, 
+	                            input$geneticsInput[[basin]]$age0)
+	  
+	}
+	# HATCHERY FISH INPUTS W/O GENETICS
+	if(!genetics & hatchery_name)
+	{
+	  tmp$hatchery_info<-aggregate(no_stocked~hatchery+age,
+	                               input$geneticsInput[[basin]]$age1plus, 
+	                               sum) 
+	  tmp2<-aggregate(no_stocked~hatchery+age,
+	                  input$geneticsInput[[basin]]$age0,
+	                  sum) 
+	  tmp$hatchery_info<-rbind(tmp$hatchery_info, tmp2)
+	  rm(tmp2)
+	}
+	
 	return(tmp)
 }

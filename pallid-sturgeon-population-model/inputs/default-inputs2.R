@@ -18,12 +18,9 @@ input$lower$hatchery<- round(12.9*689+5.53*587,0)
 input$upper$hatchery<- 16444
   # Rotella (2017)  2017 AM Report Table 3-1
 
-
+# LIKELY WANT THIS TO LINE UP WITH SPAWNING THE YEAR BEFORE...
 input$lower$natural_age0<- 200
 input$upper$natural_age0<- 200
-
-input$lower$hatchery_age0<- 0
-input$upper$hatchery_age0<- 0
 
 
 #[2] GROWTH PARAMETERS
@@ -198,14 +195,16 @@ input$upper$recruit_length_sd <- 25
 #### FINGERLINGS
 input$stockingInput$upper$fingerling<-data.frame(month=c(9),
                                                  stocking_rkm=c(2500),
-                                                 number=c(0),
+                                                 stocking_no=c(0),
+                                                 hatchery="Neosho",
                                                  age=c(3), # months
                                                  length_mn=c(50),
                                                  length_sd=c(5)) 
 #### YEARLINGS
 input$stockingInput$upper$yearling<-data.frame(month=c(9),
                                                stocking_rkm=c(2500),
-                                               number=c(0),
+                                               stocking_no=c(0),
+                                               hatchery="Neosho",
                                                age=c(15), # months
                                                length_mn=c(100),
                                                length_sd=c(15))
@@ -213,18 +212,21 @@ input$stockingInput$upper$yearling<-data.frame(month=c(9),
 #### FINGERLINGS
 input$stockingInput$lower$fingerling<-data.frame(month=c(9),
                                                  stocking_rkm=c(50),
-                                                 number=c(0),
+                                                 stocking_no=c(0),
+                                                 hatchery=c("Neosho"),
                                                  age=c(3), # months
                                                  length_mn=c(50),
                                                  length_sd=c(5)) 
 #### YEARLINGS
 input$stockingInput$lower$yearling<-data.frame(month=c(9),
                                                stocking_rkm=c(50),
-                                               number=c(0),
+                                               stocking_no=c(0),
+                                               hatchery=c("Neosho"),
                                                age=c(15), # months
                                                length_mn=c(100),
                                                length_sd=c(15))
 ## END STOCKING INPUTS ##
+
 
 
 ## SPATIAL INPUTS ##
@@ -232,7 +234,7 @@ input$stockingInput$lower$yearling<-data.frame(month=c(9),
 input$spatialInput$adult_spatial_structure<- "Uniform" # "Emperical"
 input$spatialInput$age0_n_spatial_structure<- "Uniform"# "Emperical"
 input$spatialInput$age0_h_spatial_structure<- "Uniform"# "Emperical"
-### SPAWNING HOTSPOTS  <!-- fix: improve inputs -->
+### SPAWNING HOTSPOTS
 input$spatialInput$upper$spn_bends<- c(154, 156) 
 input$spatialInput$lower$spn_bends<- c(316)
 ### DRIFT DYNAMICS   <!-- fix: improve inputs -->
@@ -250,6 +252,56 @@ input$simulationInput$nyears<- 50
 input$simulationInput$daug_H<- 100000
 input$simulationInput$daug_N<- 100000
 input$simulationInput$size_indices<-TRUE
+
+
+
+## GENETICS ##
+### UPPER BASIN
+input$geneticsInput$upper$fingerling<- data.frame(hatchery=c("Neosho"),
+                                                  mother=c("TAG1"),
+                                                  father=c("TAG2"),
+                                                  no_offspring=c(50))
+input$geneticsInput$upper$yearling<- data.frame(hatchery=c("Neosho"),
+                                                mother=c("TAG3"),
+                                                father=c("TAG4"),
+                                                no_offspring=c(50))
+input$geneticsInput$upper$age0<- data.frame(hatchery=c("Neosho"),
+                                            mother=c("TAG5"),
+                                            father=c("TAG6"),
+                                            no_stocked=c(0),
+                                            yr_stocked=input$simulationInput$startYear-1,
+                                            age_stocked=0)
+input$geneticsInput$upper$age1plus<- data.frame(hatchery=c("Neosho"),
+                                                mother=c("TAG7"),
+                                                father=c("TAG8"),
+                                                no_stocked=c(20000),
+                                                yr_stocked=c(2012),
+                                                age_stocked=c(1))
+### LOWER BASIN
+input$geneticsInput$lower$fingerling<- data.frame(hatchery=c("Neosho"),
+                                                  mother=c("TAG1"),
+                                                  father=c("TAG2"),
+                                                  no_offspring=c(50))
+input$geneticsInput$lower$yearling<- data.frame(hatchery=c("Neosho"),
+                                                mother=c("TAG3"),
+                                                father=c("TAG4"),
+                                                no_offspring=c(50))
+input$geneticsInput$lower$age0<- data.frame(hatchery=c("Neosho"),
+                                            mother=c("TAG5"),
+                                            father=c("TAG6"),
+                                            no_stocked=c(0),
+                                            yr_stocked=input$simulationInput$startYear-1,
+                                            age_stocked=0)
+input$geneticsInput$lower$age1plus<- data.frame(hatchery=c("Neosho"),
+                                                mother=c("TAG7"),
+                                                father=c("TAG8"),
+                                                no_stocked=c(20000),
+                                                yr_stocked=c(2012),
+                                                age_stocked=c(1))
+## END GENETICS INPUTS ##
+
+input$lower$hatchery_age0<- sum(input$geneticsInput$lower$age0$no_stocked)
+input$upper$hatchery_age0<- sum(input$geneticsInput$upper$age0$no_stocked)
 
 
 
