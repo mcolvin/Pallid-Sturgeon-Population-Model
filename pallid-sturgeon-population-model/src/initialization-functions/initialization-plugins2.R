@@ -7,6 +7,54 @@
 
 
 # INITIALIZATION PLUGINS
+##[1] EXTRAPOLATE HATCHERY DATA
+ini_hatchery<-function(stockingHist=NULL)
+{
+  stockingHist$current_number<-rbinom(nrow(stockingHist),
+                                      stockingHist$number,
+                                      stockingHist$survival_est)
+  # stockingHist$yr1<-ceiling(stockingHist$age/12)*12-
+  #   stockingHist$age
+  # stockingHist$yr2plus<-ifelse(stockingHist$MPStock>12, 
+  #                                     floor((stockingHist$MPStock-
+  #                                       stockingHist$yr1)/12),
+  #                                     0)
+  # stockingHist$remainder<-ifelse(stockingHist$MPStock>12, 
+  #                                       stockingHist$MPStock-
+  #                                         (stockingHist$yr2plus*
+  #                                         12+stockingHist$yr1),
+  #                                       0)
+  # stockingHist$p1<-c(tmp$phi0,tmp$phi)[
+  #   floor(stockingHist$age/12)+1]^(stockingHist$yr1/12)
+  # stockingHist$p2<-sapply(1:nrow(stockingHist), function(y)
+  # {
+  #   p2<-ifelse(stockingHist$yr2plus[y]>0,
+  #              prod(tmp$phi[ceiling(stockingHist$age[y]/12):
+  #                 (stockingHist$yr2plus[y]+
+  #                    ceiling(stockingHist$age[y]/12)-1)]),
+  #              1)
+  # })
+  # stockingHist$p3<-c(tmp$phi0,tmp$phi)[
+  #   floor(stockingHist$current_age/12)+1]^(stockingHist$remainder/12)
+  # stockingHist$current_number<-rbinom(length(stockingHist$number), 
+  #                                            stockingHist$number,
+  #                                            stockingHist$p1*stockingHist$p2*stockingHist$p3)
+  tmp<-lapply(1:nrow(stockingHist), function(i)
+  {
+    out<-rnorm(stockingHist$current_number[i], 
+               stockingHist$length_mn[i],
+               stockingHist$length_sd[i])
+    return(out)
+  })
+  ini_H <- data.frame(L=unlist(tmp),
+                      A=rep(stockingHist$current_age, 
+                            stockingHist$current_number),
+                      dA=rep(stockingHist$current_age-stockingHist$age,
+                             stockingHist$current_number))
+  ini_H$L <- ifelse(ini_H$L<=0, mean(stockingHist$length_mn), ini_H$L)
+  return(ini_H)
+}
+
 ##[2] INITIALIZE GROWTH PARAMETERS (L_INF, K)	
 ini_growth<- function(n,mu_ln_Linf,mu_ln_k,vcv, maxLinf=2100)
 {

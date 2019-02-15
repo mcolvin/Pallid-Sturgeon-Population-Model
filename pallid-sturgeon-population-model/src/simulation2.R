@@ -386,6 +386,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        {
 	          indxB<-which(AGE_0_H_BND!=0, arr.ind=TRUE)
 	          BEND_H[indxr]<-rep(indxB[,1], AGE_0_H_BND[indxB])
+	          #sample this vector to make it more random???
 	        }	
 	      }
 	      ##### NATURALLY SPAWNED FISH

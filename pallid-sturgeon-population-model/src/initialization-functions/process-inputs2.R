@@ -25,13 +25,6 @@ modelInputs<- function(input=NULL,
       return(print("More fish are to be stocked than genetic information is available for.")) 
     }
   }
-  if(genetics | hatchery_name)
-  {
-    if(sum(input$geneticsInput[[basin]]$age1plus$no_stocked)<input[[basin]]$hatchery)
-    {
-      return(print("More hatchery fish are initially present than hatchery information is available for.")) 
-    }
-  }
   
   # POPULATION INPUTS FOR GIVEN BASIN
   tmp <- input[[basin]]
@@ -78,6 +71,16 @@ modelInputs<- function(input=NULL,
 	#   tmp$propM[i]<-tmp$propM[i-1]+(1-tmp$propM[i-1])*tmp$pMat[i]
 	# }
 	
+	# HATCHERY FISH DATA
+	tmp$stockingHistory<-input$stockingHistory[[basin]]
+	tmp$stockingHistory$MPStock<- (input$simulationInput$startYear-
+	                                 tmp$stockingHistory$year-1)*12 +
+	  12-tmp$stockingHistory$month
+	tmp$stockingHistory$current_age<- tmp$stockingHistory$age +
+	  tmp$stockingHistory$MPStock
+	tmp$hatchery_age0<- subset(tmp$stockingHistory, current_age<12)
+	tmp$stockingHistory<- subset(tmp$stockingHistory, current_age>=12)
+	
 	# SIMULATION STUFF
 	tmp <- c(tmp, input$simulationInput)
 	tmp$spatial <- spatial
@@ -96,7 +99,7 @@ modelInputs<- function(input=NULL,
 		tmp$n_bends <- nrow(bend_meta[[basin]])	
 		tmp$bend_lengths <- bend_meta[[basin]]$Length.RKM
 		
-		## MONTHLY MOVEMENT MATRIX
+		## MOVEMENT MATRICES
 
 		### FREE EMBRYOS
 		#### UNIFORM RANDOM DRIFT:  ENTRY ij IS THE PROBABILTY OF DRIFTING
@@ -106,8 +109,26 @@ modelInputs<- function(input=NULL,
 		tmp$drift_prob[upper.tri(tmp$drift_prob)]<-0
 		tmp$drift_prob<- tmp$drift_prob/apply(tmp$drift_prob,1,sum)*tmp$p_retained
 		tmp$drift_prob<- cbind(tmp$drift_prob, 1-tmp$p_retained)
+		
+		### FINGERLING DISPERSAL
+		#### UNIFORM RANDOM DRIFT WITH STRONGER ABILITY TO HOLD POSITION:  
+		####    ENTRY ij IS THE PROBABILTY OF DRIFTING FROM BEND i TO BEND j; 
+		####    ROW 1 IS FARTHEST DOWNSTREAM)
+		# tmp$disp_prob<- matrix(runif(tmp$n_bends*tmp$n_bends),nrow=tmp$n_bends,ncol=tmp$n_bends)
+		# tmp$disp_prob[upper.tri(tmp$disp_prob)]<-0
+		# diag(tmp$disp_prob)<-c(0.5,0.5*(1:(tmp$nbends-1)))
+		# tmp$disp_prob<- tmp$disp_prob/apply(tmp$disp_prob,1,sum)
+		tmp$disp_prob<- matrix(0,nrow=tmp$n_bends,ncol=tmp$n_bends)
+		for(i in 1:nrow(tmp$disp_prob))
+		{
+		  for(j in 1:i)
+		  {
+		    tmp$disp_prob[i,j]<-(1/2)^(i-j+1)
+		  }
+		}
+		tmp$disp_prob<- tmp$disp_prob/apply(tmp$disp_prob,1,sum)
 
-		### ADULTS
+		### ADULTS (MONTHLY)
 		#### NON-SPAWNING
 		## ORIGINAL:
 		tmp$adult_mov_prob<- matrix(runif(tmp$n_bends*tmp$n_bends,0,0.1),nrow=tmp$n_bends,ncol=tmp$n_bends)
