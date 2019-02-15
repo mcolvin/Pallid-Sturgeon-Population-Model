@@ -41,7 +41,7 @@ initialize<- function(inputs)
 	dyn$Z_N[1:inputs$natural,]<-1
 
 	for(j in 1:inputs$nreps)
-		{
+	{
 	  ## [0] GENERATE HATCHERY ORIGIN DATA
 	  ini_H<-ini_hatchery(inputs$stockingHistory)
 	  inputs$hatchery[,j]<-nrow(ini_H)
@@ -178,18 +178,18 @@ initialize<- function(inputs)
 	      dyn$DAD_H[,j] <- tmp[,3]
 	    }
 	  }
-	 }
+	}
 	
 
 	## [10] INITIALIZE SPATIAL COMPONENTS
 	if(inputs$spatial==FALSE)
-		{
+	{
 		dyn$AGE_0_N_BND<-matrix(inputs$natural_age0,nrow=1,ncol=inputs$nreps)
 		dyn$AGE_0_H_BND<-matrix(sum(inputs$hatchery_age0$number),
 		                        nrow=1, ncol=inputs$nreps)
-		}
+	}
 	if(inputs$spatial==TRUE)
-		{
+	{
 		## SET UP LOCATIONS
 		dyn$BEND_H<- matrix(0L,inputs$daug_H,inputs$nreps)  
 		dyn$BEND_N<- matrix(0L,inputs$daug_N,inputs$nreps)
@@ -198,7 +198,7 @@ initialize<- function(inputs)
 		dyn$AGE_0_H_BND<-matrix(0L,nrow=inputs$n_bends,ncol=inputs$nreps)
 		  #GIVES THE NUMBER OF AGE-0's IN EACH BEND
 		for(j in 1:inputs$nreps)
-			{
+		{
 			# INITIALIZE LOCATION OF ADULTS
 			dyn$BEND_H[,j]<-dyn$Z_H[,j]*initialize_spatial_location(n=inputs$daug_H,
 				nbends=inputs$n_bends,			
@@ -209,11 +209,13 @@ initialize<- function(inputs)
 					
 			# INITIALIZE AGE-0 IN EACH BEND
 			dyn$AGE_0_N_BND[,j]<-rmultinom(1,inputs$natural_age0,inputs$natural_age0_rel_dens)
-			dyn$AGE_0_H_BND[,j]<-rep(0,inputs$n_bends)
-			tmp<-aggregate(number~bend, inputs$hatchery_age0, sum)
-			dyn$AGE_0_H_BND[tmp$bend,j]<- tmp$number
+			if(nrow(inputs$hatchery_age0)>0)
+			{
+			  tmp<-aggregate(number~bend, inputs$hatchery_age0, sum)
+			  dyn$AGE_0_H_BND[tmp$bend,j]<- tmp$number
 			}
 		}
+	}
 	# END INITIALIZATION OF SPATIAL COMPONENTS
 
 	
