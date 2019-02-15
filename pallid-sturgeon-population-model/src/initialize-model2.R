@@ -71,28 +71,33 @@ initialize<- function(inputs)
 		dyn$Linf_N[,j]<-tmp$linf
 		dyn$k_N[,j]<-tmp$k	
 		
-		## [6] INITIALIZE AGE IN MONTHS
+	
+		## [3] INITIALIZE LENGTH
+		### HATCHERY ORIGIN LENGTH FROM DATA AND RANDOM GROWTH COEFFICIENTS
+		dyn$LEN_H[1:nrow(ini_H),j]<-dLength(dyn$k_H[1:nrow(ini_H),j], 
+		                                    dyn$Linf_H[1:nrow(ini_H),j],
+		                                    ini_H$L[indxH],
+		                                    ini_H$dA[indxH])
+		### NATURAL ORIGIN LENGTH FROM DISTRIBUTION
+		dyn$LEN_N[,j]<-dyn$Z_N[,j]*ini_length(n=inputs$daug_N, 
+		                                      basin=inputs$basin,
+		                                      origin=0, # 1 FOR HATCHERY, 0 FOR NATURAL
+		                                      spatial=FALSE)
+		dyn$Linf_N[,j]<-ifelse(dyn$LEN_N[,j]<dyn$Linf_N[,j],
+		                       dyn$Linf_N[,j], 
+		                       dyn$LEN_N[,j]*1.1)
+		
+		
+		## [6] INITIALIZE AGE
+		### HATCHERY ORIGIN AGE IN MONTHS FROM DATA
 		dyn$AGE_H[1:nrow(ini_H),j]<-ini_H$A[indxH]
+		### NATURAL ORIGIN AGE IN MONTHS FROM LENGTH
 		dyn$AGE_N[,j]<-ini_age(len=dyn$LEN_N[,j],
 		                       linf=dyn$Linf_N[,j],
 		                       k=dyn$k_N[,j],
 		                       sizeAtHatch=7,
 		                       maxAge=inputs$maxage)	
-		
-		
-		## [3] INITIALIZE LENGTH
-		dyn$LEN_H[1:nrow(ini_H),j]<-dLength(dyn$k_H[1:nrow(ini_H),j], 
-		                                    dyn$Linf_H[1:nrow(ini_H),j],
-		                                    ini_H$L[indxH],
-		                                    ini_H$dA[indxH])
-		
-		dyn$LEN_N[,j]<-dyn$Z_N[,j]*ini_length(n=inputs$daug_N, 
-				basin=inputs$basin,
-				origin=0, # 1 FOR HATCHERY, 0 FOR NATURAL
-				spatial=FALSE)
-		dyn$Linf_N[,j]<-ifelse(dyn$LEN_N[,j]<dyn$Linf_N[,j],
-			dyn$Linf_N[,j], 
-			dyn$LEN_N[,j]*1.1)		
+
 		
 		
 		## [4] INITIALIZE WEIGHT GIVEN LENGTH
