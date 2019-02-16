@@ -8,7 +8,9 @@
 
 # INITIALIZATION PLUGINS
 ##[1] EXTRAPOLATE HATCHERY DATA
-ini_hatchery<-function(stockingHist=NULL)
+ini_hatchery<-function(stockingHist=NULL,
+                       genetics=NULL,
+                       hatchery_name=NULL)
 {
   stockingHist$current_number<-rbinom(nrow(stockingHist),
                                       stockingHist$number,
@@ -52,6 +54,20 @@ ini_hatchery<-function(stockingHist=NULL)
                       dA=rep(stockingHist$current_age-stockingHist$age,
                              stockingHist$current_number))
   ini_H$L <- ifelse(ini_H$L<=0, mean(stockingHist$length_mn), ini_H$L)
+  if(genetics)
+  {
+    ini_H$M<-rep(stockingHist$mother, 
+                 stockingHist$current_number)
+    ini_H$D<-rep(stockingHist$father, 
+                 stockingHist$current_number)
+    ini_H$H<-rep(stockingHist$hatchery, 
+                 stockingHist$current_number)
+  }
+  if(!genetics & hatchery_name)
+  {
+    ini_H$H<-rep(stockingHist$hatchery, 
+                 stockingHist$current_number)
+  }
   return(ini_H)
 }
 
@@ -164,38 +180,38 @@ initialize_spatial_location<- function(n,nbends,relativeDensity)
   return(x)
 }
 
-##[] INITIALIZE HATCHERY AND PARENTAL INFORMATION
-## NEEDS ADJUSTING
-ini_hatch_info<- function(age=NULL, 
-                          hatchery_info=NULL, 
-                          genetics=NULL)
-{
-  age<-floor(age/12)
-  setA<-setdiff(unique(age),0)
-  out<-lapply(setA, function(i)
-  {
-    indxA<-which(age==i)
-    indxH<-which(hatchery_info$age==i)
-    x<-NULL
-    if(length(indxH)>0)
-    {
-      x<-sample(indxH, size=length(indxA), replace=TRUE, 
-           prob=hatchery_info$no_stocked[indxH]/sum(hatchery_info$no_stocked[indxH]))
-      if(genetics)
-      {
-        x<-cbind(indxA, hatchery_info$hatchery[x], 
-                 hatchery_info$mother[x], hatchery_info$father[x])
-      }
-      if(!genetics)
-      {
-        x<-cbind(indxA, hatchery_info$hatchery[x])
-      }
-    }
-    return(x)
-  })
-  out<-do.call(rbind, out)
-  out<-out[order(out[,1]),]
-  out<-out[,-1]
-  return(out)
-}
+# ##[] INITIALIZE HATCHERY AND PARENTAL INFORMATION
+# ## NEEDS ADJUSTING
+# ini_hatch_info<- function(age=NULL, 
+#                           hatchery_info=NULL, 
+#                           genetics=NULL)
+# {
+#   age<-floor(age/12)
+#   setA<-setdiff(unique(age),0)
+#   out<-lapply(setA, function(i)
+#   {
+#     indxA<-which(age==i)
+#     indxH<-which(hatchery_info$age==i)
+#     x<-NULL
+#     if(length(indxH)>0)
+#     {
+#       x<-sample(indxH, size=length(indxA), replace=TRUE, 
+#            prob=hatchery_info$no_stocked[indxH]/sum(hatchery_info$no_stocked[indxH]))
+#       if(genetics)
+#       {
+#         x<-cbind(indxA, hatchery_info$hatchery[x], 
+#                  hatchery_info$mother[x], hatchery_info$father[x])
+#       }
+#       if(!genetics)
+#       {
+#         x<-cbind(indxA, hatchery_info$hatchery[x])
+#       }
+#     }
+#     return(x)
+#   })
+#   out<-do.call(rbind, out)
+#   out<-out[order(out[,1]),]
+#   out<-out[,-1]
+#   return(out)
+# }
 

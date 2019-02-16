@@ -242,23 +242,26 @@ modelInputs<- function(input=NULL,
 	{
 	  tmp$genetics_info$fingerling<-input$geneticsInput[[basin]]$fingerling
 	  tmp$genetics_info$yearling<-input$geneticsInput[[basin]]$yearling
-	## HATCHERY FISH INPUTS W/ GENETICS
-	  tmp$hatchery_info<- rbind(input$geneticsInput[[basin]]$age1plus, 
-	                            input$geneticsInput[[basin]]$age0)
+	# ## HATCHERY FISH INPUTS W/ GENETICS
+	#   tmp$hatchery_info<- rbind(input$geneticsInput[[basin]]$age1plus, 
+	#                             input$geneticsInput[[basin]]$age0)
 	  
 	}
 	# HATCHERY FISH INPUTS W/O GENETICS
-	if(!genetics & hatchery_name)
-	{
-	  tmp$hatchery_info<-aggregate(no_stocked~hatchery+age,
-	                               input$geneticsInput[[basin]]$age1plus, 
-	                               sum) 
-	  tmp2<-aggregate(no_stocked~hatchery+age,
-	                  input$geneticsInput[[basin]]$age0,
-	                  sum) 
-	  tmp$hatchery_info<-rbind(tmp$hatchery_info, tmp2)
-	  rm(tmp2)
-	}
+	# if(!genetics & hatchery_name)
+	# {
+	#   tmp$hatchery_info<-aggregate(number~hatchery+age,
+	#                                input$stockingHistory[[basin]], 
+	#                                sum)
+	#   # tmp$hatchery_info<-aggregate(no_stocked~hatchery+age,
+	#   #                              input$geneticsInput[[basin]]$age1plus, 
+	#   #                              sum) 
+	#   # tmp2<-aggregate(no_stocked~hatchery+age,
+	#   #                 input$geneticsInput[[basin]]$age0,
+	#   #                 sum) 
+	#   # tmp$hatchery_info<-rbind(tmp$hatchery_info, tmp2)
+	#   # rm(tmp2)
+	# }
 	
 	return(tmp)
 }

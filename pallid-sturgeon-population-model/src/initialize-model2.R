@@ -168,14 +168,11 @@ initialize<- function(inputs)
 	  ## [??] INITIALIZE HATCHERY AND PARENTAL INFORMATION
 	  if(inputs$genetics | inputs$hatchery_name)
 	  {
-	    tmp<- ini_hatch_info(age=dyn$AGE_H[,j],
-	                         hatchery_info=inputs$hatchery_info, 
-	                         genetics=inputs$genetics) 
-	    dyn$HATCH[,j] <- tmp[,1]*dyn$Z_H[,j]
+	    dyn$HATCH[,j] <- ini_H$H[indxH]
 	    if(inputs$genetics)
 	    {
-	      dyn$MOM_H[,j] <- tmp[,2]
-	      dyn$DAD_H[,j] <- tmp[,3]
+	      dyn$MOM_H[,j] <- ini_H$M[indxH]
+	      dyn$DAD_H[,j] <- ini_H$D[indxH]
 	    }
 	  }
 	}
@@ -187,6 +184,7 @@ initialize<- function(inputs)
 		dyn$AGE_0_N_BND<-matrix(inputs$natural_age0,nrow=1,ncol=inputs$nreps)
 		dyn$AGE_0_H_BND<-matrix(sum(inputs$hatchery_age0$number),
 		                        nrow=1, ncol=inputs$nreps)
+		#LAST LINE IS FINE EXCEPT FOR WHEN LOOKING AT GENETICS/HATCHERY
 	}
 	if(inputs$spatial==TRUE)
 	{
@@ -213,6 +211,9 @@ initialize<- function(inputs)
 			{
 			  tmp<-aggregate(number~bend, inputs$hatchery_age0, sum)
 			  dyn$AGE_0_H_BND[tmp$bend,j]<- tmp$number
+			  ###IF ADDING DRIFT AND/OR DISPERSAL THEN NEED A WAY TO LINK BACK 
+			  ###TO GENETICS AND HATCHERY...DON'T USE AGE_0_H_BND...JUST USE
+			  ###DATAFRAME AND PROCESS THAT...
 			}
 		}
 	}
