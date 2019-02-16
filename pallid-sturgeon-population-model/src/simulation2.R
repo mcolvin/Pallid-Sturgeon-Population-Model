@@ -141,7 +141,18 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  EGGS_N<-dyn$EGGS_N 
 	  
 	  AGE_0_N_BND<-dyn$AGE_0_N_BND
-	  AGE_0_H_BND<-dyn$AGE_0_H_BND
+	  AGE_0_H<-dyn$AGE_0_H[order(dyn$AGE_0_H$id),]
+	  
+	  if(inputs$genetics)
+	  {
+	    MOM_H<-dyn$MOM_H
+	    DAD_H<-dyn$DAD_H
+	  }
+	  
+	  if(inputs$hatchery_name)
+	  {
+	    HATCH<-dyn$HATCH
+	  }
 	  
 	  m<-dyn$m
 	  
@@ -311,13 +322,25 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      EGGS_N<-EGGS_N*Z_N
 	      
 	      ### AGE-1 RECRUITMENT
-	      #### SURVIVAL FROM AGE-0 TO AGE-1    
-	      AGE_0_N_BND[]<- rbinom(inputs$nreps,
+	      #### SURVIVAL FROM AGE-0 TO AGE-1
+	      AGE_0_N_BND[]<- rbinom(length(AGE_0_N_BND),
 	                             AGE_0_N_BND,
 	                             inputs$phi0)
-	      AGE_0_H_BND[]<- rbinom(inputs$nreps,
-	                             AGE_0_H_BND,
-	                             inputs$phi0) #SHOULD phi0_H DIFFER FROM phi0_N????
+	      
+	      if(sum(AGE_0_H$number)>0)
+	      {
+	        AGE_0_H_DAT<- matrix(rbinom(inputs$nreps*nrow(AGE_0_H),
+	                                    AGE_0_H$number,
+	                                    AGE_0_H$survival_est),
+	                             ncol=inputs$nreps,
+	                             nrow=nrow(AGE_0_H))
+	        AGE_0_H_BND<- 
+	      }
+	      if(sum(AGE_0_H$number)==0)
+	      {
+	        AGE_0_H_BND<-matrix(0, ncol=inputs$nreps, nrow=1)
+	      }
+	      
 	      #### ADD SURVIVING FISH TO POPULATION
 	      ##### HATCHERY STOCKED FISH
 	      if(sum(AGE_0_H_BND)>0)

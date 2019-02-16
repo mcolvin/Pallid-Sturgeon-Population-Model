@@ -60,10 +60,8 @@ ini_hatchery<-function(stockingHist=NULL,
                  stockingHist$current_number)
     ini_H$D<-rep(stockingHist$father, 
                  stockingHist$current_number)
-    ini_H$H<-rep(stockingHist$hatchery, 
-                 stockingHist$current_number)
   }
-  if(!genetics & hatchery_name)
+  if(hatchery_name)
   {
     ini_H$H<-rep(stockingHist$hatchery, 
                  stockingHist$current_number)
