@@ -179,58 +179,34 @@ initialize<- function(inputs)
 	  }
 	}
 	
-
-	## [10] INITIALIZE SPATIAL COMPONENTS
+	## [] INITIALIZE AGE-0 POPULATION AND ADULT SPATIAL STRUCTURE
+	### NATURAL ORIGIN AGE-0's: NON-SPATIAL
 	if(inputs$spatial==FALSE)
 	{
 		dyn$AGE_0_N_BND<-matrix(inputs$natural_age0,nrow=1,ncol=inputs$nreps)
-		if(!inputs$genetics & !inputs$hatchery_name)
-		{
-		  dyn$AGE_0_H_DAT<-matrix(sum(inputs$hatchery_age0$number),
-		                          nrow=1,ncol=inputs$nreps)
-		  dyn$phi0_H<-(inputs$hatchery_age0$number*
-		                 inputs$hatchery_age0$est_survival)/sum(inputs$hatchery_age0$number)
-		}
 	}
+	### SPATIAL STRUCTURE
 	if(inputs$spatial==TRUE)
 	{
+
 		## SET UP LOCATIONS
 		dyn$BEND_H<- matrix(0L,inputs$daug_H,inputs$nreps)  
 		dyn$BEND_N<- matrix(0L,inputs$daug_N,inputs$nreps)
 		  #GIVES BEND LOCATION OF EACH ADULT
 		dyn$AGE_0_N_BND<-matrix(0L,nrow=inputs$n_bends,ncol=inputs$nreps)
-		if(!inputs$genetics & !inputs$hatchery_name)
-		{
-		  dyn$AGE_0_H_DAT<-matrix(0L,nrow=inputs$n_bends,ncol=inputs$nreps)
-		  dyn$phi0_H<-rep(0,inputs$n_bends)
-		  tmp<-ddply(inputs$hatchery_age0, .(bend),
-		             phi0=sum(est_survival*number)/sum(number))
-		  dyn$phi0_H[tmp$bend]<- tmp$phi0
-		}
 		  #GIVES THE NUMBER OF AGE-0's IN EACH BEND
 		for(j in 1:inputs$nreps)
 		{
-			# INITIALIZE LOCATION OF ADULTS
+	#### INITIALIZE LOCATION OF HATCHERY & NATURAL ORIGIN AGE-1 PLUS
 			dyn$BEND_H[,j]<-dyn$Z_H[,j]*initialize_spatial_location(n=inputs$daug_H,
 				nbends=inputs$n_bends,			
 				relativeDensity=inputs$hatchery_age1plus_rel_dens)
 			dyn$BEND_N[,j]<-dyn$Z_N[,j]*initialize_spatial_location(n=inputs$daug_N,
 				nbends=inputs$n_bends,
 				relativeDensity=inputs$natural_age1plus_rel_dens)					
-					
-			# INITIALIZE AGE-0 IN EACH BEND
+	#### NATURAL ORIGIN AGE-0's: SPATIAL
 			dyn$AGE_0_N_BND[,j]<-rmultinom(1,inputs$natural_age0,inputs$natural_age0_rel_dens)
-			if(nrow(inputs$hatchery_age0)>0)
-			{
-			  tmp<-aggregate(number~bend, inputs$hatchery_age0, sum)
-			  dyn$AGE_0_H_DAT[tmp$bend,j]<- tmp$number
-			  # CAN LAYER DISPERSAL ONTO THIS TO MAKE REPLICATES DIFFER
-			}
 		}
-	}
-	if(inputs$genetics | inputs$hatchery_name)
-	{
-	  dyn$AGE_0_H_DAT<-inputs$hatchery_age0
 	}
 	# END INITIALIZATION OF SPATIAL COMPONENTS
 
