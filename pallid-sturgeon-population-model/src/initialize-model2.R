@@ -30,6 +30,7 @@ initialize<- function(inputs)
 	{
 	  dyn$MOM_H<- matrix(0L,inputs$daug_H,inputs$nreps)
 	  dyn$DAD_H<- matrix(0L,inputs$daug_H,inputs$nreps)
+	  dyn$TAG_N<- matrix(0L,inputs$daug_H,inputs$nreps)
 	}
 	if(inputs$hatchery_name)
 	{
@@ -176,6 +177,7 @@ initialize<- function(inputs)
 	  {
 	    dyn$MOM_H[1:nrow(ini_H),j] <- ini_H$M[indxH]
 	    dyn$DAD_H[1:nrow(ini_H),j] <- ini_H$D[indxH]
+	    dyn$TAG_N[1:inputs$natural,j] <- paste0("TAG", 1:inputs$natural) 
 	  }
 	}
 	

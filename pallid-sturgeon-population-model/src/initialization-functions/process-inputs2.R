@@ -203,6 +203,8 @@ modelInputs<- function(input=NULL,
 	}## END SPATIAL
 	
 	# STOCKING INPUTS
+	###
+	tmp$broodstock<- input$stockingInput[[basin]]$broodstock
 	### FINGERGLINGS
 	tmp$fingerling<- input$stockingInput[[basin]]$fingerling
 	### YEARLINGS
@@ -227,14 +229,22 @@ modelInputs<- function(input=NULL,
 	                                         sum(length_mn*stocking_no)/sum(stocking_no),
 	                                         mean(length_mn)),
 	                        length_sd=max(length_sd),
-	                        stocking_no=sum(stocking_no))
+	                        stocking_no=sum(stocking_no),
+	                        phi0_mn=ifelse(sum(stocking_no)!=0,
+	                                       sum(phi0_mn*stocking_no)/sum(stocking_no),
+	                                       mean(phi0_mn)),
+	                        phi0_sd=max(phi0_sd))
 	  tmp$yearling<-ddply(tmp$yearling, .(month), summarize,
 	                        age=mean(age),
 	                        length_mn=ifelse(sum(stocking_no)!=0,
 	                                         sum(length_mn*stocking_no)/sum(stocking_no),
 	                                         mean(length_mn)),
 	                        length_sd=max(length_sd),
-	                        stocking_no=sum(stocking_no))
+	                        stocking_no=sum(stocking_no),
+	                        phi_mn=ifelse(sum(stocking_no)!=0,
+	                                      sum(phi_mn*stocking_no)/sum(stocking_no),
+	                                      mean(phi_mn)),
+	                        phi_sd=max(phi_sd))
 	}
 	
 	# GENETICS INPUTS

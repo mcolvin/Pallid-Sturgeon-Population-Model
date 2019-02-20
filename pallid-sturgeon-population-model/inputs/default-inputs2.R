@@ -196,6 +196,12 @@ input$upper$phi_age0_er<-0.01
   # SOURCE: WAG
   # MOTIVATION: GIVES A LARGE RSD: 100  
 
+input$lower$phi0_Hcap_mean<-0.5
+input$upper$phi0_Hcap_mean<-0.5
+
+input$lower$phi0_Hcap_er<-0.1
+input$upper$phi0_Hcap_er<-0.1
+
 input$lower$phi_age1_mean<-0.68
   # SOURCE:
 input$upper$phi_age1_mean<-0.95
@@ -233,42 +239,66 @@ input$upper$recruit_length_sd <- 25
 
 
 
-## STOCKING ##
+## STOCKING PROGRAM ##
 ### UPPER BASIN
+#### BROODSTOCK DATA
+input$stockingInput$upper$broodstock$breeder_no<-4
+input$stockingInput$upper$broodstock$bank_F<-paste0("TAG", 1:10)
+input$stockingInput$upper$broodstock$bank_M<-paste0("TAG", 1:10)
+input$stockingInput$upper$broodstock$BROOD_1<-
+  data.frame(mother=paste0("TAG", 11:14),
+             father=paste0("TAG", 15:18),
+             hatchery=sample(c("Neosho", "Gavins"), 4, replace=TRUE),
+             no_available=runif(4,1000,5000))
+  # NUMBER OF AGE-1's AVAILABLE FOR STOCKING BY FAMILY LOT
+  ## INITIALIZE THESE LASAT THREE IN PROCESS_INPUTS.R USING STOCKING 
+  ## HISTORY AND BACK CALCULATION
 #### FINGERLINGS
 input$stockingInput$upper$fingerling<-data.frame(month=c(9),
                                                  stocking_rkm=c(2500),
                                                  stocking_no=c(0),
-                                                 hatchery="Neosho",
+                                                 #hatchery="Neosho",
                                                  age=c(3), # months
                                                  length_mn=c(50),
-                                                 length_sd=c(5)) 
+                                                 length_sd=c(5),
+                                                 phi0_mn=c(0.25^(4/3)),
+                                                 phi0_sd=c(0.1)) 
 #### YEARLINGS
 input$stockingInput$upper$yearling<-data.frame(month=c(9),
                                                stocking_rkm=c(2500),
                                                stocking_no=c(0),
-                                               hatchery="Neosho",
+                                               #hatchery="Neosho",
                                                age=c(15), # months
                                                length_mn=c(100),
-                                               length_sd=c(15))
+                                               length_sd=c(15),
+                                               phi_mn=c(0.25),
+                                               phi_sd=c(0.1))
 ### LOWER BASIN
+#### BROODSTOCK DATA
+input$stockingInput$lower$broodstock$breeder_no<-4
+input$stockingInput$lower$broodstock$bank_F<-paste0("TAG", 1:10)
+input$stockingInput$lower$broodstock$bank_M<-paste0("TAG", 1:10)
 #### FINGERLINGS
 input$stockingInput$lower$fingerling<-data.frame(month=c(9),
                                                  stocking_rkm=c(50),
                                                  stocking_no=c(0),
-                                                 hatchery=c("Neosho"),
+                                                 #hatchery=c("Neosho"),
                                                  age=c(3), # months
                                                  length_mn=c(50),
-                                                 length_sd=c(5)) 
+                                                 length_sd=c(5),
+                                                 phi0_mn=c(0.25^(4/3)),
+                                                 phi0_sd=c(0.1)) 
 #### YEARLINGS
 input$stockingInput$lower$yearling<-data.frame(month=c(9),
                                                stocking_rkm=c(50),
                                                stocking_no=c(0),
-                                               hatchery=c("Neosho"),
+                                               #hatchery=c("Neosho"),
                                                age=c(15), # months
                                                length_mn=c(100),
-                                               length_sd=c(15))
-## END STOCKING INPUTS ##
+                                               length_sd=c(15),
+                                               phi_mn=c(0.25),
+                                               phi_sd=c(0.1))
+## END STOCKING PROGRAM INPUTS ##
 
 
 
