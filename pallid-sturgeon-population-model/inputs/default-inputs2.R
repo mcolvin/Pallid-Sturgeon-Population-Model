@@ -16,7 +16,8 @@ input$upper$natural_age0<- 200
 
 input$stockingHistory$upper<- data.frame(year=1992:2017,
                                   month=rep(9, 26),
-                                  bend=sample(1:156, 26, replace=TRUE),
+                                  bend=sample(1:nrow(bend_meta$upper), 
+                                              26, replace=TRUE),
                                   number=sample(300:1200, 26, 
                                                 replace=TRUE),
                                   mother=paste0("PIT", 1:26),
@@ -37,7 +38,8 @@ input$stockingHistory$upper$length_mn<-ifelse(input$stockingHistory$upper$age==3
                                                      350, 200))
 input$stockingHistory$lower<- data.frame(year=1992:2017,
                                          month=rep(9, 26),
-                                         bend=sample(1:316, 26, 
+                                         bend=sample(1:nrow(bend_meta$lower), 
+                                                     26, 
                                                      replace=TRUE),
                                          number=sample(300:1200, 26, 
                                                        replace=TRUE),
@@ -308,12 +310,13 @@ input$spatialInput$adult_spatial_structure<- "Uniform" # "Emperical"
 input$spatialInput$age0_n_spatial_structure<- "Uniform"# "Emperical"
 input$spatialInput$age0_h_spatial_structure<- "Uniform"# "Emperical"
 ### SPAWNING HOTSPOTS
-input$spatialInput$upper$spn_bends<- c(154, 156) 
+input$spatialInput$upper$spn_bends<- c(154, 156, 157) 
 input$spatialInput$lower$spn_bends<- c(316)
 ### DRIFT DYNAMICS   <!-- fix: improve inputs -->
-#### CAN ALSO JUST USE EMPERICAL DRIFT MATRIX... 
-input$spatialInput$upper$p_retained<- rep(0.5, 156)
-input$spatialInput$lower$p_retained<- rep(0.5, 316)
+#### CAN ALSO USE EMPERICAL DRIFT MATRIX... 
+input$spatialInput$upper$p_retained<- c(rep(0.5, nrow(bend_meta$upper)-1),
+                                        0.65)
+input$spatialInput$lower$p_retained<- rep(0.5, nrow(bend_meta$lower))
 ## END SPATIAL INPUTS ##
 
 

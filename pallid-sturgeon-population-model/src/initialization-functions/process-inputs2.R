@@ -105,8 +105,16 @@ modelInputs<- function(input=NULL,
 		#### UNIFORM RANDOM DRIFT:  ENTRY ij IS THE PROBABILTY OF DRIFTING
 		####    FROM BEND i TO BEND j; ROW 1 IS FARTHEST DOWNSTREAM)
 		tmp$p_retained<- input$spatialInput[[basin]]$p_retained
-		tmp$drift_prob<- matrix(runif(tmp$n_bends*tmp$n_bends),nrow=tmp$n_bends,ncol=tmp$n_bends)
+		tmp$drift_prob<- matrix(runif(tmp$n_bends*tmp$n_bends),
+		                        nrow=tmp$n_bends, ncol=tmp$n_bends)
 		tmp$drift_prob[upper.tri(tmp$drift_prob)]<-0
+		if(basin=="upper")
+		{
+		  tmp$drift_prob[nrow(tmp$drift_prob), 
+		                 (length(which(tmp$bend_meta$B_SEGMENT==4))+1):
+		                   (ncol(tmp$drift_prob)-1)]<-0
+		  
+		}
 		tmp$drift_prob<- tmp$drift_prob/apply(tmp$drift_prob,1,sum)*tmp$p_retained
 		tmp$drift_prob<- cbind(tmp$drift_prob, 1-tmp$p_retained)
 		
@@ -119,11 +127,21 @@ modelInputs<- function(input=NULL,
 		# diag(tmp$disp_prob)<-c(0.5,0.5*(1:(tmp$nbends-1)))
 		# tmp$disp_prob<- tmp$disp_prob/apply(tmp$disp_prob,1,sum)
 		tmp$disp_prob<- matrix(0,nrow=tmp$n_bends,ncol=tmp$n_bends)
-		for(i in 1:nrow(tmp$disp_prob))
+		M<-ifelse(basin=="upper", nrow(tmp$disp_prob)-1, nrow(tmp$disp_prob))
+		for(i in 1:M)
 		{
 		  for(j in 1:i)
 		  {
 		    tmp$disp_prob[i,j]<-(1/2)^(i-j+1)
+		  }
+		}
+		if(basin=="upper")
+		{
+		  J<-length(which(tmp$bend_meta$B_SEGMENT==4))
+		  for(j in 1:J)
+		  {
+		    tmp$disp_prob[nrow(tmp$disp_prob),j]<-(1/2)^(J-j+2)
+		    tmp$disp_prob[nrow(tmp$disp_prob),nrow(tmp$disp_prob)]<-0.5
 		  }
 		}
 		tmp$disp_prob<- tmp$disp_prob/apply(tmp$disp_prob,1,sum)
@@ -212,13 +230,19 @@ modelInputs<- function(input=NULL,
 	if(spatial)
 	{
 	  tmp$bend_meta$upper_rkm<-tmp$bend_meta$LOWER_RIVER_MILE[1]*1.60934+cumsum(tmp$bend_meta$Length.RKM)
+	  if(basin=="upper")
+	  {
+	    tmp$bend_meta$upper_rkm[nrow(tmp$bend_meta)]<-tmp$bend_meta$Length.RKM[nrow(tmp$bend_meta)]
+	  }
 	  tmp$fingerling$bend<-unlist(lapply(1:nrow(tmp$fingerling),function(i)
 	    {
-	      return(min(which(tmp$bend_meta$upper>=tmp$fingerling$stocking_rkm[i])))
+	      return(min(which(tmp$bend_meta$upper_rkm>=tmp$fingerling$stocking_rkm[i] & 
+	                         tmp$bend_meta$RIVER=="MO")))
 	    }))
 	  tmp$yearling$bend<-unlist(lapply(1:nrow(tmp$yearling),function(i)
 	  {
-	    return(min(which(tmp$bend_meta$upper>=tmp$yearling$stocking_rkm[i])))
+	    return(min(which(tmp$bend_meta$upper>=tmp$yearling$stocking_rkm[i] & 
+	                       tmp$bend_meta$RIVER=="MO")))
 	  }))
 	}
 	if(!spatial)
