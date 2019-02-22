@@ -202,6 +202,20 @@ fecundity<- function(fl,a,b,er,sex,spawn)
   return(eggs)
 }
 
+immigrants<- function(migrants=NULL,
+                      phi_migrants,
+                      p_immigrate)
+{
+  phi<-phi_migrants[migrants$Age+migrants$dT+1]
+  survive<-rbinom(nrow(migrants), 1, phi)
+  alive<-migrants[which(survive==1),]
+  alive$dT<-alive$dT+1
+  move<-rbinom(nrow(alive), 1, p_immigrate)
+  stay<-alive[which(move==0),]
+  leave<-alive[which(move==1),]
+  return(list(stay=stay, leave=leave))
+}
+
 
 
 # #PARAMETERS OF LOG LAMBDA~N(a+b*fl_normalized, er)

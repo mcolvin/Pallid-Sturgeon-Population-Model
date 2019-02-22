@@ -474,6 +474,9 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      AGE_0_N_BND[]<- rbinom(length(AGE_0_N_BND),
 	                             AGE_0_N_BND,
 	                             inputs$phi0)
+	      AGE_0_N_OUT[]<- rbinom(length(AGE_0_N_OUT),
+	                             AGE_0_N_OUT,
+	                             inputs$phi0)
 	      if(sum(AGE_0_H$number)>0)
 	      {
 	        AGE_0_H_DAT<- matrix(rbinom(inputs$nreps*nrow(AGE_0_H),
@@ -588,7 +591,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	                            as.vector(AGE_0_H_DAT))
 	        }
 	      }
-	      ##### NATURALLY SPAWNED FISH
+	      ##### NATURALLY SPAWNED FISH WITHIN MISSOURI RIVER
 	      if(sum(AGE_0_N_BND)>0)
 	      {
 	        chk<-min(nrow(Z_N)-colSums(Z_N)-colSums(AGE_0_N_BND))
@@ -659,8 +662,35 @@ sim<- function(inputs=NULL, dyn=NULL,
 	          #                                      function(x){rep(1:inputs$n_bends,AGE_0_N_BND[,x])}))))
 	        }		
 	      }
+	      ##### NATURALLY SPAWNED FISH OUTSIDE OF FLOWING MISSOURI RIVER
+	      if(sum(AGE_0_N_OUT)>0)
+	      {
+          # AGE-1's FOR EACH REPLICATE
+	        tmp<-merge(data.frame(Origin=0, # 1 FOR HATCHERY, 0 FOR NATURAL
+	                              Age=12, dT=0), 
+	                   data.frame(Rep=rep(1:inputs$nreps, 
+	                                      colSums(AGE_0_N_OUT))))
+	        # ADD GROWTH COEFFICIENTS
+	        tmp2<- ini_growth(n=nrow(tmp),
+	                          mu_ln_Linf=inputs$ln_Linf_mu,
+	                          mu_ln_k=inputs$ln_k_mu,
+	                          vcv=inputs$vcv,
+	                          maxLinf=inputs$maxLinf) 
+	        tmp$Linf<-tmp2$linf
+	        tmp$k<-tmp2$k
+	        # ADD  INITIAL LENGTHS
+	        ## METHOD 1: LENGTH DISTRIBUTION (SEE ABOVE FOR METHOD 2)
+	        tmp$Length<-rnorm(nrow(tmp),
+	                          inputs$recruit_mean_length,
+	                          inputs$recruit_length_sd)				
+	        # ASSIGN SEX
+	        tmp$Sex<-ini_sex(n=nrow(tmp),
+	                         prob_F=inputs$sexratio)
+	        MIGRANT_FISH<-rbind.fill(MIGRANT_FISH, tmp)
+	      }
 	      #### ZERO OUT AGE-0's AFTER THEY MOVE TO AGE-1
-	      AGE_0_N_BND[]<-0 
+	      AGE_0_N_BND[]<-0
+	      AGE_0_N_OUT[]<-0
 	      AGE_0_H_DAT[]<-0
 	      AGE_0_H<-NULL
 	      
@@ -742,18 +772,21 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      
 	      
 	      ### ADJUST FOR THE AGE-0 THAT WERE INTERCEPTED AND RETAINED IN
-	      ### THE BASIN
+	      ### THE BASIN AND KEEP TRACK OF HOW MANY DRIFTED OUT OF THE BASIN
+	      AGE_0_N_OUT <- AGE_0_N_BND
 	      if(!inputs$spatial)
 	      {
 	        AGE_0_N_BND[]<- rbinom(length(AGE_0_N_BND),
 	                               c(AGE_0_N_BND),
 	                               inputs$p_retained)
+	        
 	      }
 	      if(inputs$spatial)
 	      {
 	        AGE_0_N_BND[]<- freeEmbryoDrift(bendAbund=AGE_0_N_BND, 
 	                                        driftMatrix=inputs$drift_prob)
 	      }
+	      AGE_0_N_OUT <- colSums(AGE_0_N_OUT)-colSums(AGE_0_N_BND)
 	    }
 	    
 	    

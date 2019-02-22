@@ -4,6 +4,7 @@ modelInputs<- function(input=NULL,
                        basin=NULL, 
                        spatial=FALSE,
                        bend_meta=NULL,
+                       migration=FALSE,
                        hatchery_name=FALSE,
                        genetics=FALSE)
 	{
@@ -84,6 +85,7 @@ modelInputs<- function(input=NULL,
 	# SIMULATION STUFF
 	tmp <- c(tmp, input$simulationInput)
 	tmp$spatial <- spatial
+	tmp$migration <- migration
 	tmp$genetics <- genetics
 	tmp$hatchery_name <- hatchery_name
 	tmp$commit <- input$commit
@@ -149,9 +151,40 @@ modelInputs<- function(input=NULL,
 		### ADULTS (MONTHLY)
 		#### NON-SPAWNING
 		## ORIGINAL:
-		tmp$adult_mov_prob<- matrix(runif(tmp$n_bends*tmp$n_bends,0,0.1),nrow=tmp$n_bends,ncol=tmp$n_bends)
+	  tmp$adult_mov_prob<- matrix(runif(tmp$n_bends*tmp$n_bends,0,0.1),nrow=tmp$n_bends,ncol=tmp$n_bends)
 		diag(tmp$adult_mov_prob)<-0.7
+		if(basin=="upper")
+		{
+		  tmp$p_upper_YR <-input$spatialInput[[basin]]$p_upper_YR
+		  tmp$YR_return_dist <- runif(tmp$n_bends)
+		  tmp$YR_return_dist[tmp$n_bends]<-50
+		  tmp$YR_return_dist <- tmp$YR_return_dist/sum(tmp$YR_return_dist)
+		  tmp$adult_mov_prob[tmp$n_bends,
+		                     (length(which(tmp$bend_meta$B_SEGMENT==4))+1):
+		                       (tmp$n_bends-1)]<-0
+		}
 		tmp$adult_mov_prob<- tmp$adult_mov_prob/apply(tmp$adult_mov_prob,1,sum)
+		if(migration)
+		{
+		  tmp$p_dwnstrm <-input$spatialInput[[basin]]$p_dwnstrm
+		  tmp$p_leave <-ifelse(basin=="upper",
+		                       tmp$p_dwnstrm$to+tmp$p_upper_YR$to,
+		                       tmp$p_dwnstrm$to)
+		  tmp$adult_mov_prob <- tmp$adult_mov_prob*(1-tmp$p_leave)
+		  tmp$adult_mov_prob<- cbind(tmp$adult_mov_prob, tmp$p_leave)
+		  if(basin=="upper")
+		  {
+		    tmp$adult_mov_prob[,tmp$n_bends+1] <- 
+		      tmp$adult_mov_prob[,tmp$n_bends+1]-tmp$p_upper_YR$to
+		    tmp$adult_mov_prob<- cbind(tmp$adult_mov_prob, tmp$p_upper_YR$to)
+		  }
+		  tmp$return_upstrm_dist <- rep(0, tmp$n_bends)
+		  for(i in 1:tmp$n_bends)
+		  {
+		    tmp$return_upstrm_dist[i]<-(1/2)^i
+		  }
+		  tmp$return_upstrm_dist<- tmp$return_upstrm_dist/sum(tmp$return_upstrm_dist)
+		}
 		# ## IF YOU WANT A PARTICULAR PROBABILITY OF STAYING IN A GIVEN BEND:
 		# fidelity<-0.08 #PROBABILITY OF REMAINING IN THE SAME BEND 
 		#   #UPPER MEAN  WAS ORIGINALLY: 0.7/(0.05*(156-1)+0.7)~0.08

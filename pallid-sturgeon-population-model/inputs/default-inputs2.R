@@ -204,6 +204,10 @@ input$upper$phi0_Hcap_mean<-0.5
 input$lower$phi0_Hcap_er<-0.1
 input$upper$phi0_Hcap_er<-0.1
 
+input$lower$phi0_dwnstrm<-input$lower$phi_age0_mean #MISSISSIPPI RIVER
+input$upper$phi0_dwnstrm<-input$upper$phi_age0_mean*0.01 #LAKE SAKAKAWEA
+input$upper$phi0_upper_YR<-input$upper$phi_age0_mean #ABOVE INTAKE
+
 input$lower$phi_age1_mean<-0.68
   # SOURCE:
 input$upper$phi_age1_mean<-0.95
@@ -212,6 +216,10 @@ input$upper$phi_age1_mean<-0.95
 input$lower$phi_age1_er<-0.1
 input$upper$phi_age1_er<-0.1
 
+input$lower$phi1_dwnstrm<-input$lower$phi_age1_mean #MISSISSIPPI RIVER
+input$upper$phi1_dwnstrm<-input$upper$phi_age1_mean #LAKE SAKAKAWEA
+input$upper$phi1_upper_YR<-input$upper$phi_age1_mean #ABOVE INTAKE
+
 input$lower$phi_age2_mean<-0.92
   # SOURCE:
 input$upper$phi_age2_mean<-0.95
@@ -219,6 +227,10 @@ input$upper$phi_age2_mean<-0.95
 
 input$lower$phi_age2_er<-0.01
 input$upper$phi_age2_er<-0.01
+
+input$lower$phi2_dwnstrm<-input$lower$phi_age2_mean #MISSISSIPPI RIVER
+input$upper$phi2_dwnstrm<-input$upper$phi_age2_mean #LAKE SAKAKAWEA
+input$upper$phi2_upper_YR<-input$upper$phi_age2_mean #ABOVE INTAKE
 
 input$lower$maxage<-41  #OKAY?
   # SOURCE:  Keenlyne et al. (1992) 
@@ -314,9 +326,29 @@ input$spatialInput$upper$spn_bends<- c(154, 156, 157)
 input$spatialInput$lower$spn_bends<- c(316)
 ### DRIFT DYNAMICS   <!-- fix: improve inputs -->
 #### CAN ALSO USE EMPERICAL DRIFT MATRIX... 
-input$spatialInput$upper$p_retained<- c(rep(0.5, nrow(bend_meta$upper)-1),
-                                        0.65)
+input$spatialInput$upper$p_retained<- rep(0.5, nrow(bend_meta$upper))
 input$spatialInput$lower$p_retained<- rep(0.5, nrow(bend_meta$lower))
+### EMIGRATION AND IMMIGRATION
+  ## DO WE WANT THIS TO BE AGE OR STAGE SPECIFIC?
+  ## CAN MAKE LOCATION SPECIFIC BY MAKING EACH LIST ENTRY A VECTOR 
+  ## OF LENGTH N_BENDS
+input$spatialInput$upper$p_upper_YR <-list(to=0.05, from=0.5) #ABOVE INTAKE
+input$spatialInput$upper$p_dwnstrm <- list(to=0.001, from=0.99) #LAKE SAKAKAWEA
+input$spatialInput$lower$p_dwnstrm <- list(to=0.05, from=0.5) #MISSISSIPPI RIVER
+### SPAWNING MIGRATION
+input$spatialInput$upper$p_YR_spn_passage <- 0.3
+  ## TO ALLOW SPAWNING MIGRATIONS FROM THE MS TO THE MO WE WOULD NEED TO
+  ## KEEP TRACK OF SPAWNING STATUS OF MS FISH -- THIS IS ONLY UPDATED 
+  ## ONCE A YEAR, SO MAY NOT BE TOO PROBLEMATIC
+  ## OR
+  ## WE COULD DO A BATCH DESIGNTATION WHERE APPROXIMATELY 1/3 OF THE 
+  ## POP AGE A_MAT_MIN AND OLDER MAKES A SPAWNING RUN TO THE MO SO THAT
+  ##      N_MIGRATE~BINOM(1/3, N_A_MAT_MIN+)
+  ##      SAMPLE N_MIGRATE FROM THE POP WITH EQUAL PROBS (OR PERHAPS 
+  ##        AGE ADJUSTED PROBS)
+  ##      ASSUME EACH OF THESE FISH IS MATURE AND READY TO SPAWN    
+  ## WOULD THE ASSUMPTION THEN BE THAT THESE FISH RETURN TO THE MS AFTER
+  ## THEIR SPAWNINGN RUN?
 ## END SPATIAL INPUTS ##
 
 
