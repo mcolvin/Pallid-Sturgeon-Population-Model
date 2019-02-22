@@ -1115,6 +1115,10 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    
 	    
 	    # MOVEMENT:  UPDATE LOCATION
+	    if(!inputs$spatial)
+	    {
+	      #BASIC MIGRATION HERE
+	    }
 	    if(inputs$spatial)
 	    {	
 	      ### ZERO OUT FISH THAT DIED
@@ -1136,7 +1140,15 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        spn=SPN_N[indx_N],
 	        fromToMatrix=inputs$adult_mov_prob,
 	        spnMatrix=inputs$spn_mov_prob)
-	      #source("./src/spatial-dynamics.R")
+	      if(inputs$migration)
+	      {
+	        indx_M<-which(BEND_N[indx])
+	        ### WHY DON'T WE JUST TRACK THEM AS IN A NEW BEND BUT EXCLUDE THEM FROM
+	        ### SUMMARIES
+	        ### THIS WON'T COVER ADDITIONAL MIGRANTS OUTSIDE OF THOSE STARTING, BUT 
+	        ### THIS COULD BE ADDED ON AS A GROUP???   DEPENDS ON WHAT WE CARE ABOUT
+	        ### TRACKING, E.G. GENETICS
+	      }
 	    }
 	    
 	    
