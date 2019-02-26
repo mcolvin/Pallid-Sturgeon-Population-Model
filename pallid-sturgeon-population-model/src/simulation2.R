@@ -226,6 +226,12 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  N_NAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
 	  N_HAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
 	  
+	  if(inputs$genetics)
+	  {
+	    N_e<- matrix(0,nrow=length(which(m==12)),ncol=inputs$nreps)
+	    indxY<-0
+	  }
+	  
 	  
 	  if(inputs$sizeStructure==TRUE){ss<- list()}
 	  # END SUMMARIES
@@ -1225,6 +1231,49 @@ sim<- function(inputs=NULL, dyn=NULL,
 	                            length(indx_R[[x]])
 	                          })
 	    
+	    if(inputs$genetics & m[i]==12)
+	    {
+	      ### UPDATE YEAR COUNT
+	      indxY<-indxY+1
+	      ### ZERO OUT FISH THAT DIED
+	      MAT_H<-MAT_H*Z_H 
+	      ### CALCULATE EFFECTIVE POPULATION SIZE
+	      EffectivePop<-lapply(1:inputs$nreps, function(x)
+	      {
+	        tmp<-aggregate(MAT_H[,x], by=list(id=MOM_H[,x]), sum)
+	        if(any(tmp$id=="0"))
+	        {
+	          tmp<- tmp[-which(tmp$id=="0"),]
+	        }
+	        mu_f <- mean(tmp[,2])
+	        V_f <- var(tmp[,2])
+	        N_f <- nrow(tmp)
+	        out <- (N_f*mu_f-1)/(mu_f-1+V_f/mu_f) #Saltzgiver Eqn. 4
+	        return(data.frame(N_ef=out, rep=x))
+	      })
+	      EffectivePop<-do.call(rbind, EffectivePop)
+	      
+	      N_em<-lapply(1:inputs$nreps, function(x)
+	      {
+	        tmp<-aggregate(MAT_H[,x], by=list(id=DAD_H[,x]), sum)
+	        if(any(tmp$id=="0"))
+	        {
+	          tmp<- tmp[-which(tmp$id=="0"),]
+	        }
+	        mu_m <- mean(tmp[,2])
+	        V_m <- var(tmp[,2])
+	        N_m <- nrow(tmp)
+	        out <- (N_m*mu_m-1)/(mu_m-1+V_m/mu_m) #Saltzgiver Eqn. 5
+	        return(data.frame(N_em=out, rep=x))
+	      })
+	      N_em<-do.call(rbind, N_em)
+	      EffectivePop<-merge(EffectivePop, N_em, by="rep")
+	      EffectivePop$N_e <- 4*EffectivePop$N_ef*EffectivePop$N_em/
+	        (EffectivePop$N_ef+EffectivePop$N_em)  #Saltzgiver Eqn. 6
+	      EffectivePop<-EffectivePop[order(EffectivePop$rep),]
+	      N_e[indxY,]<-EffectivePop$N_e
+	    }
+	    
 	    ### SIZE STRUCTURE
 	    if(inputs$sizeStructure==TRUE)
 	    {
@@ -1302,6 +1351,10 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    out$bend_H_initial<- N_BND_HAT_INI
 	    out$bend_N_post<- N_BND_NAT_POST
 	    out$bend_H_post<- N_BND_HAT_POST
+	  }
+	  if(inputs$genetics)
+	  {
+	    out$N_e <- N_e
 	  }
 	}
 	if(demographicOnly)
