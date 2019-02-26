@@ -25,14 +25,34 @@ initialize<- function(inputs)
 		SPN_N = matrix(0L,inputs$daug_N,inputs$nreps),
 		EGGS_H = matrix(0L,inputs$daug_H,inputs$nreps),
 		EGGS_N = matrix(0L,inputs$daug_N,inputs$nreps))
+	inputs$hatchery<-matrix(0, nrow=1, ncol=inputs$nreps)
+	if(inputs$genetics)
+	{
+	  dyn$MOM_H<- matrix(0L,inputs$daug_H,inputs$nreps)
+	  dyn$DAD_H<- matrix(0L,inputs$daug_H,inputs$nreps)
+	  dyn$TAG_N<- matrix(0L,inputs$daug_H,inputs$nreps)
+	}
+	if(inputs$hatchery_name)
+	{
+	  dyn$HATCH<- matrix(0L,inputs$daug_H,inputs$nreps)
+	}
 
 	# INITIALIZATION
-	## [1] ASSIGN LIVE OR DEAD	
-	dyn$Z_H[1:inputs$hatchery,]<-1
+	## [1] ASSIGN LIVE OR DEAD TO NATURAL ORIGIN FISH	
 	dyn$Z_N[1:inputs$natural,]<-1
 
 	for(j in 1:inputs$nreps)
-		{
+	{
+	  ## [0] GENERATE HATCHERY ORIGIN DATA
+	  ini_H<-ini_hatchery(inputs$stockingHistory,
+	                      inputs$genetics,
+	                      inputs$hatchery_name)
+	  inputs$hatchery[,j]<-nrow(ini_H)
+	  indxH<-sample(1:nrow(ini_H), nrow(ini_H))
+	  
+	  ## [1] ASSIGN LIVE OR DEAD TO HATCHERY ORIGIN FISH	
+	  dyn$Z_H[1:nrow(ini_H),j]<-1
+	  
 		## [2] INIITIALIZE GROWTH COEFFICIENTS
 		### ASSUMES GROWTH IS NOT HERITABLE
 		tmp<- ini_growth(n=inputs$daug_H,
@@ -42,6 +62,9 @@ initialize<- function(inputs)
 			maxLinf=inputs$maxLinf) 
 		dyn$Linf_H[,j]<-tmp$linf
 		dyn$k_H[,j]<-tmp$k
+		dyn$Linf_H[1:nrow(ini_H),j]<-ifelse(ini_H$L[indxH]<dyn$Linf_H[1:nrow(ini_H),j],
+		                       dyn$Linf_H[1:nrow(ini_H),j], 
+		                       ini_H$L[indxH]*1.1)
 		
 		tmp<- ini_growth(n=inputs$daug_N,
 			mu_ln_Linf=inputs$ln_Linf_mu,
@@ -51,37 +74,47 @@ initialize<- function(inputs)
 		dyn$Linf_N[,j]<-tmp$linf
 		dyn$k_N[,j]<-tmp$k	
 		
-		
+	
 		## [3] INITIALIZE LENGTH
-		dyn$LEN_H[,j]<-dyn$Z_H[,j]*ini_length(n=inputs$daug_H, 
-				basin=inputs$basin,
-				origin=1, # 1 FOR HATCHERY, 0 FOR NATURAL
-				spatial=FALSE)
-		dyn$Linf_H[,j]<-ifelse(dyn$LEN_H[,j]<dyn$Linf_H[,j],
-			dyn$Linf_H[,j], 
-			dyn$LEN_H[,j]*1.1)
-		
+		### HATCHERY ORIGIN LENGTH FROM DATA AND RANDOM GROWTH COEFFICIENTS
+		dyn$LEN_H[1:nrow(ini_H),j]<-dLength(dyn$k_H[1:nrow(ini_H),j], 
+		                                    dyn$Linf_H[1:nrow(ini_H),j],
+		                                    ini_H$L[indxH],
+		                                    ini_H$dA[indxH])
+		### NATURAL ORIGIN LENGTH FROM DISTRIBUTION
 		dyn$LEN_N[,j]<-dyn$Z_N[,j]*ini_length(n=inputs$daug_N, 
-				basin=inputs$basin,
-				origin=0, # 1 FOR HATCHERY, 0 FOR NATURAL
-				spatial=FALSE)
+		                                      basin=inputs$basin,
+		                                      origin=0, # 1 FOR HATCHERY, 0 FOR NATURAL
+		                                      spatial=FALSE)
 		dyn$Linf_N[,j]<-ifelse(dyn$LEN_N[,j]<dyn$Linf_N[,j],
-			dyn$Linf_N[,j], 
-			dyn$LEN_N[,j]*1.1)		
+		                       dyn$Linf_N[,j], 
+		                       dyn$LEN_N[,j]*1.1)
+		
+		
+		## [6] INITIALIZE AGE
+		### HATCHERY ORIGIN AGE IN MONTHS FROM DATA
+		dyn$AGE_H[1:nrow(ini_H),j]<-ini_H$A[indxH]
+		### NATURAL ORIGIN AGE IN MONTHS FROM LENGTH
+		dyn$AGE_N[,j]<-ini_age(len=dyn$LEN_N[,j],
+		                       linf=dyn$Linf_N[,j],
+		                       k=dyn$k_N[,j],
+		                       sizeAtHatch=7,
+		                       maxAge=inputs$maxage)	
+
 		
 		
 		## [4] INITIALIZE WEIGHT GIVEN LENGTH
 		### ASSUMES NO EFFECT OF ORIGIN
-		dyn$WGT_H[,j]<-dyn$Z_H[,j]*
-			ini_wgt(a=inputs$a,
-				b=inputs$b,
-				len=dyn$LEN_H[,j],
-				er=inputs$lw_er)
-		dyn$WGT_N[,j]<-dyn$Z_N[,j]*
-			ini_wgt(a=inputs$a,
-				b=inputs$b,
-				len=dyn$LEN_N[,j],
-				er=inputs$lw_er)				
+		dyn$WGT_H[1:nrow(ini_H),j]<-dyn$Z_H[1:nrow(ini_H),j]*
+		  ini_wgt(a=inputs$a,
+		          b=inputs$b,
+				      len=dyn$LEN_H[1:nrow(ini_H),j],
+				      er=inputs$lw_er)
+		dyn$WGT_N[1:inputs$natural,j]<-dyn$Z_N[1:inputs$natural,j]*
+		  ini_wgt(a=inputs$a,
+		          b=inputs$b,
+				      len=dyn$LEN_N[1:inputs$natural,j],
+				      er=inputs$lw_er)				
 	
 				
 		## [5] INITIALIZE SEX
@@ -93,17 +126,7 @@ initialize<- function(inputs)
 			        prob_F=inputs$sexratio)				
 				
 		
-		## [6] INITIALIZE AGE IN MONTHS
-		dyn$AGE_H[,j]<-ini_age(len=dyn$LEN_H[,j],
-				linf=dyn$Linf_H[,j],
-				k=dyn$k_H[,j],
-				sizeAtHatch=7,
-				maxAge=inputs$maxage)
-		dyn$AGE_N[,j]<-ini_age(len=dyn$LEN_N[,j],
-				linf=dyn$Linf_N[,j],
-				k=dyn$k_N[,j],
-				sizeAtHatch=7,
-				maxAge=inputs$maxage)				
+			
 					
 				
 		## [7] INITIALIZE WHETHER A FISH IS SEXUALLY MATURE (DURING INITIAL YEAR)	
@@ -132,51 +155,61 @@ initialize<- function(inputs)
 	                                     mature=dyn$MAT_N[,j], 
 	                                     FirstSpawn=tmp_N$FirstSpawn)
 	  ## [??] INITIALIZE THE NUMBER OF NATURAL AGE-0 RECRUITS PRODUCED (DURING INTIAL YEAR)
-	  dyn$EGGS_H[,j]<-fecundity(fl=dyn$LEN_H[,j],
-	                            a=inputs$fec_a,
-	                            b=inputs$fec_b,
-	                            er=inputs$fec_er,
-	                            sex=dyn$SEX_H[,j],
-	                            spawn=dyn$SPN_H[,j])	
-	  dyn$EGGS_N[,j]<-fecundity(fl=dyn$LEN_N[,j],
-	                            a=inputs$fec_a,
-	                            b=inputs$fec_b,
-	                            er=inputs$fec_er,
-	                            sex=dyn$SEX_N[,j],
-	                            spawn=dyn$SPN_N[,j])	
-	 }
+	  # dyn$EGGS_H[,j]<-ini_eggs(fl=dyn$LEN_H[,j],
+	  #                           a=inputs$fec_a,
+	  #                           b=inputs$fec_b,
+	  #                           er=inputs$fec_er,
+	  #                           sex=dyn$SEX_H[,j],
+	  #                           spawn=dyn$SPN_H[,j])	
+	  # dyn$EGGS_N[,j]<-ini_eggs(fl=dyn$LEN_N[,j],
+	  #                           a=inputs$fec_a,
+	  #                           b=inputs$fec_b,
+	  #                           er=inputs$fec_er,
+	  #                           sex=dyn$SEX_N[,j],
+	  #                           spawn=dyn$SPN_N[,j])	
+	  
+	  ## [??] INITIALIZE HATCHERY AND PARENTAL INFORMATION
+	  if(inputs$hatchery_name)
+	  {
+	    dyn$HATCH[1:nrow(ini_H),j] <- ini_H$H[indxH]
+	  }
+	  if(inputs$genetics)
+	  {
+	    dyn$MOM_H[1:nrow(ini_H),j] <- ini_H$M[indxH]
+	    dyn$DAD_H[1:nrow(ini_H),j] <- ini_H$D[indxH]
+	    dyn$TAG_N[1:inputs$natural,j] <- paste0("TAG", 1:inputs$natural) 
+	  }
+	}
 	
-
-	## [10] INITIALIZE SPATIAL COMPONENTS
+	## [] INITIALIZE AGE-0 POPULATION AND ADULT SPATIAL STRUCTURE
+	### NATURAL ORIGIN AGE-0's: NON-SPATIAL
 	if(inputs$spatial==FALSE)
-		{
+	{
 		dyn$AGE_0_N_BND<-matrix(inputs$natural_age0,nrow=1,ncol=inputs$nreps)
-		dyn$AGE_0_H_BND<-matrix(inputs$hatchery_age0,nrow=1,ncol=inputs$nreps)
-		}
+	}
+	### SPATIAL STRUCTURE
 	if(inputs$spatial==TRUE)
-		{
+	{
+
 		## SET UP LOCATIONS
 		dyn$BEND_H<- matrix(0L,inputs$daug_H,inputs$nreps)  
 		dyn$BEND_N<- matrix(0L,inputs$daug_N,inputs$nreps)
 		  #GIVES BEND LOCATION OF EACH ADULT
-		dyn$AGE_0_N_BND<-matrix(0L,nrow=inputs$n_bends,ncol=inputs$nreps) 
-		dyn$AGE_0_H_BND<-matrix(0L,nrow=inputs$n_bends,ncol=inputs$nreps)
+		dyn$AGE_0_N_BND<-matrix(0L,nrow=inputs$n_bends,ncol=inputs$nreps)
 		  #GIVES THE NUMBER OF AGE-0's IN EACH BEND
 		for(j in 1:inputs$nreps)
-			{
-			# INITIALIZE LOCATION OF ADULTS
+		{
+	#### INITIALIZE LOCATION OF HATCHERY & NATURAL ORIGIN AGE-1 PLUS
 			dyn$BEND_H[,j]<-dyn$Z_H[,j]*initialize_spatial_location(n=inputs$daug_H,
 				nbends=inputs$n_bends,			
 				relativeDensity=inputs$hatchery_age1plus_rel_dens)
 			dyn$BEND_N[,j]<-dyn$Z_N[,j]*initialize_spatial_location(n=inputs$daug_N,
 				nbends=inputs$n_bends,
 				relativeDensity=inputs$natural_age1plus_rel_dens)					
-					
-			# INITIALIZE AGE-0 IN EACH BEND
+	#### NATURAL ORIGIN AGE-0's: SPATIAL
 			dyn$AGE_0_N_BND[,j]<-rmultinom(1,inputs$natural_age0,inputs$natural_age0_rel_dens)
-			dyn$AGE_0_H_BND[,j]<-rmultinom(1,inputs$hatchery_age0,inputs$hatchery_age0_rel_dens)
-			}
 		}
+	}
 	# END INITIALIZATION OF SPATIAL COMPONENTS
 
 	

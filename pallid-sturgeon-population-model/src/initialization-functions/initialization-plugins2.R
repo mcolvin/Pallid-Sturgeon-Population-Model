@@ -7,6 +7,68 @@
 
 
 # INITIALIZATION PLUGINS
+##[1] EXTRAPOLATE HATCHERY DATA
+ini_hatchery<-function(stockingHist=NULL,
+                       genetics=NULL,
+                       hatchery_name=NULL)
+{
+  stockingHist$current_number<-rbinom(nrow(stockingHist),
+                                      stockingHist$number,
+                                      stockingHist$survival_est)
+  # stockingHist$yr1<-ceiling(stockingHist$age/12)*12-
+  #   stockingHist$age
+  # stockingHist$yr2plus<-ifelse(stockingHist$MPStock>12, 
+  #                                     floor((stockingHist$MPStock-
+  #                                       stockingHist$yr1)/12),
+  #                                     0)
+  # stockingHist$remainder<-ifelse(stockingHist$MPStock>12, 
+  #                                       stockingHist$MPStock-
+  #                                         (stockingHist$yr2plus*
+  #                                         12+stockingHist$yr1),
+  #                                       0)
+  # stockingHist$p1<-c(tmp$phi0,tmp$phi)[
+  #   floor(stockingHist$age/12)+1]^(stockingHist$yr1/12)
+  # stockingHist$p2<-sapply(1:nrow(stockingHist), function(y)
+  # {
+  #   p2<-ifelse(stockingHist$yr2plus[y]>0,
+  #              prod(tmp$phi[ceiling(stockingHist$age[y]/12):
+  #                 (stockingHist$yr2plus[y]+
+  #                    ceiling(stockingHist$age[y]/12)-1)]),
+  #              1)
+  # })
+  # stockingHist$p3<-c(tmp$phi0,tmp$phi)[
+  #   floor(stockingHist$current_age/12)+1]^(stockingHist$remainder/12)
+  # stockingHist$current_number<-rbinom(length(stockingHist$number), 
+  #                                            stockingHist$number,
+  #                                            stockingHist$p1*stockingHist$p2*stockingHist$p3)
+  tmp<-lapply(1:nrow(stockingHist), function(i)
+  {
+    out<-rnorm(stockingHist$current_number[i], 
+               stockingHist$length_mn[i],
+               stockingHist$length_sd[i])
+    return(out)
+  })
+  ini_H <- data.frame(L=unlist(tmp),
+                      A=rep(stockingHist$current_age, 
+                            stockingHist$current_number),
+                      dA=rep(stockingHist$current_age-stockingHist$age,
+                             stockingHist$current_number))
+  ini_H$L <- ifelse(ini_H$L<=0, mean(stockingHist$length_mn), ini_H$L)
+  if(genetics)
+  {
+    ini_H$M<-rep(stockingHist$mother, 
+                 stockingHist$current_number)
+    ini_H$D<-rep(stockingHist$father, 
+                 stockingHist$current_number)
+  }
+  if(hatchery_name)
+  {
+    ini_H$H<-rep(stockingHist$hatchery, 
+                 stockingHist$current_number)
+  }
+  return(ini_H)
+}
+
 ##[2] INITIALIZE GROWTH PARAMETERS (L_INF, K)	
 ini_growth<- function(n,mu_ln_Linf,mu_ln_k,vcv, maxLinf=2100)
 {
@@ -31,7 +93,6 @@ ini_growth<- function(n,mu_ln_Linf,mu_ln_k,vcv, maxLinf=2100)
 ini_length<-function(n, basin, origin, spatial=FALSE)
 {# A FUNCTION TO INITIALIZE LENGTHS OF INDIVIDUAL FISH
   # origin [0 for natural, 1 for hatchery]
-  # CALLS r WHICH IS AN EMPRICAL DISTRIBUTION
   if(tolower(basin)=="lower" & spatial==FALSE)
   {
     tmp<- len_ini_low_hatchery_nospace(runif(n))*origin + # hatchery
@@ -116,3 +177,39 @@ initialize_spatial_location<- function(n,nbends,relativeDensity)
   x<- sample(c(1:nbends),n,relativeDensity,replace=TRUE)
   return(x)
 }
+
+# ##[] INITIALIZE HATCHERY AND PARENTAL INFORMATION
+# ## NEEDS ADJUSTING
+# ini_hatch_info<- function(age=NULL, 
+#                           hatchery_info=NULL, 
+#                           genetics=NULL)
+# {
+#   age<-floor(age/12)
+#   setA<-setdiff(unique(age),0)
+#   out<-lapply(setA, function(i)
+#   {
+#     indxA<-which(age==i)
+#     indxH<-which(hatchery_info$age==i)
+#     x<-NULL
+#     if(length(indxH)>0)
+#     {
+#       x<-sample(indxH, size=length(indxA), replace=TRUE, 
+#            prob=hatchery_info$no_stocked[indxH]/sum(hatchery_info$no_stocked[indxH]))
+#       if(genetics)
+#       {
+#         x<-cbind(indxA, hatchery_info$hatchery[x], 
+#                  hatchery_info$mother[x], hatchery_info$father[x])
+#       }
+#       if(!genetics)
+#       {
+#         x<-cbind(indxA, hatchery_info$hatchery[x])
+#       }
+#     }
+#     return(x)
+#   })
+#   out<-do.call(rbind, out)
+#   out<-out[order(out[,1]),]
+#   out<-out[,-1]
+#   return(out)
+# }
+

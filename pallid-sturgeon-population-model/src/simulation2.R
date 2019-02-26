@@ -141,7 +141,21 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  EGGS_N<-dyn$EGGS_N 
 	  
 	  AGE_0_N_BND<-dyn$AGE_0_N_BND
-	  AGE_0_H_BND<-dyn$AGE_0_H_BND
+	  AGE_0_H<-inputs$hatchery_age0
+	  
+	  if(inputs$genetics)
+	  {
+	    MOM_H<-dyn$MOM_H
+	    DAD_H<-dyn$DAD_H
+	    TAG_N<-dyn$TAG_N
+	    bank_F<-rep(list(inputs$broodstock$bank_F), inputs$nreps)
+	    bank_M<-rep(list(inputs$broodstock$bank_M), inputs$nreps)
+	  }
+	  
+	  if(inputs$hatchery_name)
+	  {
+	    HATCH<-dyn$HATCH
+	  }
 	  
 	  m<-dyn$m
 	  
@@ -211,6 +225,12 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  
 	  N_NAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
 	  N_HAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
+	  
+	  if(inputs$genetics)
+	  {
+	    N_e<- matrix(0,nrow=length(which(m==12)),ncol=inputs$nreps)
+	    indxY<-0
+	  }
 	  
 	  
 	  if(inputs$sizeStructure==TRUE){ss<- list()}
@@ -292,10 +312,155 @@ sim<- function(inputs=NULL, dyn=NULL,
 	                             mature = MAT_N[indx_N],
 	                             FirstSpawn = tmp_N$FirstSpawn)
 	    }
+	    
+	    ## IF MARCH, BROODSTOCK MODULE
+	    ### HATCHERY DATA
+	    if(inputs$genetics & m[i]==3)
+	    {
+	      ### ZERO OUT FISH THAT DIED
+	      SPN_H<-SPN_H*Z_H
+	      SPN_N<-SPN_N*Z_N
+	      
+	      SEX_H<-SEX_H*Z_H
+	      SEX_N<-SEX_N*Z_N
+	      
+	      ## FEMALES
+	      BRST_F<-lapply(1:inputs$nreps, function(j)
+	      {
+	        indx<-which(SPN_N[,j]==1 & SEX_N[,j]==1)
+	        indx<-sample(indx, min(10, length(indx)))
+	        #indx<-data.frame(row=which(SPN_N[,j]==1 & SEX_N[,j]==1))
+	        #indx$origin<-"N"
+	        #indxH<-data.frame(row=which(SPN_H[,j]==1 & SEX_H[,j]==1))
+	        #indxH$origin<-"H"
+	        #indx<-rbind(indx, indxH)
+	        #indx<-indx[sample(1:nrow(indx)),]
+	        #indx<-indx[sample(1:nrow(indx), min(10, nrow(indx))),]
+	        ### INCLUDE ALL HATCHERY PRODUCED FISH IN BANK_F IF USING ABOVE
+	        ### AND NEED TO ADJUST HOW INFO IS PULLED FROM MATRICES
+	        tags<-TAG_N[indx,j]
+	        priority<-ifelse(tags %in% bank_F[[j]], 0, 1)
+	        #priority<-ifelse(tags %in% bank_F[[j]]$tag, 0, 1)
+	        out<-indx[sample(which(priority==1), min(inputs$broodstock$breeder_no, sum(priority)))]
+	        if(length(out)==0){out<-rep(NA,inputs$broodstock$breeder_no)}
+	        need<- inputs$broodstock$breeder_no-length(out)
+	        if(need>0)
+	        {
+	          W<-floor(need/length(out))
+	          R<-need-W*length(out)
+	          out<-c(rep(out,W+1), sample(out,R))
+	        }
+#           if(length(priority)<inputs$broodstock$breeder_no)
+# 	        {
+#             need <- inputs$broodstock$breeder_no-length(out)
+#             if(length(which(priority==0))>=need)
+#             {
+#               tmp<-indx[sample(which(priority==0),need)]
+#             }
+#             if(length(which(priority==0))<need)
+#             {
+#               tmp<- indx[which(priority==0)]
+#               need <- need-length(which(priority==0))
+#               tmp<- c(tmp, sample(indx,need))
+#             }
+#             tmp<-indx[sample(which(priority==0),inputs$broodstock$breeder_no-length(out))]
+# 	          }
+# 	        if(sum(priority)<inputs$broodstock$breeder_no)
+# 	        {
+# 	          if(length(priority)>=inputs$broodstock$breeder_no)
+# 	          {
+# 	            tmp<-indx[sample(which(priority==0),inputs$broodstock$breeder_no-length(out))]
+# 	          }
+# 	          #out<-indx[which(priority==1)]
+# 	          #tmp<-which(bank_F[[j]]$tag %in% tags & bank_F[[j]]$times<2)
+# 	          #tmp<-sample(bank_F[[j]]$tag[tmp], min(inputs$broodstock$breeder_no-length(out), length(tmp)))
+# 	          #tmp<-which(tags %in% tmp)
+# 	          #tmp<-indx[tmp]
+# 	          out<-c(out,tmp)
+# 	        }
+	        out<-cbind(out, rep(j,inputs$broodstock$breeder_no))
+	        #out<-cbind(out, rep(j,length(out)))
+	        return(out)
+	      })
+	      BRST_F<-do.call(rbind, BRST_F)
+	      ### UPDATE FEMALE BROODSTOCK BANK
+	      bank_F<-lapply(1:inputs$nreps, function(j)
+	      {
+	        out<-unique(c(bank_F[[j]], TAG_N[BRST_F[which(BRST_F[,2]==j),1],j]))
+	        return(out)
+	      })
+
+	      ## MALES
+	      BRST_M<-lapply(1:inputs$nreps, function(j)
+	      {
+	        indx<-which(SPN_N[,j]==1 & SEX_N[,j]==0)
+	        indx<-sample(indx, min(10, length(indx)))
+	        #indx<-data.frame(row=which(SPN_N[,j]==1 & SEX_N[,j]==0))
+	        #indx$origin<-"N"
+	        #indxH<-data.frame(row=which(SPN_H[,j]==1 & SEX_H[,j]==0))
+	        #indxH$origin<-"H"
+	        #indx<-rbind(indx, indxH)
+	        #indx<-indx[sample(1:nrow(indx)),]
+	        #indx<-indx[sample(1:nrow(indx), min(10, nrow(indx))),]
+	        ### INCLUDE ALL HATCHERY PRODUCED FISH IN BANK_M IF USING ABOVE
+	        tags<-TAG_N[indx,j]
+	        priority<-ifelse(tags %in% bank_M[[j]], 0, 1)
+	        #priority<-ifelse(tags %in% bank_M[[j]]$tag, 0, 1)
+	        out<-indx[sample(which(priority==1), min(inputs$broodstock$breeder_no, sum(priority)))]
+	        if(length(out)==0){out<-rep(NA,inputs$broodstock$breeder_no)}
+	        need<- inputs$broodstock$breeder_no-length(out)
+	        if(need>0)
+	        {
+	          W<-floor(need/length(out))
+	          R<-need-W*length(out)
+	          out<-c(rep(out,W+1), sample(out,R))
+	        }
+	        # if(sum(priority)>=inputs$broodstock$breeder_no)
+	        # {
+	        #   out<-indx[sample(which(priority==1), inputs$broodstock$breeder_no)]
+	        # }
+	        # if(sum(priority)<inputs$broodstock$breeder_no)
+	        # {
+	        #   tmp<-indx[sample(which(priority==0),inputs$broodstock$breeder_no-length(out))]
+	        #   #out<-indx[which(priority==1)]
+	        #   #tmp<-which(bank_M[[j]]$tag %in% tags & bank_M[[j]]$times<2)
+	        #   #tmp<-sample(bank_M[[j]]$tag[tmp], min(inputs$broodstock$breeder_no-length(out), length(tmp)))
+	        #   #tmp<-which(tags %in% tmp)
+	        #   #tmp<-indx[tmp]
+	        #   out<-c(out,tmp)
+	        # }
+	        out<-cbind(out, rep(j,inputs$broodstock$breeder_no))
+	        #out<-cbind(out, rep(j,length(out)))
+	        return(out)
+	      })
+	      BRST_M<-do.call(rbind, BRST_M)
+	      ### UPDATE MALE BROODSTOCK BANK
+	      bank_M<-lapply(1:inputs$nreps, function(j)
+	      {
+	        out<-unique(c(bank_M[[j]], TAG_N[BRST_M[which(BRST_M[,2]==j),1],j]))
+	        return(out)
+	      })
+	      ## STORE INITIAL BROODSTOCK DATA
+	      tmp<-rbind(BRST_F, BRST_M)
+	      tmp<- tmp[!is.na(tmp[,1]),]
+	      BRST_DAT<-data.frame(k=k_N[tmp],
+	                           Linf=Linf_N[tmp],
+	                           Length=LEN_N[tmp],
+	                           Age=AGE_N[tmp],
+	                           Sex=SEX_N[tmp],
+	                           Tag=TAG_N[tmp],
+	                           rep=tmp[,2])
+	      if(weightCalc){BRST_DAT$Weight<-WGT_N[tmp]}
+	      if(inputs$spatial){BRST_DAT$Bend<-BEND_N[tmp]}
+	      ## ZERO OUT BROODSTOCK FISH FROM RIVER POPULATION
+	      Z_N[tmp]<-0
+	      AGE_N[tmp]<-0
+	      LEN_N[tmp]<-0
+	    }
 
 	    # IF JUNE, RECRUITMENT AND SPAWNING MODULES
 	    ### RECRUITMENT AND SPAWNING
-	    if(inputs$recruitmentFreq>0 & m[i]==6)
+	    if(recruitmentFreq>0 & m[i]==6)
 	    {
 	      ### ZERO OUT FISH THAT DIED
 	      MAT_H<-MAT_H*Z_H 
@@ -311,18 +476,28 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      EGGS_N<-EGGS_N*Z_N
 	      
 	      ### AGE-1 RECRUITMENT
-	      #### SURVIVAL FROM AGE-0 TO AGE-1    
-	      AGE_0_N_BND[]<- rbinom(inputs$nreps,
+	      #### SURVIVAL FROM AGE-0 TO AGE-1
+	      AGE_0_N_BND[]<- rbinom(length(AGE_0_N_BND),
 	                             AGE_0_N_BND,
 	                             inputs$phi0)
-	      AGE_0_H_BND[]<- rbinom(inputs$nreps,
-	                             AGE_0_H_BND,
-	                             inputs$phi0) #SHOULD phi0_H DIFFER FROM phi0_N????
+	      if(sum(AGE_0_H$number)>0)
+	      {
+	        AGE_0_H_DAT<- matrix(rbinom(inputs$nreps*nrow(AGE_0_H),
+	                                    AGE_0_H$number,
+	                                    AGE_0_H$survival_est),
+	                             ncol=inputs$nreps,
+	                             nrow=nrow(AGE_0_H))
+	      }
+	      if(sum(AGE_0_H$number)==0)
+	      {
+	        AGE_0_H_DAT<- matrix(0, ncol=inputs$nreps, nrow=1)
+	      }
+	      
 	      #### ADD SURVIVING FISH TO POPULATION
 	      ##### HATCHERY STOCKED FISH
-	      if(sum(AGE_0_H_BND)>0)
+	      if(sum(AGE_0_H_DAT)>0)
 	      {
-	        chk<-min(nrow(Z_H)-colSums(Z_H)-colSums(AGE_0_H_BND))
+	        chk<-min(nrow(Z_H)-colSums(Z_H)-colSums(AGE_0_H_DAT))
 	        if(chk<0)
 	        {
 	          z0<-matrix(0,ncol=ncol(Z_H), nrow=abs(chk))
@@ -344,24 +519,33 @@ sim<- function(inputs=NULL, dyn=NULL,
 	          {
 	            BEND_H<-rbind(BEND_H,z0)
 	          }
+	          if(inputs$genetics)
+	          {
+	            MOM_H<-rbind(MOM_H,z0)
+	            DAD_H<-rbind(DAD_H,z0)
+	          }
+	          if(inputs$hatchery_name)
+	          {
+	            HATCH<-rbind(HATCH,z0)
+	          }
 	        }
 	        # INDEX OF OPEN SLOTS
 	        indxr<- unlist(sapply(1:inputs$nreps,function(x)
 	        {
 	          tmp<-NULL
-	          if(sum(AGE_0_H_BND[,x])>0)
+	          if(sum(AGE_0_H_DAT[,x])>0)
 	          {
-	            tmp<-which(Z_H[,x]==0)[1:sum(AGE_0_H_BND[,x])]
+	            tmp<-which(Z_H[,x]==0)[1:sum(AGE_0_H_DAT[,x])]
 	          }
 	          return(tmp)
 	        }))		
-	        indxr<- cbind(c(indxr),sort(rep(1:inputs$nreps,colSums(AGE_0_H_BND))))
+	        indxr<- cbind(c(indxr),sort(rep(1:inputs$nreps,colSums(AGE_0_H_DAT))))
 	        # ADD NEW 1 YEAR OLD RECRUITS
 	        Z_H[indxr]<-1 
 	        # ADD AGE OF RECRUITS
 	        AGE_H[indxr]<-12 	
 	        # UPDATE GROWTH COEFFICIENTS
-	        tmp<- ini_growth(n=sum(AGE_0_H_BND),
+	        tmp<- ini_growth(n=sum(AGE_0_H_DAT),
 	                         mu_ln_Linf=inputs$ln_Linf_mu,
 	                         mu_ln_k=inputs$ln_k_mu,
 	                         vcv=inputs$vcv,
@@ -374,19 +558,41 @@ sim<- function(inputs=NULL, dyn=NULL,
 	                            inputs$recruit_mean_length,
 	                            inputs$recruit_length_sd)				
 	        ### METHOD 2: LENGTH FROM AGE AND VB GROWTH 
+	        #LEN_H[indxr]<-rnorm(length(indxr[,1]),
+	        #                    rep(rep(AGE_0_H$length_mn,inputs$nreps), 
+	        #                        as.vector(AGE_0_H_DAT)),
+	        #                    rep(rep(AGE_0_H$length_sd,inputs$nreps), 
+	        #                        as.vector(AGE_0_H_DAT)))
+	        #Linf_H[indxr]<-ifelse(LEN_H[indxr]<Linf_H[indxr], 
+	        #                      Linf_H[indxr],
+	        #                      LEN_H[indxr]*1.1)
 	        #LEN_H[indxr]<-dLength(k=k_H[indxr], 
-	        #                           linf=Linf_H[indxr],
-	        #                           length1=7,
-	        #                           dT=1)
+	        #                      linf=Linf_H[indxr],
+	        #                      length1=LEN_H[indxr]
+	        #                      dT=0.5)
 	        # ASSIGN SEX
 	        SEX_H[indxr]<-ini_sex(n=length(indxr[,1]),
 	                              prob_F=inputs$sexratio)
 	        # ASSIGN LOCATION OF RECRUITS
 	        if(inputs$spatial)
 	        {
-	          indxB<-which(AGE_0_H_BND!=0, arr.ind=TRUE)
-	          BEND_H[indxr]<-rep(indxB[,1], AGE_0_H_BND[indxB])
-	        }	
+	          BEND_H[indxr]<-rep(rep(AGE_0_H$bend, inputs$nreps),
+	                             as.vector(AGE_0_H_DAT))
+	          #CAN ADD IN DISPERSAL HERE
+	          #BEND_H[indxr]<- dispersal stuff
+	        }
+	        if(inputs$genetics)
+	        {
+	          MOM_H[indxr]<-rep(rep(AGE_0_H$mother, inputs$nreps),
+	                            as.vector(AGE_0_H_DAT))
+	          DAD_H[indxr]<-rep(rep(AGE_0_H$father, inputs$nreps),
+	                            as.vector(AGE_0_H_DAT))
+	        }
+	        if(inputs$hatchery_name)
+	        {
+	          HATCH[indxr]<-rep(rep(AGE_0_H$hatchery, inputs$nreps),
+	                            as.vector(AGE_0_H_DAT))
+	        }
 	      }
 	      ##### NATURALLY SPAWNED FISH
 	      if(sum(AGE_0_N_BND)>0)
@@ -461,8 +667,10 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      }
 	      #### ZERO OUT AGE-0's AFTER THEY MOVE TO AGE-1
 	      AGE_0_N_BND[]<-0 
-	      AGE_0_H_BND[]<-0	
+	      AGE_0_H_DAT[]<-0
+	      AGE_0_H<-NULL
 	      
+	      ##### NATURAL REPRODUCTION
 	      ### UPDATE THE NUMBER OF EGGS IN A FEMALE 
 	      ### GIVEN SEX AND SPAWNING STATUS
 	      EGGS_H[indx_H]<-fecundity(fl=LEN_H[indx_H],
@@ -555,42 +763,118 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    }
 	    
 	    
-	    # IF SEPTEMBER (OR OTHER STOCKING MONTHS), STOCKING MODULE
-	    if(stockingFreq>0)
+	    # IF JUNE, BROODSTOCK REPRODUCTION 
+	    ### RECRUITMENT AND SPAWNING
+	    if(stockingFreq>0 & m[i]==6)
 	    {
-	      ## PALLID STURGEON STOCKING 
-	      ### STATUS: DONE 
-	      ### NOTE: NEED TO MODIFY TO ALLOW COHORT, PARENT, AND LOCATION INFO
-	      ### PROBABLY MORE EFFICIENT TO RBIND TO REDUCED DATASET RATHER THAN BIG MATRIX OF BENDS
-	      ### COULD DO ONE FOR NATURAL AND HATHCERY AND KEEP TRACK IN LONG FORMAT...
-	      if(any(inputs$fingerling$month==m[i]))
+	      if(inputs$genetics)
 	      {
-	        indx<-which(inputs$fingerling$month==m[i])
-	        if(any(inputs$fingerling$number[indx] > 0))
+	        ##### GENERATE GENETICS STOCKING DATA
+	        ### UPDATE BROODSTOCK LENGTH AND AGE
+	        BRST_DAT$Age<-BRST_DAT$Age+3
+	        BRST_DAT$Length<-dLength(k=BRST_DAT$k,
+	                                 linf=BRST_DAT$Linf,
+	                                 dT=1/4,
+	                                 length1=BRST_DAT$Length)
+	        ### EGGS PRODUCED
+	        BRST_DAT$Eggs<-fecundity(fl=BRST_DAT$Length,
+	                                 a=inputs$fec_a,
+	                                 b=inputs$fec_b,
+	                                 er=inputs$fec_er,
+	                                 sex=BRST_DAT$Sex,
+	                                 spawn=1)
+	        ### RANDOM BREEDING
+	        BROOD<-lapply(1:inputs$nreps, function(j)
 	        {
-	          # ADD NUMBER OF FISH STOCKED IN A BEND
-	          if(!inputs$spatial)
+	          out<-NULL
+	          if(length(which(BRST_DAT$rep==j))==2*inputs$broodstock$breeder_no)
 	          {
-	            AGE_0_H_BND<- AGE_0_H_BND+inputs$fingerling$number[indx]
+	            indxF<-sample(which(BRST_DAT$Sex==1 & BRST_DAT$rep==j),inputs$broodstock$breeder_no)
+	            indxM<-sample(which(BRST_DAT$Sex==0 & BRST_DAT$rep==j),inputs$broodstock$breeder_no)
+	            out<-data.frame(hatchery=sample(c("Neosho", "Gavins"), 
+	                                            inputs$broodstock$breeder_no, replace=TRUE),
+	                            mother=BRST_DAT[indxF,]$Tag,
+	                            father=BRST_DAT[indxM,]$Tag,
+	                            no_offspring=BRST_DAT[indxF,]$Eggs,
+	                            hatchery_survival=plogis(rnorm(inputs$broodstock$breeder_no, 
+	                                                           log(inputs$phi0_Hcap_mean/(1-inputs$phi0_Hcap_mean)),
+	                                                           inputs$phi0_Hcap_er)),
+	                            rep=j)
+	          }
+	          return(out)
+	          #THIS IS GENETICS_INFO$FINGERLINGS MINUS SURVIVAL TO AGE 3 
+	          #MONTHS AND NEXT YEARS GENETICS_INFO$YEARLINGS AFTER 
+	          #FINGERLING STOCKING AND SURVIVAL TO 15 MONTHS
+	        })
+	        BROOD<-do.call("rbind", BROOD)
+	        
+	        ### RELEASE ADULTS BACK INTO POPULATION
+	        chk<-min(nrow(Z_N)-colSums(Z_N)-(2*inputs$broodstock$breeder_no))
+	        if(chk<0)
+	        {
+	          z0<-matrix(0,ncol=ncol(Z_N), nrow=abs(chk))
+	          Z_N<-rbind(Z_N,z0)
+	          AGE_N<-rbind(AGE_N,z0)
+	          MAT_N<-rbind(MAT_N,z0)
+	          MPS_N<-rbind(MPS_N,z0)
+	          SPN_N<-rbind(SPN_N,z0)
+	          SEX_N<-rbind(SEX_N,z0)
+	          EGGS_N<-rbind(EGGS_N,z0)
+	          k_N<-rbind(k_N,z0)
+	          Linf_N<-rbind(Linf_N,z0)
+	          LEN_N<-rbind(LEN_N,z0)
+	          if(weightCalc)
+	          {
+	            WGT_N<-rbind(WGT_N,z0)
 	          }
 	          if(inputs$spatial)
 	          {
-	           AGE_0_H_BND[inputs$fingerling$bend[indx],]<- 
-	              AGE_0_H_BND[inputs$fingerling$bend[indx],]+inputs$fingerling$number[indx]
+	            BEND_N<-rbind(BEND_N,z0)
 	          }
 	        }
-	        rm(indx)
+	        indx0<- lapply(1:inputs$nreps,function(x)
+	        {
+	          tmp<-which(Z_N[,x]==0)[1:length(which(BRST_DAT$rep==x))]
+	          tmp<-cbind(tmp,rep(x,length(which(BRST_DAT$rep==x))))
+	          return(tmp)
+	        })
+	        indx0<-do.call(rbind, indx0) 
+	        indxb<- unlist(lapply(1:inputs$nreps,function(x)
+	        {
+	          tmp<-which(BRST_DAT$rep==x)[1:length(which(indx0[,2]==x))]
+	          tmp<-sample(tmp)
+	          return(tmp)
+	        }))
+	        Z_N[indx0]<-1    
+	        AGE_N[indx0]<-BRST_DAT$Age[indxb] 	
+	        Linf_N[indx0]<-BRST_DAT$Linf[indxb]
+	        k_N[indx0]<-BRST_DAT$k[indxb]
+	        LEN_N[indx0]<-BRST_DAT$Length[indxb]				
+	        SEX_N[indx0]<-BRST_DAT$Sex[indxb]
+	        MAT_N[indx0]<-1
+	        MPS_N[indx0]<-0
+	        SPN_N[indx0]<-1
+	        if(weightCalc){WGT_N[indx0]<-BRST_DAT$Weight[indxb]}
+	        # ASSIGN RELEASE LOCATION AS CAPTURE LOCATION
+	        if(inputs$spatial){BEND_N[indx0]<-BRST_DAT$Bend[indxb]}	
+	        # ZERO OUT BROODSTOCK
+	        BRST_DAT<-NULL
 	      }
-	      
-	      ### YEARLING STOCKING (AGE-1+)
-	      ### STOCK INDIVIDUAL FISH INTO BENDS
-	      ### STATUS: NEEDS TO BE UPDATED FOR SPATIAL
+	    }
+	    
+	    
+	    # IF SEPTEMBER, STOCKING MODULE
+	    ## NEED TO UPDATE IF WANT TO INCLUDE OTHER MONTHS
+	    if(stockingFreq>0 & m[i]==9)
+	    {
+	      ### YEARLING STOCKING (AGE-1)
 	      if(any(inputs$yearling$month==m[i]))
 	      {
-	        indx<-which(inputs$yearling$month==m[i])
-	        if(any(inputs$yearling$number[indx]>0))
+	        yearling<-inputs$yearling[which(inputs$yearling$month==m[i]),]
+	        if(any(yearling$stocking_no>0))
 	        {
-	          chk<-min(nrow(Z_H)-colSums(Z_H)-sum(inputs$yearling$number[indx]))
+	          #### CREATE ENOUGH OPEN SPACE FOR NEW AGE-1 FISH
+	          chk<-min(nrow(Z_H)-colSums(Z_H)-sum(yearling$stocking_no))
 	          if(chk<0)
 	          {
 	            z0<-matrix(0,ncol=ncol(Z_H), nrow=abs(chk))
@@ -612,46 +896,181 @@ sim<- function(inputs=NULL, dyn=NULL,
 	            {
 	              BEND_H<-rbind(BEND_H,z0)
 	            }
+	            if(inputs$genetics)
+	            {
+	              MOM_H<-rbind(MOM_H,z0)
+	              DAD_H<-rbind(DAD_H,z0)
+	            }
+	            if(inputs$hatchery_name)
+	            {
+	              HATCH<-rbind(HATCH,z0)
+	            }
 	          }
-	          ### GET INDEXES OF OPEN SLOTS TO STICK STOCKED INDIVIDUALS
-	          indx_R<- lapply(1:inputs$nreps,
-	                          function(x){out<- which(Z_H[,x]==0)[1:sum(inputs$yearling$number[indx])]}) 
-	          indx_R<- cbind(unlist(indx_R),
-	                         rep(1:inputs$nreps,each=sum(inputs$yearling$number[indx])))
-	        
-	          ### ADD NEWLY STOCKED INDIVIDUALS TO Z_H	
+	          if(inputs$genetics)
+	          {
+	            #### DETERMINE HOW MANY FISH OF EACH GENETIC TYPE TO STOCK
+	            yearling$proportion<-ifelse(sum(inputs$yearling$stocking_no)>0,
+	                                        yearling$stocking_no/
+	                                          sum(inputs$yearling$stocking_no),
+	                                        0)
+	            yearling$desired_no<-floor(yearling$stocking_no/inputs$broodstock$breeder_no)
+	            yearling <- as.data.frame(
+	              lapply(yearling,function(x) rep(x,inputs$nreps)))
+	            yearling$rep<-1:inputs$nreps
+	            yearling<-merge(yearling, 
+	                            BROOD_1[,c("mother", "father", "hatchery", 
+	                                       "rep","yearlings")], 
+	                            by="rep", all=TRUE)
+	            yearling$available_no<-floor(yearling$proportion*yearling$yearlings)
+	            yearling$number<-ifelse(yearling$desired_no<=yearling$available_no,
+	                                    yearling$desired_no,
+	                                    yearling$available_no)
+	            #### GET INDEXES OF OPEN SLOTS TO STICK STOCKED INDIVIDUALS
+	            indx_R<- lapply(1:inputs$nreps,
+	                            function(x){out<- which(Z_H[,x]==0)[1:sum(yearling[which(yearling$rep==x),]$number)]}) 
+	            indx_R<- cbind(unlist(indx_R),
+	                           rep(1:inputs$nreps, sum(yearling[which(yearling$rep==x),]$number)))
+	            
+	          }
+	          if(!inputs$genetics)
+	          {
+	            names(yearling)[3]<-"number"
+	            #### GET INDEXES OF OPEN SLOTS TO STICK STOCKED INDIVIDUALS
+	            indx_R<- lapply(1:inputs$nreps,
+	                            function(x){out<- which(Z_H[,x]==0)[1:sum(yearling$number)]}) 
+	            indx_R<- cbind(unlist(indx_R),
+	                           rep(1:inputs$nreps, sum(yearling$number)))
+	            
+
+	          }
+	          #### ADD IN NEWLY STOCKED INDIVIDUALS	
 	          Z_H[indx_R]<- 1
-	          ### INITIALIZE LENGTH
-	          LEN_H[indx_R]<- rnorm(sum(inputs$yearling$number[indx])*inputs$nreps,
-	                                rep(rep(inputs$yearling$length_mn[indx], 
-	                                        inputs$yearling$number[indx]),
-	                                    inputs$nreps),
-	                                rep(rep(inputs$yearling$length_sd[indx],
-	                                        inputs$yearling$number[indx]),
-	                                    inputs$nreps))
+	          ##### INITIALIZE LENGTH
+	          LEN_H[indx_R]<- rnorm(sum(yearling$number),
+	                                rep(yearling$length_mn, 
+	                                    yearling$number),
+	                                rep(yearling$length_sd,
+	                                    yearling$number))
 	          LEN_H[indx_R]<-ifelse(LEN_H[indx_R]<0, 100, LEN_H[indx_R])
-	        
-	          ### ASSIGN AGE	
-	          AGE_H[indx_R]<- rep(rep(inputs$yearling$age[indx], 
-	                                  inputs$yearling$number[indx]), 
-	                              inputs$nreps) 
-	          ### ASSIGN MATURATION, MPS, AND SPAWNING STATUS 
+	          
+	          ##### AGE	
+	          AGE_H[indx_R]<- rep(yearling$age, yearling$number)
+	          ##### GROWTH COEFFICIENTS
+	          tmp<- ini_growth(n=sum(yearling$number),
+	                           mu_ln_Linf=inputs$ln_Linf_mu,
+	                           mu_ln_k=inputs$ln_k_mu,
+	                           vcv=inputs$vcv,
+	                           maxLinf=inputs$maxLinf) 
+	          Linf_H[indx_R]<-tmp$linf
+	          k_H[indx_R]<-tmp$k
+	          ##### ASSIGN MATURATION, MPS, SPAWNING STATUS, & EGGS
 	          MAT_H[indx_R]<- 0	
 	          MPS_H[indx_R]<- 0 
 	          SPN_H[indx_R]<- 0 
-	        
-	          ### ASSIGN SEX
+	          EGGS_H[indx_R]<- 0 
+	          
+	          ##### ASSIGN SEX
 	          SEX_H[indx_R]<-rbinom(length(indx_R[,1]), 1, p=0.5)
 	          
-	          ### ASSIGN BEND LOCATION
+	          ##### ASSIGN BEND LOCATION
 	          if(inputs$spatial)
 	          {
-	            BEND_H[indx_R]<- rep(rep(inputs$yearling$bend[indx], 
-	                                     inputs$yearling$number[indx]), 
-	                                 inputs$nreps) 
+	            BEND_H[indx_R]<- rep(yearling$bend, yearling$number)
+	          }
+	          ##### ASSIGN PARENTS AND HATCHERY
+	          if(inputs$genetics)
+	          {
+	            MOM_H[indx_R]<-rep(yearling$mother, yearling$number)
+	            DAD_H[indx_R]<-rep(yearling$father, yearling$number)
+	          }
+	          if(inputs$hatchery_name)
+	          {
+	            HATCH[indx_R]<-rep(yearling$hatchery, yearling$number)
 	          }
 	        }
 	      }
+	      ### ZERO OUT AGE-1 FISH IN HATCHERY
+	      BROOD_1<-NULL #OK UNLESS USING MULTIPLE STOCKING MONTHS
+	      yearling<-NULL
+	      ### FINGERLING STOCKING (AGE-0)
+	      #### UPDATE NUMBER OF OFFSPRING AVAILABLE FOR STOCKING
+	      if(inputs$genetics)
+	      {
+	        BROOD$fingerlings<-rbinom(nrow(BROOD), 
+	                                  BROOD$no_offspring, 
+	                                  (BROOD$hatchery_survival)^(1/4))
+	      }
+	      #### DETERMINE NUMBER OF FISH STOCKED IN EACH BEND
+	      if(any(inputs$fingerling$month==m[i]))
+	      {
+	        fingerling<-inputs$fingerling[which(inputs$fingerling$month==m[i]),]
+	        if(inputs$genetics)
+	        { 
+	          if(any(fingerling$stocking_no>0))
+	          {
+	            fingerling$proportion<-ifelse(sum(inputs$fingerling$stocking_no)>0,
+	                                          fingerling$stocking_no/
+	                                          sum(inputs$fingerling$stocking_no),
+	                                          0)
+	            fingerling$desired_no<-floor(fingerling$stocking_no/inputs$broodstock$breeder_no)
+	            fingerling <- as.data.frame(
+	              lapply(fingerling,function(x) rep(x,inputs$nreps)))
+	            fingerling$rep<-1:inputs$nreps
+	            ### STOCKED AGE-0's
+	            AGE_0_H<-merge(fingerling, 
+	                           BROOD[,c("mother", "father", "hatchery", 
+	                                    "rep","fingerlings")], 
+	                           by="rep", all=TRUE)
+	            AGE_0_H$available_no<-floor(AGE_0_H$proportion*
+	                                          AGE_0_H$fingerlings)
+	            AGE_0_H$number<-ifelse(AGE_0_H$desired_no<=AGE_0_H$available_no,
+	                                   AGE_0_H$desired_no,
+	                                   AGE_0_H$available_no)
+	            AGE_0_H$survival_est<-plogis(rnorm(nrow(AGE_0_H), 
+	                                               log(AGE_0_H$phi0_mn/(1-AGE_0_H$phi0_mn)),
+	                                               AGE_0_H$phi0_sd))
+	            ### NEXT YEAR's AVAILABLE YEARLINGS FOR STOCKING
+	            # OKAY IF ONLY 1 MONTH; NEEDS  UPDATING FOR MULTIPLE MONTHS
+	            BROOD_1<-aggregate(number~mother+father+hatchery+rep, AGE_0_H, sum)
+	            names(BROOD_1)[5]<-"stocked"
+	            BROOD_1<-merge(BROOD_1, BROOD[,c("mother", "father", "hatchery", 
+	                                             "rep", "fingerlings")],
+	                           by=c("mother", "father", "hatchery", "rep"),
+	                           all.x=TRUE)
+	            BROOD_1$hatchery_survival<-plogis(rnorm(nrow(BROOD_1), 
+	                                                    log(inputs$yearling$phi_mn/(1-inputs$yearling$phi_mn)),
+	                                                    inputs$yearling$phi_sd))
+	            BROOD_1$yearlings<-rbinom(nrow(BROOD_1),
+	                                      BROOD_1$fingerlings-BROOD_1$stocked,
+	                                      BROOD_1$hatchery_survival)
+	          }
+	          if(all(fingerling$stocking_no==0))
+	          {
+	            ### STOCKED AGE-0's
+	            AGE_0_H<-data.frame(number=0)
+	            ### NEXT YEAR's AVAILABLE YEARLINGS FOR STOCKING
+	            # OKAY IF ONLY 1 MONTH; NEEDS  UPDATING FOR MULTIPLE MONTHS
+	            BROOD_1<-BROOD[,c("mother", "father", "hatchery", "rep", 
+	                              "fingerlings")]
+	            BROOD_1$hatchery_survival<-plogis(rnorm(nrow(BROOD_1), 
+	                                                    log(inputs$yearling$phi_mn/(1-inputs$yearling$phi_mn)),
+	                                                    inputs$yearling$phi_sd))
+	            BROOD_1$yearlings<-rbinom(nrow(BROOD_1),
+	                                      BROOD_1$fingerlings,
+	                                      BROOD_1$hatchery_survival)
+	          }
+	          ### ZERO OUT AGE-0 BROODSTOCK DATA
+	          # OKAY IF ONLY 1 MONTH; NEEDS  UPDATING FOR MULTIPLE MONTHS
+	          BROOD<-NULL
+	          fingerling<-NULL
+	        }
+	        if(!inputs$genetics)
+	        {
+	          ### STOCKED AGE-0's
+	          AGE_0_H<-data.frame(number=sum(fingerling$stocking_no))
+	        }
+	      }
+	
 	    }
 	    
 	    ### UPDATE INDICES FOR FISH THAT ARE ALIVE; INCLUDING RECRUITS
@@ -767,6 +1186,49 @@ sim<- function(inputs=NULL, dyn=NULL,
 	                            length(indx_R[[x]])
 	                          })
 	    
+	    if(inputs$genetics & m[i]==12)
+	    {
+	      ### UPDATE YEAR COUNT
+	      indxY<-indxY+1
+	      ### ZERO OUT FISH THAT DIED
+	      MAT_H<-MAT_H*Z_H 
+	      ### CALCULATE EFFECTIVE POPULATION SIZE
+	      EffectivePop<-lapply(1:inputs$nreps, function(x)
+	      {
+	        tmp<-aggregate(MAT_H[,x], by=list(id=MOM_H[,x]), sum)
+	        if(any(tmp$id=="0"))
+	        {
+	          tmp<- tmp[-which(tmp$id=="0"),]
+	        }
+	        mu_f <- mean(tmp[,2])
+	        V_f <- var(tmp[,2])
+	        N_f <- nrow(tmp)
+	        out <- (N_f*mu_f-1)/(mu_f-1+V_f/mu_f) #Saltzgiver Eqn. 4
+	        return(data.frame(N_ef=out, rep=x))
+	      })
+	      EffectivePop<-do.call(rbind, EffectivePop)
+	      
+	      N_em<-lapply(1:inputs$nreps, function(x)
+	      {
+	        tmp<-aggregate(MAT_H[,x], by=list(id=DAD_H[,x]), sum)
+	        if(any(tmp$id=="0"))
+	        {
+	          tmp<- tmp[-which(tmp$id=="0"),]
+	        }
+	        mu_m <- mean(tmp[,2])
+	        V_m <- var(tmp[,2])
+	        N_m <- nrow(tmp)
+	        out <- (N_m*mu_m-1)/(mu_m-1+V_m/mu_m) #Saltzgiver Eqn. 5
+	        return(data.frame(N_em=out, rep=x))
+	      })
+	      N_em<-do.call(rbind, N_em)
+	      EffectivePop<-merge(EffectivePop, N_em, by="rep")
+	      EffectivePop$N_e <- 4*EffectivePop$N_ef*EffectivePop$N_em/
+	        (EffectivePop$N_ef+EffectivePop$N_em)  #Saltzgiver Eqn. 6
+	      EffectivePop<-EffectivePop[order(EffectivePop$rep),]
+	      N_e[indxY,]<-EffectivePop$N_e
+	    }
+	    
 	    ### SIZE STRUCTURE
 	    if(inputs$sizeStructure==TRUE)
 	    {
@@ -844,6 +1306,10 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    out$bend_H_initial<- N_BND_HAT_INI
 	    out$bend_N_post<- N_BND_NAT_POST
 	    out$bend_H_post<- N_BND_HAT_POST
+	  }
+	  if(inputs$genetics)
+	  {
+	    out$N_e <- N_e
 	  }
 	}
 	if(demographicOnly)

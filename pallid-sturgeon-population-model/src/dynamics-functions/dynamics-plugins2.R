@@ -173,7 +173,7 @@ freeEmbryoDrift<- function(bendAbund=NULL,
 {
   ## ERROR CHECK
   if(nrow(driftMatrix)!=nrow(bendAbund) 
-     | ncol(driftMatrix)!=(ncol(bendAbund)+1))
+     | ncol(driftMatrix)!=(nrow(bendAbund)+1))
   {
     return(print("driftMatrix must have 1 row for every bend, 1 column
                  for every bend, plus a last additional column with the 
@@ -188,6 +188,7 @@ freeEmbryoDrift<- function(bendAbund=NULL,
     return(new)
   })
   out<-Reduce('+', out)# combine drifting recruits from each spawning location
+  if(is.null(out)){out<-matrix(0,nrow=nrow(bendAbund)+1,ncol=ncol(bendAbund))}
   return(out[-nrow(out),])
 }
 
