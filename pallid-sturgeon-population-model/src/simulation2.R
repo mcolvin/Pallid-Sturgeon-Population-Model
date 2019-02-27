@@ -143,6 +143,15 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  AGE_0_N_BND<-dyn$AGE_0_N_BND
 	  AGE_0_H<-inputs$hatchery_age0
 	  
+	  if(inputs$spatial | inputs$migration)
+	  {
+	    BEND_N <- dyn$BEND_N
+	    BEND_H <- dyn$BEND_H
+	  }
+	  
+	  inBasinH<-1
+	  inBasinN<-1
+	  
 	  if(inputs$genetics)
 	  {
 	    MOM_H<-dyn$MOM_H
@@ -158,14 +167,36 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  }
 	  
 	  m<-dyn$m
+
 	  
+	  #rm(list='dyn')	
+	  
+	  # SET UP SUMMARIES
+	  RECRUITS<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	  
+	  MEANLENGTH_N<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	  MEANLENGTH_H<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	  MEANLENGTH<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	  
+	  if(weightCalc)
+	  {
+	    MEANWEIGHT_N<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	    MEANWEIGHT_H<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	    MEANWEIGHT<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	      ## THIS CAN BE CALCULATED FROM OTHER STORED ITEMS
+	    
+	    BIOMASS_N<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	    BIOMASS_H<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	    BIOMASS<-matrix(0,nrow=length(m),ncol=inputs$nreps)
+	      ## THIS CAN BE CALCULATED FROM BIOMASS_N AND BIOMASS_H
+	  }
+	  
+	  N_NAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
+	  N_HAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
 	  
 	  if(inputs$spatial)
 	  {
-	    BEND_N <- dyn$BEND_N
-	    BEND_H <- dyn$BEND_H
-	    
-	    # INITIAL SUMMARIES
+	    # INITIAL BEND ABUNDANCE
 	    N_BND_HAT_INI<- aggregate(Z_H[,1], by=list(id=BEND_H[,1]), sum)
 	    names(N_BND_HAT_INI)[2]<-"rep_1"
 	    for(i in 2:inputs$nreps)
@@ -200,32 +231,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	                           ncol=inputs$nreps)
 	    N_BND_NAT_INI[is.na(N_BND_NAT_INI)]<-0
 	  }
-	  
-	  #rm(list='dyn')	
-	  
-	  # SET UP SUMMARIES
-	  RECRUITS<-matrix(0,nrow=length(m),ncol=inputs$nreps)
-	  
-	  MEANLENGTH_N<-matrix(0,nrow=length(m),ncol=inputs$nreps)
-	  MEANLENGTH_H<-matrix(0,nrow=length(m),ncol=inputs$nreps)
-	  MEANLENGTH<-matrix(0,nrow=length(m),ncol=inputs$nreps)
-	  
-	  if(weightCalc)
-	  {
-	    MEANWEIGHT_N<-matrix(0,nrow=length(m),ncol=inputs$nreps)
-	    MEANWEIGHT_H<-matrix(0,nrow=length(m),ncol=inputs$nreps)
-	    MEANWEIGHT<-matrix(0,nrow=length(m),ncol=inputs$nreps)
-	      ## THIS CAN BE CALCULATED FROM OTHER STORED ITEMS
-	    
-	    BIOMASS_N<-matrix(0,nrow=length(m),ncol=inputs$nreps)
-	    BIOMASS_H<-matrix(0,nrow=length(m),ncol=inputs$nreps)
-	    BIOMASS<-matrix(0,nrow=length(m),ncol=inputs$nreps)
-	      ## THIS CAN BE CALCULATED FROM BIOMASS_N AND BIOMASS_H
-	  }
-	  
-	  N_NAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
-	  N_HAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
-	  
+
 	  if(inputs$genetics)
 	  {
 	    N_e<- matrix(0,nrow=length(which(m==12)),ncol=inputs$nreps)
@@ -327,28 +333,37 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      ## FEMALES
 	      BRST_F<-lapply(1:inputs$nreps, function(j)
 	      {
+	        # NATURAL ORIGIN FEMALE SPAWNERS
 	        indx<-which(SPN_N[,j]==1 & SEX_N[,j]==1)
-	        indx<-sample(indx, min(10, length(indx)))
-	        #indx<-data.frame(row=which(SPN_N[,j]==1 & SEX_N[,j]==1))
-	        #indx$origin<-"N"
-	        #indxH<-data.frame(row=which(SPN_H[,j]==1 & SEX_H[,j]==1))
-	        #indxH$origin<-"H"
-	        #indx<-rbind(indx, indxH)
-	        #indx<-indx[sample(1:nrow(indx)),]
-	        #indx<-indx[sample(1:nrow(indx), min(10, nrow(indx))),]
-	        ### INCLUDE ALL HATCHERY PRODUCED FISH IN BANK_F IF USING ABOVE
-	        ### AND NEED TO ADJUST HOW INFO IS PULLED FROM MATRICES
+	        if(inputs$migration)
+	        {
+	          indx<-intersect(indx, which(BND_N[,j]<=inputs$n_bends))
+	        }
+	        # FEMALE CATCH
+	        indx<-sample(indx, rbinom(1, length(indx), inputs$broodstock$cp))
+	        # WHICH FEMALES HAVE NOT BEEN BRED BEFORE
 	        tags<-TAG_N[indx,j]
 	        priority<-ifelse(tags %in% bank_F[[j]], 0, 1)
-	        #priority<-ifelse(tags %in% bank_F[[j]]$tag, 0, 1)
-	        out<-indx[sample(which(priority==1), min(inputs$broodstock$breeder_no, sum(priority)))]
-	        if(length(out)==0){out<-rep(NA,inputs$broodstock$breeder_no)}
-	        need<- inputs$broodstock$breeder_no-length(out)
-	        if(need>0)
+	        # USE ONLY FISH THAT WERE NOT PREVIOUSLY BRED
+	        ## ENOUGH NEW CATCH TO SATISFY GOAL
+	        if(sum(priority)>inputs$broodstock$breeder_no)
 	        {
-	          W<-floor(need/length(out))
-	          R<-need-W*length(out)
-	          out<-c(rep(out,W+1), sample(out,R))
+	          out<-indx[sample(which(priority==1),inputs$broodstock$breeder_no)]
+	        }
+	        ## NOT ENOUGH NEW CATCH TO SATISFY GOAL
+	        if(sum(priority)<=inputs$broodstock$breeder_no)
+	        {
+	          out<-indx
+	          # NO FISH AVAILABLE
+	          if(length(out)==0){out<-rep(NA,inputs$broodstock$breeder_no)}
+	          # USE AVAILABLE NEW BREEDERS IN MULTIPLE FAMILY LOTS
+	          need<- inputs$broodstock$breeder_no-length(out)
+	          if(need>0)
+	          {
+	            W<-floor(need/length(out))
+	            R<-need-W*length(out)
+	            out<-c(rep(out,W+1), sample(out,R))
+	          }
 	        }
 #           if(length(priority)<inputs$broodstock$breeder_no)
 # 	        {
@@ -393,42 +408,38 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      ## MALES
 	      BRST_M<-lapply(1:inputs$nreps, function(j)
 	      {
+	        # NATURAL ORIGIN MALE SPAWNERS
 	        indx<-which(SPN_N[,j]==1 & SEX_N[,j]==0)
-	        indx<-sample(indx, min(10, length(indx)))
-	        #indx<-data.frame(row=which(SPN_N[,j]==1 & SEX_N[,j]==0))
-	        #indx$origin<-"N"
-	        #indxH<-data.frame(row=which(SPN_H[,j]==1 & SEX_H[,j]==0))
-	        #indxH$origin<-"H"
-	        #indx<-rbind(indx, indxH)
-	        #indx<-indx[sample(1:nrow(indx)),]
-	        #indx<-indx[sample(1:nrow(indx), min(10, nrow(indx))),]
-	        ### INCLUDE ALL HATCHERY PRODUCED FISH IN BANK_M IF USING ABOVE
+	        if(inputs$migration)
+	        {
+	          indx<-intersect(indx, which(BND_N[,j]<=inputs$n_bends))
+	        }
+	        # MALE CATCH
+	        indx<-sample(indx, rbinom(1, length(indx), inputs$broodstock$cp))
+	        # WHICH MALES HAVE NOT BEEN BRED BEFORE
 	        tags<-TAG_N[indx,j]
 	        priority<-ifelse(tags %in% bank_M[[j]], 0, 1)
-	        #priority<-ifelse(tags %in% bank_M[[j]]$tag, 0, 1)
-	        out<-indx[sample(which(priority==1), min(inputs$broodstock$breeder_no, sum(priority)))]
-	        if(length(out)==0){out<-rep(NA,inputs$broodstock$breeder_no)}
-	        need<- inputs$broodstock$breeder_no-length(out)
-	        if(need>0)
+	        # USE ONLY FISH THAT WERE NOT PREVIOUSLY BRED
+	        ## ENOUGH NEW CATCH TO SATISFY GOAL
+	        if(sum(priority)>inputs$broodstock$breeder_no)
 	        {
-	          W<-floor(need/length(out))
-	          R<-need-W*length(out)
-	          out<-c(rep(out,W+1), sample(out,R))
+	          out<-indx[sample(which(priority==1),inputs$broodstock$breeder_no)]
 	        }
-	        # if(sum(priority)>=inputs$broodstock$breeder_no)
-	        # {
-	        #   out<-indx[sample(which(priority==1), inputs$broodstock$breeder_no)]
-	        # }
-	        # if(sum(priority)<inputs$broodstock$breeder_no)
-	        # {
-	        #   tmp<-indx[sample(which(priority==0),inputs$broodstock$breeder_no-length(out))]
-	        #   #out<-indx[which(priority==1)]
-	        #   #tmp<-which(bank_M[[j]]$tag %in% tags & bank_M[[j]]$times<2)
-	        #   #tmp<-sample(bank_M[[j]]$tag[tmp], min(inputs$broodstock$breeder_no-length(out), length(tmp)))
-	        #   #tmp<-which(tags %in% tmp)
-	        #   #tmp<-indx[tmp]
-	        #   out<-c(out,tmp)
-	        # }
+	        ## NOT ENOUGH NEW CATCH TO SATISFY GOAL
+	        if(sum(priority)<=inputs$broodstock$breeder_no)
+	        {
+	          out<-indx
+	          # NO FISH AVAILABLE
+	          if(length(out)==0){out<-rep(NA,inputs$broodstock$breeder_no)}
+	          # USE AVAILABLE NEW BREEDERS IN MULTIPLE FAMILY LOTS
+	          need<- inputs$broodstock$breeder_no-length(out)
+	          if(need>0)
+	          {
+	            W<-floor(need/length(out))
+	            R<-need-W*length(out)
+	            out<-c(rep(out,W+1), sample(out,R))
+	          }
+	        }
 	        out<-cbind(out, rep(j,inputs$broodstock$breeder_no))
 	        #out<-cbind(out, rep(j,length(out)))
 	        return(out)
@@ -458,7 +469,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      LEN_N[tmp]<-0
 	    }
 
-	    # IF JUNE, RECRUITMENT AND SPAWNING MODULES
+	    # IF JUNE, RECRUITMENT AND NATURAL SPAWNING MODULES
 	    ### RECRUITMENT AND SPAWNING
 	    if(recruitmentFreq>0 & m[i]==6)
 	    {
@@ -518,7 +529,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	          {
 	            WGT_H<-rbind(WGT_H,z0)
 	          }
-	          if(inputs$spatial)
+	          if(inputs$spatial | inputs$migration)
 	          {
 	            BEND_H<-rbind(BEND_H,z0)
 	          }
@@ -577,6 +588,10 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        SEX_H[indxr]<-ini_sex(n=length(indxr[,1]),
 	                              prob_F=inputs$sexratio)
 	        # ASSIGN LOCATION OF RECRUITS
+	        if(!inputs$spatial & inputs$migration)
+	        {
+	          BEND_H[indxr]<-1
+	        }
 	        if(inputs$spatial)
 	        {
 	          BEND_H[indxr]<-rep(rep(AGE_0_H$bend, inputs$nreps),
@@ -618,7 +633,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	          {
 	            WGT_N<-rbind(WGT_N,z0)
 	          }
-	          if(inputs$spatial)
+	          if(inputs$spatial | inputs$migration)
 	          {
 	            BEND_N<-rbind(BEND_N,z0)
 	          }
@@ -660,6 +675,10 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        SEX_N[indxr]<-ini_sex(n=length(indxr[,1]),
 	                              prob_F=inputs$sexratio)
 	        # ASSIGN LOCATION OF RECRUITS
+	        if(!inputs$spatial & inputs$migration)
+	        {
+	          BEND_N[indxr]<-1
+	        }	
 	        if(inputs$spatial)
 	        {
 	          indxB<-which(AGE_0_N_BND!=0, arr.ind=TRUE)
@@ -671,28 +690,28 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      ##### NATURALLY SPAWNED FISH OUTSIDE OF FLOWING MISSOURI RIVER
 	      if(sum(AGE_0_N_OUT)>0)
 	      {
-          # AGE-1's FOR EACH REPLICATE
+          # BATCH AGE-1's FOR EACH REPLICATE
 	        tmp<-merge(data.frame(Origin=0, # 1 FOR HATCHERY, 0 FOR NATURAL
-	                              Age=12, dT=0), 
-	                   data.frame(Rep=rep(1:inputs$nreps, 
-	                                      colSums(AGE_0_N_OUT))))
-	        # ADD GROWTH COEFFICIENTS
-	        tmp2<- ini_growth(n=nrow(tmp),
-	                          mu_ln_Linf=inputs$ln_Linf_mu,
-	                          mu_ln_k=inputs$ln_k_mu,
-	                          vcv=inputs$vcv,
-	                          maxLinf=inputs$maxLinf) 
-	        tmp$Linf<-tmp2$linf
-	        tmp$k<-tmp2$k
-	        # ADD  INITIAL LENGTHS
-	        ## METHOD 1: LENGTH DISTRIBUTION (SEE ABOVE FOR METHOD 2)
-	        tmp$Length<-rnorm(nrow(tmp),
-	                          inputs$recruit_mean_length,
-	                          inputs$recruit_length_sd)				
-	        # ASSIGN SEX
-	        tmp$Sex<-ini_sex(n=nrow(tmp),
-	                         prob_F=inputs$sexratio)
-	        MIGRANT_FISH<-rbind.fill(MIGRANT_FISH, tmp)
+	                              Age=12), 
+	                   data.frame(Number=AGE_0_N_OUT[1,],
+	                              Rep=1:inputs$nreps))
+	        # # ADD GROWTH COEFFICIENTS
+	        # tmp2<- ini_growth(n=nrow(tmp),
+	        #                   mu_ln_Linf=inputs$ln_Linf_mu,
+	        #                   mu_ln_k=inputs$ln_k_mu,
+	        #                   vcv=inputs$vcv,
+	        #                   maxLinf=inputs$maxLinf) 
+	        # tmp$Linf<-tmp2$linf
+	        # tmp$k<-tmp2$k
+	        # # ADD  INITIAL LENGTHS
+	        # ## METHOD 1: LENGTH DISTRIBUTION (SEE ABOVE FOR METHOD 2)
+	        # tmp$Length<-rnorm(nrow(tmp),
+	        #                   inputs$recruit_mean_length,
+	        #                   inputs$recruit_length_sd)				
+	        # # ASSIGN SEX
+	        # tmp$Sex<-ini_sex(n=nrow(tmp),
+	        #                  prob_F=inputs$sexratio)
+	        DRIFT_FISH<-rbind.fill(DRIFT_FISH, tmp)
 	      }
 	      #### ZERO OUT AGE-0's AFTER THEY MOVE TO AGE-1
 	      AGE_0_N_BND[]<-0
@@ -703,18 +722,23 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      ##### NATURAL REPRODUCTION
 	      ### UPDATE THE NUMBER OF EGGS IN A FEMALE 
 	      ### GIVEN SEX AND SPAWNING STATUS
+	      if(inputs$migration)
+	      {
+	        inBasinH<-ifelse(BEND_H[indx_H] %in% 1:inputs$n_bends, 1, 0)
+	        inBasinN<-ifelse(BEND_N[indx_N] %in% 1:inputs$n_bends, 1, 0)
+	      }
 	      EGGS_H[indx_H]<-fecundity(fl=LEN_H[indx_H],
 	                                a=inputs$fec_a,
 	                                b=inputs$fec_b,
 	                                er=inputs$fec_er,
 	                                sex=SEX_H[indx_H],
-	                                spawn=SPN_H[indx_H])	
+	                                spawn=SPN_H[indx_H])*inBasinH
 	      EGGS_N[indx_N]<-fecundity(fl=LEN_N[indx_N],
 	                                a=inputs$fec_a,
 	                                b=inputs$fec_b,
 	                                er=inputs$fec_er,
 	                                sex=SEX_N[indx_N],
-	                                spawn=SPN_N[indx_N])
+	                                spawn=SPN_N[indx_N])*inBasinN
 	      
 	      ## NUMBER OF EGGS
 	      if(!inputs$spatial)
@@ -1023,7 +1047,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        }
 	      }
 	      ### ZERO OUT AGE-1 FISH IN HATCHERY
-	      BROOD_1<-NULL #OK UNLESS USING MULTIPLE STOCKING MONTHS
+	      BROOD_1<-NULL #OK UNLESS USING MULTIPLE STOCKING MONTHS OR AGES ABOVE AGE-1
 	      yearling<-NULL
 	      ### FINGERLING STOCKING (AGE-0)
 	      #### UPDATE NUMBER OF OFFSPRING AVAILABLE FOR STOCKING
@@ -1121,9 +1145,13 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    
 	    
 	    # MOVEMENT:  UPDATE LOCATION
-	    if(!inputs$spatial)
+	    if(!inputs$spatial & inputs$migration)
 	    {
-	      #BASIC MIGRATION HERE
+	      ### ZERO OUT FISH THAT DIED
+	      BEND_H<- BEND_H*Z_H
+	      BEND_N<- BEND_N*Z_N
+	      ### DETERMINE NEW FISH LOCATION
+	      
 	    }
 	    if(inputs$spatial)
 	    {	
@@ -1134,27 +1162,16 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      ### DEPENDING ON WHAT BEND FISH IS IN
 	      ### AND IF FISH IS SPAWNING
 	      ### STATUS:  DONE BUT SLOW
-	      BEND_H[indx_H]<- adultMovement(
-	        previousLocation=BEND_H[indx_H],
-	        month=m[i],
-	        spn=SPN_H[indx_H],
-	        fromToMatrix=inputs$adult_mov_prob,
-	        spnMatrix=inputs$spn_mov_prob)
-	      BEND_N[indx_N]<- adultMovement(
-	        previousLocation=BEND_N[indx_N],
-	        month=m[i],
-	        spn=SPN_N[indx_N],
-	        fromToMatrix=inputs$adult_mov_prob,
-	        spnMatrix=inputs$spn_mov_prob)
-	      if(inputs$migration)
-	      {
-	        indx_M<-which(BEND_N[indx])
-	        ### WHY DON'T WE JUST TRACK THEM AS IN A NEW BEND BUT EXCLUDE THEM FROM
-	        ### SUMMARIES
-	        ### THIS WON'T COVER ADDITIONAL MIGRANTS OUTSIDE OF THOSE STARTING, BUT 
-	        ### THIS COULD BE ADDED ON AS A GROUP???   DEPENDS ON WHAT WE CARE ABOUT
-	        ### TRACKING, E.G. GENETICS
-	      }
+	      BEND_H[indx_H]<- adultMovement(previousLocation=BEND_H[indx_H],
+	                                     month=m[i],
+	                                     spn=SPN_H[indx_H],
+	                                     fromToMatrix=inputs$adult_mov_prob,
+	                                     spnMatrix=inputs$spn_mov_prob)
+	      BEND_N[indx_N]<- adultMovement(previousLocation=BEND_N[indx_N],
+	                                     month=m[i],
+	                                     spn=SPN_N[indx_N],
+	                                     fromToMatrix=inputs$adult_mov_prob,
+	                                     spnMatrix=inputs$spn_mov_prob)
 	    }
 	    
 	    
@@ -1177,12 +1194,19 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      WGT_H<- WGT_H*Z_H
 	      WGT_N<- WGT_N*Z_N
 	      
-	      ### UPDATE LIVING FISH
-	      WGT_H[indx_H]<-dWeight(len=LEN_H[indx_H],
+	      ### UPDATE LIVING FISH WITHIN BASIN
+	      indxH<-indx_H
+	      indxN<-indx_N
+	      if(inputs$migration)
+	      {
+	        indxH<-indx_H[which(BEND_H[indx_H] %in% 1:inputs$n_bends),]
+	        indxN<-indx_N[which(BEND_N[indx_N] %in% 1:inputs$n_bends),]
+	      }
+	      WGT_H[indxH]<-dWeight(len=LEN_H[indxH],
 	                             a=inputs$a,
 	                             b=inputs$b,
 	                             er=inputs$lw_er)
-	      WGT_N[indx_N]<-dWeight(len=LEN_N[indx_N],
+	      WGT_N[indxN]<-dWeight(len=LEN_N[indxN],
 	                             a=inputs$a,
 	                             b=inputs$b,
 	                             er=inputs$lw_er)
@@ -1192,30 +1216,43 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    
 	    ## SUMMARIES 
 	    ### ABUNDANCE AGE-1+
-	    N_NAT[i,]<-colSums(Z_N) 
-	    N_HAT[i,]<-colSums(Z_H) 
+	    if(inputs$migration)
+	    {
+	      inBasinH<-sapply(1:inputs$nreps, function(x)
+	      {
+	        out<-ifelse(BEND_H[,x] %in% 1:inputs$n_bends, 1, 0)
+	        return(out)
+	      })
+	      inBasinN<-sapply(1:inputs$nreps, function(x)
+	      {
+	        out<-ifelse(BEND_N[,x] %in% 1:inputs$n_bends, 1, 0)
+	        return(out)
+	      }) 
+	    }
+	    N_NAT[i,]<-colSums(Z_N*inBasinN) 
+	    N_HAT[i,]<-colSums(Z_H*inBasinH) 
 	    
 	    if(weightCalc)
 	    {
 	      ### BIOMASS IN KILOGRAMS
-	      BIOMASS_N[i,]<- colSums(WGT_N)/1000
-	      BIOMASS_H[i,]<- colSums(WGT_H)/1000
-	      BIOMASS[i,]<- (colSums(WGT_H)+colSums(WGT_N))/1000 
+	      BIOMASS_N[i,]<- colSums(WGT_N*inBasinN)/1000
+	      BIOMASS_H[i,]<- colSums(WGT_H*inBasinH)/1000
+	      BIOMASS[i,]<- (colSums(WGT_H*inBasinH)+colSums(WGT_N*inBasinN))/1000 
 	        ## THIS CAN BE CALCULATED FROM BIOMASS_N AND BIOMASS_H
 	    
 	      ### MEAN WEIGHT IN KILOGRAMS
-	      MEANWEIGHT_N[i,]<- (colSums(WGT_N)/colSums(Z_N))/1000 
-	      MEANWEIGHT_H[i,]<- (colSums(WGT_H)/colSums(Z_H))/1000 
-	      MEANWEIGHT[i,]<-((colSums(WGT_H)+colSums(WGT_N))/(colSums(Z_H)+colSums(Z_N)))/1000 
+	      MEANWEIGHT_N[i,]<- (colSums(WGT_N*inBasinN)/colSums(Z_N*inBasinN))/1000 
+	      MEANWEIGHT_H[i,]<- (colSums(WGT_H*inBasinH)/colSums(Z_H*inBasinH))/1000 
+	      MEANWEIGHT[i,]<-((colSums(WGT_H*inBasinH)+colSums(WGT_N*inBasinN))/(colSums(Z_H*inBasinH)+colSums(Z_N*inBasinN)))/1000 
 	      ## THIS CAN BE CALCULATED FROM MEANWEIGHT_N, MEANWEIGHT_H, 
 	      ##    N_NAT, AND N_HAT:
 	      ## (MEANWEIGHT_N*N_NAT+MEANWEIGHT_H*N_HAT)/(N_NAT+N_HAT) 
 	    }
 	    
 	    ### MEAN LENGTH IN MM
-	    MEANLENGTH_N[i,]<- colSums(LEN_N)/colSums(Z_N)	
-	    MEANLENGTH_H[i,]<- colSums(LEN_H)/colSums(Z_H)
-	    MEANLENGTH[i,]<-(colSums(LEN_H)+ colSums(LEN_N))/(colSums(Z_H)+colSums(Z_N))
+	    MEANLENGTH_N[i,]<- colSums(LEN_N*inBasinN)/colSums(Z_N*inBasinN)	
+	    MEANLENGTH_H[i,]<- colSums(LEN_H*inBasinH)/colSums(Z_H*inBasinH)
+	    MEANLENGTH[i,]<-(colSums(LEN_H*inBasinH)+ colSums(LEN_N*inBasinN))/(colSums(Z_H*inBasinH)+colSums(Z_N*inBasinN))
 	    ## THIS CAN BE CALCULATED FROM MEANLENGTH_N, MEANLENGTH_H, 
 	    ##    N_NAT, AND N_HAT:
 	    ## (MEANLENGTH_N*N_NAT+MEANLENGTH_H*N_HAT)/(N_NAT+N_HAT) 
@@ -1223,7 +1260,14 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    ### AGE-1 RECRUITS; NATURAL ORIGIN
 	    indx_R<- lapply(1:inputs$nreps,function(x)
 	    {
-	      out<- which(AGE_N[,x]>0 & AGE_N[,x]<24 & Z_N[,x]==1)
+	      if(!inputs$migration)
+	      {
+	        out<- which(AGE_N[,x]>0 & AGE_N[,x]<24 & Z_N[,x]==1)
+	      }
+	      if(inputs$migration)
+	      {
+	        out<- which(AGE_N[,x]>0 & AGE_N[,x]<24 & Z_N[,x]==1 & inBasinN[,x]==1)
+	      }
 	    }) 		
 	    RECRUITS[i,]<- sapply(1:inputs$nreps,
 	                          function(x)
@@ -1240,7 +1284,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      ### CALCULATE EFFECTIVE POPULATION SIZE
 	      EffectivePop<-lapply(1:inputs$nreps, function(x)
 	      {
-	        tmp<-aggregate(MAT_H[,x], by=list(id=MOM_H[,x]), sum)
+	        tmp<-aggregate(MAT_H[,x]*inBasinH[,x], by=list(id=MOM_H[,x]), sum)
 	        if(any(tmp$id=="0"))
 	        {
 	          tmp<- tmp[-which(tmp$id=="0"),]
@@ -1255,7 +1299,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      
 	      N_em<-lapply(1:inputs$nreps, function(x)
 	      {
-	        tmp<-aggregate(MAT_H[,x], by=list(id=DAD_H[,x]), sum)
+	        tmp<-aggregate(MAT_H[,x]*inBasinH[,x], by=list(id=DAD_H[,x]), sum)
 	        if(any(tmp$id=="0"))
 	        {
 	          tmp<- tmp[-which(tmp$id=="0"),]
@@ -1275,6 +1319,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    }
 	    
 	    ### SIZE STRUCTURE
+	    #### NOT UPDATED
 	    if(inputs$sizeStructure==TRUE)
 	    {
 	      ss[[i]]<-process_size_structure(year=i/(length(m))*inputs$nyears,

@@ -188,9 +188,18 @@ initialize<- function(inputs)
 		dyn$AGE_0_N_BND<-matrix(inputs$natural_age0,nrow=1,ncol=inputs$nreps)
 	}
 	### SPATIAL STRUCTURE
+	if(!inputs$spatial & inputs$migration)
+	{
+	  ## SET UP LOCATIONS
+	  dyn$BEND_H<- matrix(0L,inputs$daug_H,inputs$nreps)  
+	  dyn$BEND_N<- matrix(0L,inputs$daug_N,inputs$nreps)
+	  ## INTIALIZE LOCATION: 1 = "WITHIN BASIN"; 0 = "OUTSIDE BASIN OR DEAD"
+	  ### ALL KNOWN FISH INITIALLY WITHIN THE BASIN
+	  dyn$BEND_H[,j]<-dyn$Z_H[,j]
+	  dyn$BEND_N[,j]<-dyn$Z_N[,j]
+	}
 	if(inputs$spatial==TRUE)
 	{
-
 		## SET UP LOCATIONS
 		dyn$BEND_H<- matrix(0L,inputs$daug_H,inputs$nreps)  
 		dyn$BEND_N<- matrix(0L,inputs$daug_N,inputs$nreps)

@@ -98,8 +98,51 @@ modelInputs<- function(input=NULL,
 	{	
 		## BEND DATA & META
 		tmp$bend_meta <- bend_meta[[basin]]
-		tmp$n_bends <- nrow(bend_meta[[basin]])	
-		tmp$bend_lengths <- bend_meta[[basin]]$Length.RKM
+		tmp$bend_meta$RIVER<-"MO"
+    if(basin=="upper")
+    {
+		  YR <- data.frame(B_SEGMENT=22, BEND_NUM=1, 
+		                   UPPER_RIVER_MILE=round(113*0.621371, 1),
+		                   LOWER_RIVER_MILE=0, STATE="MT", Length.RKM=113,
+		                   basin="upper", id=999,RIVER="YR") 
+		    #Intake at 113 rkm from UBPSRWG 2004 Annual Report
+		  YR$Length.RM<-YR$UPPER_RIVER_MILE-YR$LOWER_RIVER_MILE
+		  tmp$bend_meta<-rbind.fill(tmp$bend_meta, YR)
+		  rm(YR)
+		  #YR<-rbind.fill(bend_meta$upper[1:max(which(bend_meta$upper$B_SEGMENT==4)),],
+		  #                YR)
+		  #YR<-rbind(YR, bend_meta$upper[min(which(bend_meta$upper$B_SEGMENT==3)):nrow(bend_meta$upper),])
+    }
+		tmp$n_bends <- nrow(tmp$bend_meta)	
+		tmp$bend_lengths <- tmp$bend_meta$Length.RKM
+    if(migration)
+    {
+      if(basin=="upper")
+      {
+        YR <- data.frame(B_SEGMENT=22, BEND_NUM=2, 
+                         UPPER_RIVER_MILE=NA,
+                         LOWER_RIVER_MILE=round(113*0.621371, 1), 
+                         STATE="MT", basin="upper", id=1000, RIVER="YR") 
+        tmp$bend_meta<-rbind.fill(tmp$bend_meta, YR)
+        rm(YR)
+        LS <- data.frame(B_SEGMENT=52, BEND_NUM=1, 
+                         UPPER_RIVER_MILE=min(tmp$bend_meta$LOWER_RIVER_MILE),
+                         LOWER_RIVER_MILE=NA, STATE="ND",
+                         basin="upper", id=0, RIVER="MO")
+        tmp$bend_meta<-rbind.fill(tmp$bend_meta, LS)
+        rm(LS)
+      }
+      if(basin=="lower")
+      {
+        MS <- data.frame(B_SEGMENT=71, BEND_NUM=1, 
+                         UPPER_RIVER_MILE=0,
+                         LOWER_RIVER_MILE=NA, STATE="MO",
+                         basin="lower", id=0, RIVER="MS")
+        tmp$bend_meta<-rbind.fill(tmp$bend_meta, MS)
+        rm(MS)
+      }
+		  tmp$outside_bends<-(tmp$n_bends+1):nrow(tmp$bend_meta)
+    }
 		
 		## MOVEMENT MATRICES
 
@@ -115,9 +158,25 @@ modelInputs<- function(input=NULL,
 		  tmp$drift_prob[nrow(tmp$drift_prob), 
 		                 (length(which(tmp$bend_meta$B_SEGMENT==4))+1):
 		                   (ncol(tmp$drift_prob)-1)]<-0
-		  
+		  if(migration)
+		  {
+		    tmp$drift_prob <- rbind(tmp$drift_prob, runif(tmp$n_bends))
+		    tmp$drift_prob[nrow(tmp$drift_prob), 
+		                   (length(which(tmp$bend_meta$B_SEGMENT==4))+1):
+		                     (ncol(tmp$drift_prob)-1)]<-0
+		  }
 		}
 		tmp$drift_prob<- tmp$drift_prob/apply(tmp$drift_prob,1,sum)*tmp$p_retained
+		if(migration & basin=="upper")
+		{
+		  tmp$drift_prob <- cbind(tmp$drift_prob, rep(0, tmp$n_bends))
+		  drift_from_UYS <- runif(tmp$n_bends+1)
+		  drift_from_UYS[(length(which(tmp$bend_meta$B_SEGMENT==4))+1):
+		                   (length(drift_from_UYS)-2)]<-0
+		  tmp$drift_prob <- rbind(tmp$drift_prob, drift_from_UYS)
+		  tmp$p_retained <- c(tmp$p_retained, input$p_retained_UYS)
+		  }
+		}
 		tmp$drift_prob<- cbind(tmp$drift_prob, 1-tmp$p_retained)
 		
 		### FINGERLING DISPERSAL

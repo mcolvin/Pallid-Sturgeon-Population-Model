@@ -257,6 +257,7 @@ input$upper$recruit_length_sd <- 25
 ### UPPER BASIN
 #### BROODSTOCK DATA
 input$stockingInput$upper$broodstock$breeder_no<-4
+input$stockingInput$upper$broodstock$cp<-0.5
 input$stockingInput$upper$broodstock$bank_F<-paste0("TAG", 1:10)
 input$stockingInput$upper$broodstock$bank_M<-paste0("TAG", 1:10)
 input$stockingInput$upper$broodstock$BROOD_1<-
@@ -290,6 +291,7 @@ input$stockingInput$upper$yearling<-data.frame(month=c(9),
 ### LOWER BASIN
 #### BROODSTOCK DATA
 input$stockingInput$lower$broodstock$breeder_no<-4
+input$stockingInput$lower$broodstock$cp<-0.5
 input$stockingInput$lower$broodstock$bank_F<-paste0("TAG", 1:10)
 input$stockingInput$lower$broodstock$bank_M<-paste0("TAG", 1:10)
 #### FINGERLINGS

@@ -13,20 +13,6 @@ setwd("C:/Users/sreynolds/Documents/GitHub/Pallid-Sturgeon-Population-Model/pall
 
 # LOAD BEND METADATA 
 bend_meta<-readRDS("./inputs/bend_data.rds")
-bend_meta$lower$RIVER<-"MO"
-bend_meta$upper$RIVER<-"MO"
-YR <- data.frame(B_SEGMENT=22, BEND_NUM=1, 
-                 UPPER_RIVER_MILE=round(113*0.621371, 1),
-                 LOWER_RIVER_MILE=0, STATE="MT", Length.RKM=113,
-                 basin="upper", id=999,RIVER="YR") 
-  #Intake at 113 rkm from UBPSRWG 2004 Annual Report
-YR$Length.RM<-YR$UPPER_RIVER_MILE-YR$LOWER_RIVER_MILE
-YR<-rbind.fill(bend_meta$upper, YR)
-#YR<-rbind.fill(bend_meta$upper[1:max(which(bend_meta$upper$B_SEGMENT==4)),],
-#                YR)
-#YR<-rbind(YR, bend_meta$upper[min(which(bend_meta$upper$B_SEGMENT==3)):nrow(bend_meta$upper),])
-bend_meta$upper<-YR
-rm(YR)
 bend_meta$lower$irc<- runif(nrow(bend_meta$lower),0,3)
 bend_meta$upper$irc<- runif(nrow(bend_meta$upper),0,3)
 a=-3
