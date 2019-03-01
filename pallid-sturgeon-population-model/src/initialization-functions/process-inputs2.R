@@ -155,94 +155,103 @@ modelInputs<- function(input=NULL,
 		tmp$drift_prob[upper.tri(tmp$drift_prob)]<-0
 		if(basin=="upper")
 		{
+		  ## ADD ON LOWER YELLOWSTONE
 		  tmp$drift_prob[nrow(tmp$drift_prob), 
 		                 (length(which(tmp$bend_meta$B_SEGMENT==4))+1):
 		                   (ncol(tmp$drift_prob)-1)]<-0
+		  tmp$p_retained<-c(tmp$p_retained, 
+		                    input$spatialInput[[basin]]$LYR$p_retained)
 		  if(migration)
 		  {
+		    ## ADD ON UPPER YELLOWSTONE
 		    tmp$drift_prob <- rbind(tmp$drift_prob, runif(tmp$n_bends))
 		    tmp$drift_prob[nrow(tmp$drift_prob), 
 		                   (length(which(tmp$bend_meta$B_SEGMENT==4))+1):
 		                     (ncol(tmp$drift_prob)-1)]<-0
+		    tmp$p_retained<-c(tmp$p_retained, 
+		                      input$spatialInput[[basin]]$UYR$p_passage*
+		                        input$spatialInput[[basin]]$UYR$p_retained_given_passage)
 		  }
 		}
 		tmp$drift_prob<- tmp$drift_prob/apply(tmp$drift_prob,1,sum)*tmp$p_retained
 		if(migration & basin=="upper")
 		{
-		  tmp$drift_prob <- cbind(tmp$drift_prob, rep(0, tmp$n_bends))
-		  drift_from_UYS <- runif(tmp$n_bends+1)
-		  drift_from_UYS[(length(which(tmp$bend_meta$B_SEGMENT==4))+1):
-		                   (length(drift_from_UYS)-2)]<-0
-		  tmp$drift_prob <- rbind(tmp$drift_prob, drift_from_UYS)
-		  tmp$p_retained <- c(tmp$p_retained, input$p_retained_UYS)
-		  }
+		  tmp$drift_prob <- cbind(tmp$drift_prob, 
+		                          c(rep(0, tmp$n_bends),
+		                            1-input$spatialInput[[basin]]$UYR$p_passage))
 		}
-		tmp$drift_prob<- cbind(tmp$drift_prob, 1-tmp$p_retained)
+		tmp$drift_prob<- cbind(tmp$drift_prob, 1-rowSums(tmp$drift_prob))
 		
-		### FINGERLING DISPERSAL
-		#### UNIFORM RANDOM DRIFT WITH STRONGER ABILITY TO HOLD POSITION:  
-		####    ENTRY ij IS THE PROBABILTY OF DRIFTING FROM BEND i TO BEND j; 
-		####    ROW 1 IS FARTHEST DOWNSTREAM)
-		# tmp$disp_prob<- matrix(runif(tmp$n_bends*tmp$n_bends),nrow=tmp$n_bends,ncol=tmp$n_bends)
-		# tmp$disp_prob[upper.tri(tmp$disp_prob)]<-0
-		# diag(tmp$disp_prob)<-c(0.5,0.5*(1:(tmp$nbends-1)))
+		# ### FINGERLING DISPERSAL
+		# ### NOT IN USE YET... NEEDS ADDITIONS FOR MIGRATION AS WELL
+		# #### DRIFT WITH STRONGER ABILITY TO HOLD POSITION:  
+		# ####    ENTRY ij IS THE PROBABILTY OF DRIFTING FROM BEND i TO BEND j; 
+		# ####    ROW 1 IS FARTHEST DOWNSTREAM)
+		# # tmp$disp_prob<- matrix(runif(tmp$n_bends*tmp$n_bends),nrow=tmp$n_bends,ncol=tmp$n_bends)
+		# # tmp$disp_prob[upper.tri(tmp$disp_prob)]<-0
+		# # diag(tmp$disp_prob)<-c(0.5,0.5*(1:(tmp$nbends-1)))
+		# # tmp$disp_prob<- tmp$disp_prob/apply(tmp$disp_prob,1,sum)
+		# tmp$disp_prob<- matrix(0,nrow=tmp$n_bends,ncol=tmp$n_bends)
+		# M<-ifelse(basin=="upper", nrow(tmp$disp_prob)-1, nrow(tmp$disp_prob))
+		# for(i in 1:M)
+		# {
+		#   for(j in 1:i)
+		#   {
+		#     tmp$disp_prob[i,j]<-(1/2)^(i-j+1)
+		#   }
+		# }
+		# if(basin=="upper")
+		# {
+		#   J<-length(which(tmp$bend_meta$B_SEGMENT==4))
+		#   for(j in 1:J)
+		#   {
+		#     tmp$disp_prob[nrow(tmp$disp_prob),j]<-(1/2)^(J-j+2)
+		#     tmp$disp_prob[nrow(tmp$disp_prob),nrow(tmp$disp_prob)]<-0.5
+		#   }
+		# }
 		# tmp$disp_prob<- tmp$disp_prob/apply(tmp$disp_prob,1,sum)
-		tmp$disp_prob<- matrix(0,nrow=tmp$n_bends,ncol=tmp$n_bends)
-		M<-ifelse(basin=="upper", nrow(tmp$disp_prob)-1, nrow(tmp$disp_prob))
-		for(i in 1:M)
-		{
-		  for(j in 1:i)
-		  {
-		    tmp$disp_prob[i,j]<-(1/2)^(i-j+1)
-		  }
-		}
-		if(basin=="upper")
-		{
-		  J<-length(which(tmp$bend_meta$B_SEGMENT==4))
-		  for(j in 1:J)
-		  {
-		    tmp$disp_prob[nrow(tmp$disp_prob),j]<-(1/2)^(J-j+2)
-		    tmp$disp_prob[nrow(tmp$disp_prob),nrow(tmp$disp_prob)]<-0.5
-		  }
-		}
-		tmp$disp_prob<- tmp$disp_prob/apply(tmp$disp_prob,1,sum)
 
 		### ADULTS (MONTHLY)
 		#### NON-SPAWNING
 		## ORIGINAL:
 	  tmp$adult_mov_prob<- matrix(runif(tmp$n_bends*tmp$n_bends,0,0.1),nrow=tmp$n_bends,ncol=tmp$n_bends)
 		diag(tmp$adult_mov_prob)<-0.7
-		if(basin=="upper")
-		{
-		  tmp$p_upper_YR <-input$spatialInput[[basin]]$p_upper_YR
-		  tmp$YR_return_dist <- runif(tmp$n_bends)
-		  tmp$YR_return_dist[tmp$n_bends]<-50
-		  tmp$YR_return_dist <- tmp$YR_return_dist/sum(tmp$YR_return_dist)
-		  tmp$adult_mov_prob[tmp$n_bends,
-		                     (length(which(tmp$bend_meta$B_SEGMENT==4))+1):
-		                       (tmp$n_bends-1)]<-0
-		}
 		tmp$adult_mov_prob<- tmp$adult_mov_prob/apply(tmp$adult_mov_prob,1,sum)
 		if(migration)
 		{
 		  tmp$p_dwnstrm <-input$spatialInput[[basin]]$p_dwnstrm
 		  tmp$p_leave <-ifelse(basin=="upper",
-		                       tmp$p_dwnstrm$to+tmp$p_upper_YR$to,
+		                       tmp$p_dwnstrm$to+input$spatialInput[[basin]]$p_upper_YR$to,
 		                       tmp$p_dwnstrm$to)
 		  tmp$adult_mov_prob <- tmp$adult_mov_prob*(1-tmp$p_leave)
-		  tmp$adult_mov_prob<- cbind(tmp$adult_mov_prob, tmp$p_leave)
 		  if(basin=="upper")
 		  {
-		    tmp$adult_mov_prob[,tmp$n_bends+1] <- 
-		      tmp$adult_mov_prob[,tmp$n_bends+1]-tmp$p_upper_YR$to
-		    tmp$adult_mov_prob<- cbind(tmp$adult_mov_prob, tmp$p_upper_YR$to)
+		    tmp$p_upper_YR <-input$spatialInput[[basin]]$p_upper_YR
+		    tmp$adult_mov_prob<-cbind(tmp$adult_mov_prob, tmp$p_upper_YR$to)
 		  }
-		  tmp$return_upstrm_dist <- rep(0, tmp$n_bends)
-		  for(i in 1:tmp$n_bends)
+		  tmp$adult_mov_prob<- cbind(tmp$adult_mov_prob, tmp$p_dwnstrm$to)
+		  if(basin=="upper")
 		  {
-		    tmp$return_upstrm_dist[i]<-(1/2)^i
+		    YR_return_dist <- runif(tmp$n_bends)
+		    YR_return_dist[tmp$n_bends]<-50
+		    YR_return_dist <- YR_return_dist/sum(YR_return_dist)*
+		      tmp$p_upper_YR$from*(1-tmp$p_dwnstrm$to)
+		    YR_return_dist <- c(YR_return_dist[1:tmp$n_bends],
+		                        1-tmp$p_upper_YR$from,
+		                        tmp$p_upper_YR$from*tmp$p_dwnstrm$to)
+		    tmp$adult_mov_prob<-rbind(tmp$adult_mov_prob, unname(YR_return_dist))
 		  }
-		  tmp$return_upstrm_dist<- tmp$return_upstrm_dist/sum(tmp$return_upstrm_dist)
+		  return_upstrm_dist <- runif(tmp$n_bends)
+		  if(basin=="upper")
+		  {
+		    return_upstrm_dist<- return_upstrm_dist/sum(return_upstrm_dist)*
+		      (1-tmp$p_upper_YR$to)
+		    return_upstrm_dist<-c(return_upstrm_dist, tmp$p_upper_YR$to)
+		  }
+		  return_upstrm_dist<- return_upstrm_dist/sum(return_upstrm_dist)*
+		    tmp$p_dwnstrm$from
+		  return_upstrm_dist<- c(return_upstrm_dist, 1-tmp$p_dwnstrm$from)
+		  tmp$adult_mov_prob<- rbind(tmp$adult_mov_prob, unname(return_upstrm_dist))
 		}
 		# ## IF YOU WANT A PARTICULAR PROBABILITY OF STAYING IN A GIVEN BEND:
 		# fidelity<-0.08 #PROBABILITY OF REMAINING IN THE SAME BEND 
@@ -288,14 +297,41 @@ modelInputs<- function(input=NULL,
 #     rm(adult_mov_probL, adult_mov_probU)
 		#### SPAWNING
 		tmp$spn_bends<-input$spatialInput[[basin]]$spn_bends
-		tmp$spn_mov_prob<- matrix(0,nrow=tmp$n_bends,ncol=tmp$n_bends)
-		if(is.null(tmp$spn_bnd_probs))
+		if(migration & basin=="upper" & input$spatialInput[[basin]]$UYR$spawn)
+		{
+		  tmp$spn_bends<-c(tmp$spn_bends, tmp$n_bends+1)
+		}
+		M<-ifelse(migration, tmp$n_bends+length(tmp$outside_bends), tmp$n_bends)
+		tmp$spn_mov_prob<- matrix(0,nrow=tmp$n_bends,ncol=M)
+		if(is.null(input$spatialInput[[basin]]$spn_bnd_probs))
 		{
 		  tmp$spn_bnd_probs<-runif(length(tmp$spn_bend))
+		  if(migration & basin=="upper" & input$spatialInput[[basin]]$UYR$spawn)
+		  {
+		    tmp$spn_bnd_probs[length(tmp$spn_bnd_probs)]<- 
+		      tmp$spn_bnd_probs[length(tmp$spn_bnd_probs)]*
+		      input$spatialInput[[basin]]$UYR$p_YR_spn_passage
+		  }
 		  tmp$spn_bnd_probs<-tmp$spn_bnd_probs/sum(tmp$spn_bnd_probs)
 		}
 		tmp$spn_mov_prob[, tmp$spn_bends]<- rep(tmp$spn_bnd_probs,
 		                                        each=nrow(tmp$spn_mov_prob))
+		if(migration)
+		{
+		  if(basin=="upper")
+		  {
+		    UYR_spn<-c(tmp$spn_mov_prob[1,1:tmp$n_bends]/
+		                 sum(tmp$spn_mov_prob[1,1:tmp$n_bends])*
+		                 input$spatialInput[[basin]]$UYR$p_spn_mig, 
+		               1-input$spatialInput[[basin]]$UYR$p_spn_mig, 0)
+		    tmp$spn_mov_prob<- rbind(tmp$spn_mov_prob, UYR_spn)
+		  }
+		  dwnstrm_spn<- c(tmp$spn_mov_prob[1,1:nrow(tmp$spn_mov_prob)]/
+		                    sum(tmp$spn_mov_prob[1,1:nrow(tmp$spn_mov_prob)])*
+		                    input$spatialInput[[basin]]$p_spn_mig, 
+		                  1-input$spatialInput[[basin]]$p_spn_mig)
+		  tmp$spn_mov_prob<- rbind(tmp$spn_mov_prob, dwnstrm_spn)
+		}
 		# TO ADD NOISE ADD OTHER INPUTS EARLIER AND UNCOMMENT:
 		#tmp$spn_mov_prob<- tmp$spn_mov_prob/apply(tmp$spn_mov_prob,1,sum)
 		
@@ -311,6 +347,30 @@ modelInputs<- function(input=NULL,
 		pp<- runif(tmp$n_bends)
 		tmp$hatchery_age1plus_rel_dens<- pp/sum(pp)		 
 	}## END SPATIAL
+	
+	
+	if(!spatial & migration)
+	{
+	  tmp$p_retained<-input$spatialInput[[basin]]$p_retained
+	  tmp$p_migrate_out<-input$spatialInput[[basin]]$p_dwnstrm$to
+	  tmp$p_migrate_in<- input$spatialInput[[basin]]$p_dwnstrm$from
+	  if(basin=="upper")
+	  {
+	    tmp$p_migrate_out<- tmp$p_migrate_out+
+	      input$spatialInput[[basin]]$p_upper_YR$to
+	    tmp$p_migrate_in<- (tmp$p_migrate_in*
+	      input$spatialInput[[basin]]$p_dwnstrm$to +
+	      input$spatialInput[[basin]]$p_upper_YR$from*
+	      input$spatialInput[[basin]]$p_upper_YR$to)/
+	      tmp$p_migrate_out
+	    tmp$drift_in<- input$spatialInput[[basin]]$UYR$p_passage*
+	      input$spatialInput[[basin]]$UYR$p_retained_given_passage
+	    tmp$p_retained<- c(tmp$p_retained, 
+	                       input$spatialInput[[basin]]$LYR$p_retained)
+	  }
+	  tmp$p_retained<-mean(tmp$p_retained)
+	}
+	
 	
 	# STOCKING INPUTS
 	###

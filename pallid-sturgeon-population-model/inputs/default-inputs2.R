@@ -330,6 +330,9 @@ input$spatialInput$lower$spn_bends<- c(316)
 #### CAN ALSO USE EMPERICAL DRIFT MATRIX... 
 input$spatialInput$upper$p_retained<- rep(0.5, nrow(bend_meta$upper))
 input$spatialInput$lower$p_retained<- rep(0.5, nrow(bend_meta$lower))
+input$spatialInput$upper$LYR$p_retained<- 0.5
+input$spatialInput$upper$UYR$p_passage<- 0.4
+input$spatialInput$upper$UYR$p_retained_given_passage<- 0.9
 ### EMIGRATION AND IMMIGRATION
   ## DO WE WANT THIS TO BE AGE OR STAGE SPECIFIC?
   ## CAN MAKE LOCATION SPECIFIC BY MAKING EACH LIST ENTRY A VECTOR 
@@ -338,7 +341,11 @@ input$spatialInput$upper$p_upper_YR <-list(to=0.05, from=0.5) #ABOVE INTAKE
 input$spatialInput$upper$p_dwnstrm <- list(to=0.001, from=0.99) #LAKE SAKAKAWEA
 input$spatialInput$lower$p_dwnstrm <- list(to=0.05, from=0.5) #MISSISSIPPI RIVER
 ### SPAWNING MIGRATION
-input$spatialInput$upper$p_YR_spn_passage <- 0.3
+input$spatialInput$upper$UYR$spawn <- TRUE
+input$spatialInput$upper$UYR$p_YR_spn_passage <- 0.3
+input$spatialInput$upper$UYR$p_spn_mig <- 0.1
+input$spatialInput$upper$p_spn_mig <- 1
+input$spatialInput$lower$p_spn_mig <- 0.3
   ## TO ALLOW SPAWNING MIGRATIONS FROM THE MS TO THE MO WE WOULD NEED TO
   ## KEEP TRACK OF SPAWNING STATUS OF MS FISH -- THIS IS ONLY UPDATED 
   ## ONCE A YEAR, SO MAY NOT BE TOO PROBLEMATIC
