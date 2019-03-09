@@ -348,7 +348,8 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        ## ENOUGH NEW CATCH TO SATISFY GOAL
 	        if(sum(priority)>inputs$broodstock$breeder_no)
 	        {
-	          out<-indx[sample(which(priority==1),inputs$broodstock$breeder_no)]
+	          #out<-indx[sample(which(priority==1),inputs$broodstock$breeder_no)]
+	          out<-indx[which(priority==1)[1:inputs$broodstock$breeder_no]]
 	        }
 	        ## NOT ENOUGH NEW CATCH TO SATISFY GOAL
 	        if(sum(priority)<=inputs$broodstock$breeder_no)

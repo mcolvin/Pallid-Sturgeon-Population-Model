@@ -66,6 +66,26 @@ input$stockingHistory$lower$length_mn<-ifelse(input$stockingHistory$lower$age==3
                                               ifelse(input$stockingHistory$lower$age==27,
                                                      350, 200))
 
+input$stockingHistory$upper$differetial_survival<- NULL
+  #data.frame(hatchery=NA,
+  #           mother=NA,
+  #           father=NA,
+  #           year=NA,
+  #           survival_to_date=NA,
+  #           phi00=NA,
+  #           phi0=NA,
+  #           phi1=NA,
+  #           phi2=NA)
+input$stockingHistory$lower$differetial_survival<- NULL
+  #data.frame(hatchery=NA,
+  #           mother=NA,
+  #           father=NA,
+  #           year=NA,
+  #           survival_to_date=NA,
+  #           phi00=NA,
+  #           phi0=NA,
+  #           phi1=NA,
+  #           phi2=NA)
 
 
 #[2] GROWTH PARAMETERS
