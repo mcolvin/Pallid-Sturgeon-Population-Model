@@ -10,61 +10,21 @@ input$lower$natural<- round(5.5*689+0.93*587,0)
 input$upper$natural<- 125
   # Jaeger et al. (2009) 2017 AM Report Table 3-1
 
+input$lower$hatchery<- round(12.9*689+5.53*587,0)
+  # 12134, matches Steffensen et al. (2017a)  mean density (see 2017 AM 
+  # Report for full citation) multiplied by segments 7-9 river length of 
+  # 689rkm and Steffensen et al. (2014) segments 10,13,14 river length 
+  # of 587rkm, rounded to the nearest fish
+input$upper$hatchery<- 16444
+  # Rotella (2017)  2017 AM Report Table 3-1
+
 # LIKELY WANT THIS TO LINE UP WITH SPAWNING THE YEAR BEFORE...
 input$lower$natural_age0<- 200
 input$upper$natural_age0<- 200
 
-input$stockingHistory$upper<- data.frame(year=1992:2017,
-                                  month=rep(9, 26),
-                                  bend=sample(1:nrow(bend_meta$upper), 
-                                              26, replace=TRUE),
-                                  number=sample(300:1200, 26, 
-                                                replace=TRUE),
-                                  mother=paste0("PIT", 1:26),
-                                  father=paste0("PIT", 27:52),
-                                  hatchery=sample(c("Neosho","Gavins", 
-                                                    "Garrison", 
-                                                    "Blind_Pony"), 26, 
-                                                  replace=TRUE),
-                                  age=sample(c(3,15,27), 26, replace=TRUE, 
-                                             prob=c(3/16, 11/16, 1/8)),
-                                  length_mn=rep(200, 26),
-                                  length_sd=rep(50,26),
-                                  survival_est=round(runif(26, 0.2, 
-                                                           0.8), 2))
-input$stockingHistory$upper$length_mn<-ifelse(input$stockingHistory$upper$age==3,
-                                              100, 
-                                              ifelse(input$stockingHistory$upper$age==27,
-                                                     350, 200))
-input$stockingHistory$lower<- data.frame(year=1992:2017,
-                                         month=rep(9, 26),
-                                         bend=sample(1:nrow(bend_meta$lower), 
-                                                     26, 
-                                                     replace=TRUE),
-                                         number=sample(300:1200, 26, 
-                                                       replace=TRUE),
-                                         mother=paste0("PIT", 1:26),
-                                         father=paste0("PIT", 27:52),
-                                         hatchery=sample(c("Neosho",
-                                                           "Gavins", 
-                                                           "Garrison", 
-                                                           "Blind_Pony"), 
-                                                         26, 
-                                                         replace=TRUE),
-                                         age=sample(c(3,15,27), 26, 
-                                                    replace=TRUE, 
-                                                    prob=c(3/16, 11/16, 
-                                                           1/8)),
-                                         length_mn=rep(200, 26),
-                                         length_sd=rep(50,26),
-                                         survival_est=round(runif(26, 
-                                                                  0.2, 
-                                                                  0.8), 
-                                                            2))
-input$stockingHistory$lower$length_mn<-ifelse(input$stockingHistory$lower$age==3,
-                                              100, 
-                                              ifelse(input$stockingHistory$lower$age==27,
-                                                     350, 200))
+
+input$stockingHistory<- readRDS("./inputs/StockingHistory.rds") 
+
 
 input$stockingHistory$upper$differetial_survival<- NULL
   #data.frame(hatchery=NA,
@@ -278,13 +238,14 @@ input$upper$recruit_length_sd <- 25
 #### BROODSTOCK DATA
 input$stockingInput$upper$broodstock$breeder_no<-4
 input$stockingInput$upper$broodstock$cp<-0.5
-input$stockingInput$upper$broodstock$bank_F<-paste0("TAG", 1:10)
-input$stockingInput$upper$broodstock$bank_M<-paste0("TAG", 1:10)
-input$stockingInput$upper$broodstock$BROOD_1<-
-  data.frame(mother=paste0("TAG", 11:14),
-             father=paste0("TAG", 15:18),
-             hatchery=sample(c("Neosho", "Gavins"), 4, replace=TRUE),
-             no_available=runif(4,1000,5000))
+tmp<-readRDS("./inputs/BroodstockBank.rds")
+input$stockingInput$upper$broodstock$bank_F<-tmp$upper$bankF
+input$stockingInput$upper$broodstock$bank_M<-tmp$upper$bankM
+#input$stockingInput$upper$broodstock$BROOD_1<-
+#  data.frame(mother=paste0("TAG", 11:14),
+#             father=paste0("TAG", 15:18),
+#             hatchery=sample(c("Neosho", "Gavins"), 4, replace=TRUE),
+#             no_available=runif(4,1000,5000))
   # NUMBER OF AGE-1's AVAILABLE FOR STOCKING BY FAMILY LOT
   ## INITIALIZE THESE LASAT THREE IN PROCESS_INPUTS.R USING STOCKING 
   ## HISTORY AND BACK CALCULATION
@@ -312,8 +273,8 @@ input$stockingInput$upper$yearling<-data.frame(month=c(9),
 #### BROODSTOCK DATA
 input$stockingInput$lower$broodstock$breeder_no<-4
 input$stockingInput$lower$broodstock$cp<-0.5
-input$stockingInput$lower$broodstock$bank_F<-paste0("TAG", 1:10)
-input$stockingInput$lower$broodstock$bank_M<-paste0("TAG", 1:10)
+input$stockingInput$lower$broodstock$bank_F<-tmp$lower$bankF
+input$stockingInput$lower$broodstock$bank_M<-tmp$lower$bankM
 #### FINGERLINGS
 input$stockingInput$lower$fingerling<-data.frame(month=c(9),
                                                  stocking_rkm=c(50),
@@ -384,7 +345,7 @@ input$spatialInput$lower$p_spn_mig <- 0.3
 
 ## SIMULATION INPUTS
 input$simulationInput$nreps<- 10
-input$simulationInput$startYear<- 2018
+input$simulationInput$startYear<- 2019
 input$simulationInput$nyears<- 50
 input$simulationInput$daug_H<- 100000
 input$simulationInput$daug_N<- 100000
@@ -394,14 +355,14 @@ input$simulationInput$size_indices<-TRUE
 
 ## GENETICS ##
 ### UPPER BASIN
-input$geneticsInput$upper$fingerling<- data.frame(hatchery=c("Neosho"),
-                                                  mother=c("TAG1"),
-                                                  father=c("TAG2"),
-                                                  no_offspring=c(50))
-input$geneticsInput$upper$yearling<- data.frame(hatchery=c("Neosho"),
-                                                mother=c("TAG3"),
-                                                father=c("TAG4"),
-                                                no_offspring=c(50))
+# input$geneticsInput$upper$fingerling<- data.frame(hatchery=c("Neosho"),
+#                                                   mother=c("TAG1"),
+#                                                   father=c("TAG2"),
+#                                                   no_offspring=c(50))
+# input$geneticsInput$upper$yearling<- data.frame(hatchery=c("Neosho"),
+#                                                 mother=c("TAG3"),
+#                                                 father=c("TAG4"),
+#                                                 no_offspring=c(50))
 # input$geneticsInput$upper$age0<- data.frame(hatchery=c("Neosho"),
 #                                             mother=c("TAG5"),
 #                                             father=c("TAG6"),
@@ -415,14 +376,14 @@ input$geneticsInput$upper$yearling<- data.frame(hatchery=c("Neosho"),
 #                                                 yr_stocked=c(2012),
 #                                                 age_stocked=c(1))
 ### LOWER BASIN
-input$geneticsInput$lower$fingerling<- data.frame(hatchery=c("Neosho"),
-                                                  mother=c("TAG1"),
-                                                  father=c("TAG2"),
-                                                  no_offspring=c(50))
-input$geneticsInput$lower$yearling<- data.frame(hatchery=c("Neosho"),
-                                                mother=c("TAG3"),
-                                                father=c("TAG4"),
-                                                no_offspring=c(50))
+# input$geneticsInput$lower$fingerling<- data.frame(hatchery=c("Neosho"),
+#                                                   mother=c("TAG1"),
+#                                                   father=c("TAG2"),
+#                                                   no_offspring=c(50))
+# input$geneticsInput$lower$yearling<- data.frame(hatchery=c("Neosho"),
+#                                                 mother=c("TAG3"),
+#                                                 father=c("TAG4"),
+#                                                 no_offspring=c(50))
 # input$geneticsInput$lower$age0<- data.frame(hatchery=c("Neosho"),
 #                                             mother=c("TAG5"),
 #                                             father=c("TAG6"),

@@ -18,14 +18,14 @@ modelInputs<- function(input=NULL,
   {
     return(print("An input for bend_meta is required when spatial=TRUE.")) 
   }
-  if(genetics)
-  { 
-    if(sum(input$stockingInput[[basin]]$fingerling$stocking_no)>sum(input$geneticsInput[[basin]]$fingerling$no_offspring)
-       | sum(input$stockingInput[[basin]]$yearling$stocking_no)>sum(input$geneticsInput[[basin]]$yearling$no_offspring))
-    {
-      return(print("More fish are to be stocked than genetic information is available for.")) 
-    }
-  }
+  # if(genetics)
+  # { 
+    # if(sum(input$stockingInput[[basin]]$fingerling$stocking_no)>sum(input$geneticsInput[[basin]]$fingerling$no_offspring)
+    #    | sum(input$stockingInput[[basin]]$yearling$stocking_no)>sum(input$geneticsInput[[basin]]$yearling$no_offspring))
+    # {
+    #   return(print("More fish are to be stocked than genetic information is available for.")) 
+    # }
+  # }
   
   # POPULATION INPUTS FOR GIVEN BASIN
   tmp <- input[[basin]]
@@ -72,16 +72,6 @@ modelInputs<- function(input=NULL,
 	#   tmp$propM[i]<-tmp$propM[i-1]+(1-tmp$propM[i-1])*tmp$pMat[i]
 	# }
 	
-	# HATCHERY FISH DATA
-	tmp$stockingHistory<-input$stockingHistory[[basin]]
-	tmp$stockingHistory$MPStock<- (input$simulationInput$startYear-
-	                                 tmp$stockingHistory$year-1)*12 +
-	  12-tmp$stockingHistory$month
-	tmp$stockingHistory$current_age<- tmp$stockingHistory$age +
-	  tmp$stockingHistory$MPStock
-	tmp$hatchery_age0<- subset(tmp$stockingHistory, current_age<12)
-	tmp$stockingHistory<- subset(tmp$stockingHistory, current_age>=12)
-	
 	# SIMULATION STUFF
 	tmp <- c(tmp, input$simulationInput)
 	tmp$spatial <- spatial
@@ -91,6 +81,108 @@ modelInputs<- function(input=NULL,
 	tmp$commit <- input$commit
 	tmp$output_name <- input$output_name	
 	tmp$version <- input$version	
+	
+	# HATCHERY FISH DATA
+	tmp$stockingHistory<-input$stockingHistory[[basin]]
+	tmp$stockingHistory<- subset(tmp$stockingHistory, 
+	                             year<tmp$startYear)
+	## SEPERATE OUT AGE-0's
+	tmp$stockingHistory$MPStock<- (tmp$startYear-
+	                                 tmp$stockingHistory$year-1)*12 +
+	  12-tmp$stockingHistory$month
+	tmp$stockingHistory$current_age<- tmp$stockingHistory$age +
+	  tmp$stockingHistory$MPStock
+	tmp$hatchery_age0<- subset(tmp$stockingHistory, current_age<12)
+	tmp$stockingHistory<- subset(tmp$stockingHistory, current_age>=12)
+	## ADD IN SURVIVAL ESTIMATES BY AGE AND YEARS SINCE STOCKING
+	### CALCULATE MONTHS IN EACH AGE CLASS
+	tmp$stockingHistory$phi00<-ifelse(tmp$stockingHistory$age<3,
+	                                  sapply(tmp$stockingHistory$current_age, 
+	                                         min, 3)-
+	                                    tmp$stockingHistory$age, 0)
+	tmp$stockingHistory$phi0<-ifelse(tmp$stockingHistory$age<12 & 
+	                                   tmp$stockingHistory$current_age>3,
+	                                 sapply(tmp$stockingHistory$current_age, 
+	                                        min, 12) - 
+	                                   sapply(tmp$stockingHistory$age, 
+	                                          max, 3), 0)
+	tmp$stockingHistory$phi1<-ifelse(tmp$stockingHistory$age<24 & 
+	                                   tmp$stockingHistory$current_age>12,
+	                                 sapply(tmp$stockingHistory$current_age, 
+	                                        min, 24) - 
+	                                   sapply(tmp$stockingHistory$age, 
+	                                          max, 12), 0)
+	tmp$stockingHistory$phi2<-ifelse(tmp$stockingHistory$current_age>24,
+	                                 tmp$stockingHistory$current_age-24, 
+	                                 0)
+	### ADD IN BASIN SPECIFIC SURVIVALS
+	#### LOWER
+	if(basin=="lower")
+	{
+	  ##### WILDHABER ET AL. 2017(a) ECOLOGICAL MODELLING
+	  ##### W/ 1-3 ESTIMATED AS 0.00011/0.0510
+	  # tmp$stockingHistory$survival_est<- 
+	  #   0.0021^(tmp$stockingHistory$phi00/3)*
+	  #   0.0510^(tmp$stockingHistory$phi0/9)*
+	  #   0.3674^(tmp$stockingHistory$phi1/12)*
+	  #   0.9220^(tmp$stockingHistory$phi2/12)
+	  # sum(tmp$stockingHistory$number*tmp$stockingHistory$survival_est)
+	  ##### STEFFENSEN ET AL. 2019 -- MAY ALSO WANT TO TRY MODELING WITH
+	  #####  DECREASING AGE-1 SURVIVAL BY AGE CLASS... HOW MUCH OF A DECREASE IN
+	  #####  SURVIVAL WOULD BE NEEDED TO MAKE CREATE THE ESTIMATES SEEN IN
+	  #####  FIG. 7?
+	  tmp$stockingHistory$survival_est<- 
+	    0.075^(tmp$stockingHistory$phi00/12)*
+	    0.075^(tmp$stockingHistory$phi0/12)*
+	    0.279^(tmp$stockingHistory$phi1/12)*
+	    0.945^(tmp$stockingHistory$phi2/12)
+	  # sum(tmp$stockingHistory$number*tmp$stockingHistory$survival_est)
+	  ##### LOWER AT 21,790 WHICH IS GREATER THAN THE PREDICTED 12,134 USED
+	  ##### PREVIOUSLY
+	  ##### COMPARE WITH STEFFENSEN ET AL. 2018 https://doi.org/10.1111/jai.13646
+	  # aggregate(NUMBERS.STOCKED~YEAR_BORN, dat[which(dat$RPMA==4),], sum)
+	  # (dat is calculated in compile-stocking-data.R)
+	  ##### 1992 & 1997 EXCLUDED...LOOK INTO IF SHOULD EXCLUDE TOO
+	  ##### 2004: KIRK HAS ONE MORE FISH THAN US
+	  ##### 2008: WE HAVE 558 MORE
+	  ##### 2010: WE HAVE 37 MORE
+	  ##### 2011: WE HAVE 116 MORE
+	  ##### 2012: WE HAVE 99 MORE
+	  ##### 2013: WE HAVE 812 MORE
+	  ##### 2015: WE HAVE 500 MORE
+	}
+	if(basin=="upper")
+	{
+	  ##### USING ROTELLA 2017 THE BEST WE CAN QUICKLY
+	  phi_fing<-input$stockingHistory$extra$upper$phi_fingerling
+	  phi_year<-input$stockingHistory$extra$upper$phi_fingerling
+	  tmp$stockingHistory$survival_est<- 
+	    phi_fing[1]^(tmp$stockingHistory$phi00/12)*
+	    phi_fing[1]^(tmp$stockingHistory$phi0/12)*
+	    phi_fing[2]^(tmp$stockingHistory$phi1/12)*
+	    phi_fing[3]^(tmp$stockingHistory$phi2/12)
+	  tmp$stockingHistory$survival_est<- 
+	    ifelse(tmp$stockingHistory$age>=12,
+	           phi_year[1]^(tmp$stockingHistory$phi1/12)*
+	             phi_year[2]^(tmp$stockingHistory$phi2/12),
+	           tmp$stockingHistory$survival_est)
+	  # sum(tmp$stockingHistory$number*tmp$stockingHistory$survival_est)
+	  ##### INDICATES 241,120 HATCHERY FISH VS. ESTIMATED 16,444 IN 2016
+	  ##### BUT ALSO DATA SHOWS 1,666,804 STOCKINGS (WITH 1,663,460 WITH ""
+	  ##### FOR THE FIN CURL ENTRY) IN RPMA 2 BETWEEN 1998 AND 2016, NOT
+	  ##### 245,249 AS IN ROTELLA 2017.  WHY THE DISCREPANCY??? -- HOW TO TELL
+	  ##### IF HAD IRIDOVIRUS?  DOES NOT SEEM TO BE INDICATED IN ANY COMMENTS
+	  ##### (COUNTS IN ROTELLA ARE FOR DISEASE & FIN CURL FREE)
+	}
+	### ADD HERE TO MODIFY BY FAMILY, HATCHERY, OR YEAR-CLASS
+	### CALCULATE CURRENT NUMBERS BY BASIN
+  ### NOTE: USING STOCKED AND SURVIVAL GAVE VERY DIFFERENT NUMBERS FROM 
+	### POP. ESTIMATES, SO JUST USING TO DEFINE FAMILY LOT PROPORTIONS 
+	### AND NOT TO DETERMINE THE NUMBER OF HATCHERY FISH AND AGE 
+	### DISTRIBUTION
+	tmp$stockingHistory$N_hat<-rbinom(1, tmp$stockingHistory$number,
+	                                  tmp$stockingHistory$survival_est)
+
 	
 	# SPATIAL
 	## SPATIAL STRUCTURE ADULTS
@@ -373,8 +465,6 @@ modelInputs<- function(input=NULL,
 	
 	
 	# STOCKING INPUTS
-	###
-	tmp$broodstock<- input$stockingInput[[basin]]$broodstock
 	### FINGERGLINGS
 	tmp$fingerling<- input$stockingInput[[basin]]$fingerling
 	### YEARLINGS
@@ -387,10 +477,10 @@ modelInputs<- function(input=NULL,
 	    tmp$bend_meta$upper_rkm[nrow(tmp$bend_meta)]<-tmp$bend_meta$Length.RKM[nrow(tmp$bend_meta)]
 	  }
 	  tmp$fingerling$bend<-unlist(lapply(1:nrow(tmp$fingerling),function(i)
-	    {
-	      return(min(which(tmp$bend_meta$upper_rkm>=tmp$fingerling$stocking_rkm[i] & 
-	                         tmp$bend_meta$RIVER=="MO")))
-	    }))
+	  {
+	    return(min(which(tmp$bend_meta$upper_rkm>=tmp$fingerling$stocking_rkm[i] & 
+	                       tmp$bend_meta$RIVER=="MO")))
+	  }))
 	  tmp$yearling$bend<-unlist(lapply(1:nrow(tmp$yearling),function(i)
 	  {
 	    return(min(which(tmp$bend_meta$upper>=tmp$yearling$stocking_rkm[i] & 
@@ -411,17 +501,104 @@ modelInputs<- function(input=NULL,
 	                                       mean(phi0_mn)),
 	                        phi0_sd=max(phi0_sd))
 	  tmp$yearling<-ddply(tmp$yearling, .(month), summarize,
-	                        age=mean(age),
-	                        length_mn=ifelse(sum(stocking_no)!=0,
-	                                         sum(length_mn*stocking_no)/sum(stocking_no),
-	                                         mean(length_mn)),
-	                        length_sd=max(length_sd),
-	                        stocking_no=sum(stocking_no),
-	                        phi_mn=ifelse(sum(stocking_no)!=0,
-	                                      sum(phi_mn*stocking_no)/sum(stocking_no),
-	                                      mean(phi_mn)),
-	                        phi_sd=max(phi_sd))
+	                      age=mean(age),
+	                      length_mn=ifelse(sum(stocking_no)!=0,
+	                                       sum(length_mn*stocking_no)/sum(stocking_no),
+	                                       mean(length_mn)),
+	                      length_sd=max(length_sd),
+	                      stocking_no=sum(stocking_no),
+	                      phi_mn=ifelse(sum(stocking_no)!=0,
+	                                    sum(phi_mn*stocking_no)/sum(stocking_no),
+	                                    mean(phi_mn)),
+	                      phi_sd=max(phi_sd))
 	}
+	## BROODSTOCK
+	tmp$broodstock<- input$stockingInput[[basin]]$broodstock
+	### CURRENT FISH IN HATCHERY
+	if(basin=="lower")
+	{
+	  #### PULL FINGERLING FAMILY LOTS STOCKED DURING THE PAST YEAR
+	  tmp$broodstock$BROOD_1<-
+	    tmp$stockingHistory[which(stockingHistory$year==tmp$startYear 
+	                          & stockingHistory$current_age+9<24),]
+	  #### ADD IN KNOWN FAMILY LOTS FROM THE PAST YEAR (2018) AND NUMBER 
+	  #### OF EGGS INCLUDING ANY MORTALITY INDICATED
+	  tmp2<- data.frame(mother=c("46263A6E1B", "462704502D", "462704502D",
+	                             "4627693763",
+	                             "4627545945", "4627545945", "4626641923",
+	                             "4626641923", "4627201358", "46270E6C3C",
+	                             "46270E6C3C", "4626711111", "4626711111"),
+	                    father=c("4625761D21", "4716281E21", "4715591B05",
+	                             "47187B4132",
+	                             "6C00107471", "46276D476B", "462711443D",
+	                             "F7F39", "48683A3B7D", "47041F697D", 
+	                             "D6C1E", "4626773563", "462457120D"),
+	                    hatchery=rep("GAVINS POINT", 13),
+	                    no_offspring=c(37400, 0.5*25200, 0.5*25200, 1500, 
+	                                   28860, 7280, 18560, 6032, 19458, 
+	                                   17064, 7344, 6244, 6021))
+	  tmp$broodstock$BROOD_1<-merge(tmp$broodstock$BROOD_1[,c("mother", "father", "hatchery", "number")],
+	                                  tmp2,by=c("mother", "father", "hatchery"), 
+	                                  all=TRUE)
+	  tmp$broodstock$BROOD_1[which(tmp$broodstock$BROOD_1$mother=="4627201358"),]$number<-1172
+	  tmp$broodstock$BROOD_1[is.na(tmp$broodstock$BROOD_1$number),]$number<-0
+	  rm(tmp2)
+	    # 2018 LB STOCKING REPORT INCLUDES FEMALE 4715674971 W/ 3,634  
+	    # AGE-0's IN TABLE BUT THERE IS NO CORRESPONDING MALE PROGENY IN  
+	    # MALE TABLE; SINCE ALSO NOT IN STOCKING DATABASE EXCLUDED (I.E.,  
+	    # NOT ADDED) STOCKING DATABASE HAS FEMALE 4627545945 FOR 8 AGE-0's 
+	    # WITH MALE 46271B725E, BUT NO CORRESPONDING DATA EXISTS ON THESE 
+	    # IN THE STOCKING REPORT; SINCE NO EGG COUNTS AVAILABLE FOR THIS 
+	    # CROSS EXCLUDED
+	  tmp$broodstock$BROOD_1<- tmp$broodstock$BROOD_1[-which(tmp$broodstock$BROOD_1$father=="46271B725E"),]
+	}
+	if(basin=="upper")
+	{
+	  ### PULL FINGERLING FAMILY LOTS STOCKED THIS YEAR
+	  tmp$broodstock$BROOD_1<-
+	    tmp$stockingHistory[which(tmp$stockingHistory$year==tmp$startYear 
+	                              & tmp$stockingHistory$age<12),]
+	  #### NOTE: IF WE HAVE DATA ON NUMBER OF EMBRYOS PRODUCED THIS WOULD 
+	  #### BE USEFUL HERE
+	  tmp$broodstock$BROOD_1<- tmp$broodstock$BROOD_1[, c("mother", "father", "hatchery", "number")]
+	  #### RANDOMLY DRAW FEMALE LENGTHS FROM INVERSE DISTRIBUTION
+	  tmp$broodstock$BROOD_1$length<- len_ini_upp_natural_nospace(runif(nrow(broodstock$upper$BROOD_1)))
+	  #### DRAW FECUNDITIES FOR EACH FEMALE BASED ON LENGTH
+	  fl_normalized<- (tmp$broodstock$BROOD_1$length - 1260.167)/277.404
+	    #SAME AS FECUNDITY FUNCTION
+	  loglambda<- rnorm(length(fl_normalized),
+	                    tmp$fec_a+tmp$fec_b*fl_normalized,
+	                    tmp$fec_er)
+	  tmp$broodstock$BROOD_1$no_offspring<- 
+	    max(rpois(nrow(tmp$broodstock$BROOD_1),exp(loglambda)),
+	        tmp$broodstock$BROOD_1$number)
+	  rm(fl_normalized, loglambda)
+	}
+	# NOTE: WE CAN SKIP THE NEXT TWO STEPS  IF WE HAVE REMAINING NUMBERS
+	tmp$broodstock$BROOD_1$hatchery_survival<- 
+	  plogis(rnorm(nrow(tmp$broodstock$BROOD_1), 
+	               log(tmp$phi0_Hcap_mean/(1-tmp$phi0_Hcap_mean)),
+	               tmp$phi0_Hcap_er))
+	tmp$broodstock$BROOD_1$remaining <-
+	  max(rbinom(1, tmp$broodstock$BROOD_1$no_offspring, 
+	             tmp$broodstock$BROOD_1$hatchery_survival),
+	      tmp$broodstock$BROOD_1$number)-tmp$broodstock$BROOD_1$number
+	tmp$broodstock$BROOD_1$hatchery_survival<-
+	  plogis(rnorm(nrow(tmp$broodstock$BROOD_1), 
+	               log(tmp$yearling$phi_mn/(1-tmp$yearling$phi_mn)),
+	               tmp$yearling$phi_sd))
+	tmp2<- data.frame(yearlings=rbinom(nrow(BROOD_1)*tmp$nreps,
+	                                   rep(tmp$broodstock$BROOD_1$remaining,
+	                                       each=tmp$nreps),
+	                                   rep(tmp$broodstock$BROOD_1$hatchery_survival,
+	                                       each=tmp$nreps)),
+	                  rep=rep(1:tmp$nreps, nrow(BROOD_1)))
+	tmp$broodstock$BROOD_1<- 
+	  as.data.frame(lapply(tmp$broodstock$BROOD_1[,c("mother", "father", "hatchery")],
+	                       function(x) rep(x,tmp$nreps)))
+	tmp$broodstock$BROOD_1<- cbind(tmp$broodstock$BROOD_1, tmp2)
+	## NOTE: WE HAVE ASSUMED ALL YEARLINGS WILL BE 15 MONTHS OLD IN SEPTEMBER, 
+	## BUT THIS WILL NOT ALWAYS BE THE CASE GIVEN THE DATA WE HAVE
 	
 	# GENETICS INPUTS
 	if(genetics)

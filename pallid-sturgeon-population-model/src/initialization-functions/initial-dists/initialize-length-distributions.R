@@ -3,7 +3,8 @@
 #  THIS SCRIPT CREATES THE DISCRETE LENGTH DISTRIBUTIONS
 #   USED TO INITIALIZE THE POPULATION MODEL
 # 
-#  LAST UPDATED: 12/14/2018
+#  LAST UPDATED: 3/13/2019
+#  LAST DATA UPDATE: 12/14/2018
 #
 ##########################################################
 library(RODBC)
@@ -16,7 +17,7 @@ pspapcom<- odbcConnectAccess2007(paste0(db_location, "pspap/20181002-pspa_2018.m
 ### PULL LENGTH DATA
 dat<-sqlFetch(pspapcom,"FISH_CONDITION")
 dat<-subset(dat,SPECIES=="PDSG")
-dat$BASIN<-ifelse(dat$SEGMENT_ID %in% 2:4, "upper",
+dat$BASIN<-ifelse(dat$SEGMENT_ID %in% c(2:4,22), "upper",
                   ifelse(dat$SEGMENT_ID %in% c(7:10,13,14), "lower",
                          "other"))
 #DO WE WANT TO INCLUDE TRIBUTARIES?:
@@ -33,7 +34,7 @@ hampcom<- odbcConnectAccess2007(paste0(db_location, "hamp/hamp_2018.mdb"))
 hampdat<-sqlFetch(hampcom,"FISH")
 hampdat<-subset(hampdat,SPECIES=="PDSG")
 names(hampdat)[15:17]<-c("LENGTH", "WEIGHT", "FTNUM") 
-hampdat$BASIN<-ifelse(hampdat$SEGMENT_ID %in% 2:4, "upper",
+hampdat$BASIN<-ifelse(hampdat$SEGMENT_ID %in% c(2:4, 22), "upper",
                   ifelse(hampdat$SEGMENT_ID %in% c(7:10,13,14), "lower",
                          "other"))
 hampdat$SOURCE<-"HAMP"
