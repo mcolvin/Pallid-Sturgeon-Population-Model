@@ -275,6 +275,7 @@ input$stockingInput$lower$broodstock$breeder_no<-4
 input$stockingInput$lower$broodstock$cp<-0.5
 input$stockingInput$lower$broodstock$bank_F<-tmp$lower$bankF
 input$stockingInput$lower$broodstock$bank_M<-tmp$lower$bankM
+rm(tmp)
 #### FINGERLINGS
 input$stockingInput$lower$fingerling<-data.frame(month=c(9),
                                                  stocking_rkm=c(50),

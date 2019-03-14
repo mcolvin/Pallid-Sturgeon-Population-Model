@@ -220,6 +220,26 @@ initialize<- function(inputs)
 		}
 	}
 	# END INITIALIZATION OF SPATIAL COMPONENTS
+	
+	## INITIALIZE YEARLINGS AVAILABLE FOR STOCKING
+	if(inputs$genetics)
+	{
+	  dyn$BROOD_1<-inputs$broodstock$BROOD_1
+	  dyn$BROOD_1$hatchery_survival<- 
+	    plogis(rnorm(nrow(dyn$BROOD_1), 
+	                 log(inputs$yearling$phi_mn/(1-inputs$yearling$phi_mn)),
+	                 inputs$yearling$phi_sd))
+	  tmp<- data.frame(yearlings=rbinom(nrow(dyn$BROOD_1)*inputs$nreps,
+	                                   rep(dyn$BROOD_1$remaining,
+	                                       each=inputs$nreps),
+	                                   rep(dyn$BROOD_1$hatchery_survival,
+	                                       each=inputs$nreps)),
+	                   rep=rep(1:inputs$nreps, nrow(dyn$BROOD_1)))
+	  dyn$BROOD_1<- 
+	    as.data.frame(lapply(dyn$BROOD_1[,c("mother", "father", "hatchery")],
+	                         function(x) rep(x,inputs$nreps)))
+	  dyn$BROOD_1<- cbind(dyn$BROOD_1, tmp)
+	}
 
 	
 	# VECTOR OF MONTHS
@@ -227,7 +247,7 @@ initialize<- function(inputs)
 	dyn$m<- rep(c(1:12),inputs$nyears) 	
 	return(dyn)
 	}	
-		
+
 		
 		
 		

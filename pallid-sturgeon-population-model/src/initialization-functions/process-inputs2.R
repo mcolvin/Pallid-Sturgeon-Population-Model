@@ -464,7 +464,7 @@ modelInputs<- function(input=NULL,
 	}
 	
 	
-	# STOCKING INPUTS
+	# STOCKING & GENETICS INPUTS
 	### FINGERGLINGS
 	tmp$fingerling<- input$stockingInput[[basin]]$fingerling
 	### YEARLINGS
@@ -514,35 +514,37 @@ modelInputs<- function(input=NULL,
 	}
 	## BROODSTOCK
 	tmp$broodstock<- input$stockingInput[[basin]]$broodstock
-	### CURRENT FISH IN HATCHERY
-	if(basin=="lower")
+	if(genetics)
 	{
-	  #### PULL FINGERLING FAMILY LOTS STOCKED DURING THE PAST YEAR
-	  tmp$broodstock$BROOD_1<-
-	    tmp$stockingHistory[which(stockingHistory$year==tmp$startYear 
-	                          & stockingHistory$current_age+9<24),]
-	  #### ADD IN KNOWN FAMILY LOTS FROM THE PAST YEAR (2018) AND NUMBER 
-	  #### OF EGGS INCLUDING ANY MORTALITY INDICATED
-	  tmp2<- data.frame(mother=c("46263A6E1B", "462704502D", "462704502D",
-	                             "4627693763",
-	                             "4627545945", "4627545945", "4626641923",
-	                             "4626641923", "4627201358", "46270E6C3C",
-	                             "46270E6C3C", "4626711111", "4626711111"),
-	                    father=c("4625761D21", "4716281E21", "4715591B05",
-	                             "47187B4132",
-	                             "6C00107471", "46276D476B", "462711443D",
-	                             "F7F39", "48683A3B7D", "47041F697D", 
-	                             "D6C1E", "4626773563", "462457120D"),
-	                    hatchery=rep("GAVINS POINT", 13),
-	                    no_offspring=c(37400, 0.5*25200, 0.5*25200, 1500, 
-	                                   28860, 7280, 18560, 6032, 19458, 
-	                                   17064, 7344, 6244, 6021))
-	  tmp$broodstock$BROOD_1<-merge(tmp$broodstock$BROOD_1[,c("mother", "father", "hatchery", "number")],
+	  ### CURRENT FISH IN HATCHERY
+	  if(basin=="lower")
+	  {
+	    #### PULL FINGERLING FAMILY LOTS STOCKED DURING THE PAST YEAR
+	    tmp$broodstock$BROOD_1<-
+	      tmp$stockingHistory[which(stockingHistory$year==tmp$startYear-1 
+	                                & stockingHistory$current_age+9<24),]
+	    #### ADD IN KNOWN FAMILY LOTS FROM THE PAST YEAR (2018) AND NUMBER 
+	    #### OF EGGS INCLUDING ANY MORTALITY INDICATED
+	    tmp2<- data.frame(mother=c("46263A6E1B", "462704502D", "462704502D",
+	                               "4627693763",
+	                               "4627545945", "4627545945", "4626641923",
+	                               "4626641923", "4627201358", "46270E6C3C",
+	                               "46270E6C3C", "4626711111", "4626711111"),
+	                      father=c("4625761D21", "4716281E21", "4715591B05",
+	                               "47187B4132",
+	                               "6C00107471", "46276D476B", "462711443D",
+	                               "F7F39", "48683A3B7D", "47041F697D", 
+	                               "D6C1E", "4626773563", "462457120D"),
+	                      hatchery=rep("GAVINS POINT", 13),
+	                      no_offspring=c(37400, 0.5*25200, 0.5*25200, 1500, 
+	                                     28860, 7280, 18560, 6032, 19458, 
+	                                     17064, 7344, 6244, 6021))
+	    tmp$broodstock$BROOD_1<-merge(tmp$broodstock$BROOD_1[,c("mother", "father", "hatchery", "number")],
 	                                  tmp2,by=c("mother", "father", "hatchery"), 
 	                                  all=TRUE)
-	  tmp$broodstock$BROOD_1[which(tmp$broodstock$BROOD_1$mother=="4627201358"),]$number<-1172
-	  tmp$broodstock$BROOD_1[is.na(tmp$broodstock$BROOD_1$number),]$number<-0
-	  rm(tmp2)
+	    tmp$broodstock$BROOD_1[which(tmp$broodstock$BROOD_1$mother=="4627201358"),]$number<-1172
+	    tmp$broodstock$BROOD_1[is.na(tmp$broodstock$BROOD_1$number),]$number<-0
+	    rm(tmp2)
 	    # 2018 LB STOCKING REPORT INCLUDES FEMALE 4715674971 W/ 3,634  
 	    # AGE-0's IN TABLE BUT THERE IS NO CORRESPONDING MALE PROGENY IN  
 	    # MALE TABLE; SINCE ALSO NOT IN STOCKING DATABASE EXCLUDED (I.E.,  
@@ -550,66 +552,62 @@ modelInputs<- function(input=NULL,
 	    # WITH MALE 46271B725E, BUT NO CORRESPONDING DATA EXISTS ON THESE 
 	    # IN THE STOCKING REPORT; SINCE NO EGG COUNTS AVAILABLE FOR THIS 
 	    # CROSS EXCLUDED
-	  tmp$broodstock$BROOD_1<- tmp$broodstock$BROOD_1[-which(tmp$broodstock$BROOD_1$father=="46271B725E"),]
-	}
-	if(basin=="upper")
-	{
-	  ### PULL FINGERLING FAMILY LOTS STOCKED THIS YEAR
-	  tmp$broodstock$BROOD_1<-
-	    tmp$stockingHistory[which(tmp$stockingHistory$year==tmp$startYear 
-	                              & tmp$stockingHistory$age<12),]
-	  #### NOTE: IF WE HAVE DATA ON NUMBER OF EMBRYOS PRODUCED THIS WOULD 
-	  #### BE USEFUL HERE
-	  tmp$broodstock$BROOD_1<- tmp$broodstock$BROOD_1[, c("mother", "father", "hatchery", "number")]
-	  #### RANDOMLY DRAW FEMALE LENGTHS FROM INVERSE DISTRIBUTION
-	  tmp$broodstock$BROOD_1$length<- len_ini_upp_natural_nospace(runif(nrow(broodstock$upper$BROOD_1)))
-	  #### DRAW FECUNDITIES FOR EACH FEMALE BASED ON LENGTH
-	  fl_normalized<- (tmp$broodstock$BROOD_1$length - 1260.167)/277.404
+	    tmp$broodstock$BROOD_1<- 
+	      tmp$broodstock$BROOD_1[-which(tmp$broodstock$BROOD_1$father=="46271B725E"),]
+	  }
+	  if(basin=="upper")
+	  {
+	    ### PULL FINGERLING FAMILY LOTS STOCKED THIS YEAR
+	    tmp$broodstock$BROOD_1<-
+	      tmp$stockingHistory[which(tmp$stockingHistory$year==tmp$startYear-1 
+	                                & tmp$stockingHistory$age<12),]
+	    #### NOTE: IF WE HAVE DATA ON NUMBER OF EMBRYOS PRODUCED THIS WOULD 
+	    #### BE USEFUL HERE
+	    tmp$broodstock$BROOD_1<- tmp$broodstock$BROOD_1[, c("mother", "father", "hatchery", "number")]
+	    #### RANDOMLY DRAW FEMALE LENGTHS FROM INVERSE DISTRIBUTION
+	    tmp$broodstock$BROOD_1$length<- 
+	      len_ini_upp_natural_nospace(runif(nrow(tmp$broodstock$BROOD_1)))
+	    #### DRAW FECUNDITIES FOR EACH FEMALE BASED ON LENGTH
+	    fl_normalized<- (tmp$broodstock$BROOD_1$length - 1260.167)/277.404
 	    #SAME AS FECUNDITY FUNCTION
-	  loglambda<- rnorm(length(fl_normalized),
-	                    tmp$fec_a+tmp$fec_b*fl_normalized,
-	                    tmp$fec_er)
-	  tmp$broodstock$BROOD_1$no_offspring<- 
-	    max(rpois(nrow(tmp$broodstock$BROOD_1),exp(loglambda)),
-	        tmp$broodstock$BROOD_1$number)
-	  rm(fl_normalized, loglambda)
+	    loglambda<- rnorm(length(fl_normalized),
+	                      tmp$fec_a+tmp$fec_b*fl_normalized,
+	                      tmp$fec_er)
+	    tmp$broodstock$BROOD_1$no_offspring<- rpois(nrow(tmp$broodstock$BROOD_1),
+	                                                exp(loglambda))
+	    tmp$broodstock$BROOD_1$no_offspring<- 
+	      ifelse(tmp$broodstock$BROOD_1$no_offspring>=tmp$broodstock$BROOD_1$number,
+	             tmp$broodstock$BROOD_1$no_offspring,
+	             tmp$broodstock$BROOD_1$number)
+	    rm(fl_normalized, loglambda)
+	  }
+	  # NOTE: WE CAN SKIP THE NEXT TWO STEPS  IF WE HAVE REMAINING NUMBERS
+	  tmp$broodstock$BROOD_1$hatchery_survival<- 
+	    plogis(rnorm(nrow(tmp$broodstock$BROOD_1), 
+	                 log(tmp$phi0_Hcap_mean/(1-tmp$phi0_Hcap_mean)),
+	                 tmp$phi0_Hcap_er))
+	  tmp$broodstock$BROOD_1$remaining <-
+	    max(rbinom(1, tmp$broodstock$BROOD_1$no_offspring, 
+	               tmp$broodstock$BROOD_1$hatchery_survival),
+	        tmp$broodstock$BROOD_1$number)-tmp$broodstock$BROOD_1$number
+	  tmp$broodstock$BROOD_1<-tmp$broodstock$BROOD_1[,c("mother", "father", 
+	                                                    "hatchery", "remaining")]
+	  ## NOTE: AGE IS NOT INCLUDED AS WE HAVE ASSUMED ALL YEARLINGS WILL  
+	  ## BE 15 MONTHS OLD IN SEPTEMBER, BUT THIS WILL NOT ALWAYS BE THE   
+	  ## CASE GIVEN THE DATA WE HAVE; ALSO STOCKING BY BASIN AND ORIGIN  
+	  ## SHOWS STOCKING OCCURS IN VARIOUS OTHER MONTHS... MAY NEED TO 
+	  ## REVISE TO ACCOUNT FOR
 	}
-	# NOTE: WE CAN SKIP THE NEXT TWO STEPS  IF WE HAVE REMAINING NUMBERS
-	tmp$broodstock$BROOD_1$hatchery_survival<- 
-	  plogis(rnorm(nrow(tmp$broodstock$BROOD_1), 
-	               log(tmp$phi0_Hcap_mean/(1-tmp$phi0_Hcap_mean)),
-	               tmp$phi0_Hcap_er))
-	tmp$broodstock$BROOD_1$remaining <-
-	  max(rbinom(1, tmp$broodstock$BROOD_1$no_offspring, 
-	             tmp$broodstock$BROOD_1$hatchery_survival),
-	      tmp$broodstock$BROOD_1$number)-tmp$broodstock$BROOD_1$number
-	tmp$broodstock$BROOD_1$hatchery_survival<-
-	  plogis(rnorm(nrow(tmp$broodstock$BROOD_1), 
-	               log(tmp$yearling$phi_mn/(1-tmp$yearling$phi_mn)),
-	               tmp$yearling$phi_sd))
-	tmp2<- data.frame(yearlings=rbinom(nrow(BROOD_1)*tmp$nreps,
-	                                   rep(tmp$broodstock$BROOD_1$remaining,
-	                                       each=tmp$nreps),
-	                                   rep(tmp$broodstock$BROOD_1$hatchery_survival,
-	                                       each=tmp$nreps)),
-	                  rep=rep(1:tmp$nreps, nrow(BROOD_1)))
-	tmp$broodstock$BROOD_1<- 
-	  as.data.frame(lapply(tmp$broodstock$BROOD_1[,c("mother", "father", "hatchery")],
-	                       function(x) rep(x,tmp$nreps)))
-	tmp$broodstock$BROOD_1<- cbind(tmp$broodstock$BROOD_1, tmp2)
-	## NOTE: WE HAVE ASSUMED ALL YEARLINGS WILL BE 15 MONTHS OLD IN SEPTEMBER, 
-	## BUT THIS WILL NOT ALWAYS BE THE CASE GIVEN THE DATA WE HAVE
-	
 	# GENETICS INPUTS
-	if(genetics)
-	{
-	  tmp$genetics_info$fingerling<-input$geneticsInput[[basin]]$fingerling
-	  tmp$genetics_info$yearling<-input$geneticsInput[[basin]]$yearling
+	#if(genetics)
+	#{
+	#  tmp$genetics_info$fingerling<-input$geneticsInput[[basin]]$fingerling
+	#  tmp$genetics_info$yearling<-input$geneticsInput[[basin]]$yearling
 	# ## HATCHERY FISH INPUTS W/ GENETICS
 	#   tmp$hatchery_info<- rbind(input$geneticsInput[[basin]]$age1plus, 
 	#                             input$geneticsInput[[basin]]$age0)
-	  
-	}
+	#  
+	#}
 	# HATCHERY FISH INPUTS W/O GENETICS
 	# if(!genetics & hatchery_name)
 	# {
