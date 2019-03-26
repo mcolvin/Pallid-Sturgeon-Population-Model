@@ -60,6 +60,7 @@ modelInputs<- function(input=NULL,
 	{
 	  tmp$pMat[i]<-tmp$propM[i]-tmp$propM[i-1]
 	}
+	rm(i)
 	#####################################################################
 	#   CAN ALSO GO IN REVERSE IF ESTIMATING pMat (FISH MATURES AT AGE  #
 	#    A GIVEN IMMATURE AT AGE A-1) IS EASIER                         #
@@ -116,72 +117,124 @@ modelInputs<- function(input=NULL,
 	                                 tmp$stockingHistory$current_age-24, 
 	                                 0)
 	### ADD IN BASIN SPECIFIC SURVIVALS
-	#### LOWER
-	if(basin=="lower")
+	if(is.null(tmp$stockingHistory$survival_est))
 	{
-	  ##### WILDHABER ET AL. 2017(a) ECOLOGICAL MODELLING
-	  ##### W/ 1-3 ESTIMATED AS 0.00011/0.0510
-	  # tmp$stockingHistory$survival_est<- 
-	  #   0.0021^(tmp$stockingHistory$phi00/3)*
-	  #   0.0510^(tmp$stockingHistory$phi0/9)*
-	  #   0.3674^(tmp$stockingHistory$phi1/12)*
-	  #   0.9220^(tmp$stockingHistory$phi2/12)
-	  # sum(tmp$stockingHistory$number*tmp$stockingHistory$survival_est)
-	  ##### STEFFENSEN ET AL. 2019 -- MAY ALSO WANT TO TRY MODELING WITH
-	  #####  DECREASING AGE-1 SURVIVAL BY AGE CLASS... HOW MUCH OF A DECREASE IN
-	  #####  SURVIVAL WOULD BE NEEDED TO MAKE CREATE THE ESTIMATES SEEN IN
-	  #####  FIG. 7?
-	  tmp$stockingHistory$survival_est<- 
-	    0.075^(tmp$stockingHistory$phi00/12)*
-	    0.075^(tmp$stockingHistory$phi0/12)*
-	    0.279^(tmp$stockingHistory$phi1/12)*
-	    0.945^(tmp$stockingHistory$phi2/12)
-	  # sum(tmp$stockingHistory$number*tmp$stockingHistory$survival_est)
-	  ##### LOWER AT 21,790 WHICH IS GREATER THAN THE PREDICTED 12,134 USED
-	  ##### PREVIOUSLY
-	  ##### COMPARE WITH STEFFENSEN ET AL. 2018 https://doi.org/10.1111/jai.13646
-	  # aggregate(NUMBERS.STOCKED~YEAR_BORN, dat[which(dat$RPMA==4),], sum)
-	  # (dat is calculated in compile-stocking-data.R)
-	  ##### 1992 & 1997 EXCLUDED...LOOK INTO IF SHOULD EXCLUDE TOO
-	  ##### 2004: KIRK HAS ONE MORE FISH THAN US
-	  ##### 2008: WE HAVE 558 MORE
-	  ##### 2010: WE HAVE 37 MORE
-	  ##### 2011: WE HAVE 116 MORE
-	  ##### 2012: WE HAVE 99 MORE
-	  ##### 2013: WE HAVE 812 MORE
-	  ##### 2015: WE HAVE 500 MORE
+	  #### LOWER
+	  if(basin=="lower")
+	  {
+	    ##### WILDHABER ET AL. 2017(a) ECOLOGICAL MODELLING
+	    ##### W/ 1-3 ESTIMATED AS 0.00011/0.0510
+	    # tmp$stockingHistory$survival_est<- 
+	    #   0.0021^(tmp$stockingHistory$phi00/3)*
+	    #   0.0510^(tmp$stockingHistory$phi0/9)*
+	    #   0.3674^(tmp$stockingHistory$phi1/12)*
+	    #   0.9220^(tmp$stockingHistory$phi2/12)
+	    # sum(tmp$stockingHistory$number*tmp$stockingHistory$survival_est)
+	    ##### STEFFENSEN ET AL. 2019 -- MAY ALSO WANT TO TRY MODELING WITH
+	    #####  DECREASING AGE-1 SURVIVAL BY AGE CLASS... HOW MUCH OF A DECREASE IN
+	    #####  SURVIVAL WOULD BE NEEDED TO MAKE CREATE THE ESTIMATES SEEN IN
+	    #####  FIG. 7?
+	    tmp$stockingHistory$survival_est<- 
+	      0.075^(tmp$stockingHistory$phi00/12)*
+	      0.075^(tmp$stockingHistory$phi0/12)*
+	      0.279^(tmp$stockingHistory$phi1/12)*
+	      0.945^(tmp$stockingHistory$phi2/12)
+	    # sum(tmp$stockingHistory$number*tmp$stockingHistory$survival_est)
+	    ##### LOWER AT 21,790 WHICH IS GREATER THAN THE PREDICTED 12,134 USED
+	    ##### PREVIOUSLY
+	    ##### COMPARE WITH STEFFENSEN ET AL. 2018 https://doi.org/10.1111/jai.13646
+	    # aggregate(NUMBERS.STOCKED~YEAR_BORN, dat[which(dat$RPMA==4),], sum)
+	    # (dat is calculated in compile-stocking-data.R)
+	    ##### 1992 & 1997 EXCLUDED...LOOK INTO IF SHOULD EXCLUDE TOO
+	    ##### 2004: KIRK HAS ONE MORE FISH THAN US
+	    ##### 2008: WE HAVE 558 MORE
+	    ##### 2010: WE HAVE 37 MORE
+	    ##### 2011: WE HAVE 116 MORE
+	    ##### 2012: WE HAVE 99 MORE
+	    ##### 2013: WE HAVE 812 MORE
+	    ##### 2015: WE HAVE 500 MORE
+	  }
+	  if(basin=="upper")
+	  {
+	    ##### USING ROTELLA 2017 THE BEST WE CAN QUICKLY
+	    phi_fing<-input$stockingHistory$extra$upper$phi_fingerling
+	    phi_year<-input$stockingHistory$extra$upper$phi_yearling
+	    tmp$stockingHistory$survival_est<- 
+	      phi_fing[1]^(tmp$stockingHistory$phi00/12)*
+	      phi_fing[1]^(tmp$stockingHistory$phi0/12)*
+	      phi_fing[2]^(tmp$stockingHistory$phi1/12)*
+	      phi_fing[3]^(tmp$stockingHistory$phi2/12)
+	    tmp$stockingHistory$survival_est<- 
+	      ifelse(tmp$stockingHistory$age>=12,
+	             phi_year[1]^(tmp$stockingHistory$phi1/12)*
+	               phi_year[2]^(tmp$stockingHistory$phi2/12),
+	             tmp$stockingHistory$survival_est)
+	    # sum(tmp$stockingHistory$number*tmp$stockingHistory$survival_est)
+	    ##### INDICATES 241,120 HATCHERY FISH VS. ESTIMATED 16,444 IN 2016
+	    ##### BUT ALSO DATA SHOWS 1,666,804 STOCKINGS (WITH 1,663,460 WITH ""
+	    ##### FOR THE FIN CURL ENTRY) IN RPMA 2 BETWEEN 1998 AND 2016, NOT
+	    ##### 245,249 AS IN ROTELLA 2017.  WHY THE DISCREPANCY??? -- HOW TO TELL
+	    ##### IF HAD IRIDOVIRUS?  DOES NOT SEEM TO BE INDICATED IN ANY COMMENTS
+	    ##### (COUNTS IN ROTELLA ARE FOR DISEASE & FIN CURL FREE)
+	    rm(phi_fing, phi_year)
+	  }
+	  ### ADD HERE TO MODIFY BY FAMILY, HATCHERY, OR YEAR-CLASS
+	  ### CALCULATE CURRENT NUMBERS BY BASIN
+	  ### NOTE: USING STOCKED AND SURVIVAL GAVE VERY DIFFERENT NUMBERS FROM 
+	  ### POP. ESTIMATES, SO JUST USING TO DEFINE FAMILY LOT PROPORTIONS 
+	  ### AND NOT TO DETERMINE THE NUMBER OF HATCHERY FISH AND AGE 
+	  ### DISTRIBUTION
 	}
-	if(basin=="upper")
-	{
-	  ##### USING ROTELLA 2017 THE BEST WE CAN QUICKLY
-	  phi_fing<-input$stockingHistory$extra$upper$phi_fingerling
-	  phi_year<-input$stockingHistory$extra$upper$phi_fingerling
-	  tmp$stockingHistory$survival_est<- 
-	    phi_fing[1]^(tmp$stockingHistory$phi00/12)*
-	    phi_fing[1]^(tmp$stockingHistory$phi0/12)*
-	    phi_fing[2]^(tmp$stockingHistory$phi1/12)*
-	    phi_fing[3]^(tmp$stockingHistory$phi2/12)
-	  tmp$stockingHistory$survival_est<- 
-	    ifelse(tmp$stockingHistory$age>=12,
-	           phi_year[1]^(tmp$stockingHistory$phi1/12)*
-	             phi_year[2]^(tmp$stockingHistory$phi2/12),
-	           tmp$stockingHistory$survival_est)
-	  # sum(tmp$stockingHistory$number*tmp$stockingHistory$survival_est)
-	  ##### INDICATES 241,120 HATCHERY FISH VS. ESTIMATED 16,444 IN 2016
-	  ##### BUT ALSO DATA SHOWS 1,666,804 STOCKINGS (WITH 1,663,460 WITH ""
-	  ##### FOR THE FIN CURL ENTRY) IN RPMA 2 BETWEEN 1998 AND 2016, NOT
-	  ##### 245,249 AS IN ROTELLA 2017.  WHY THE DISCREPANCY??? -- HOW TO TELL
-	  ##### IF HAD IRIDOVIRUS?  DOES NOT SEEM TO BE INDICATED IN ANY COMMENTS
-	  ##### (COUNTS IN ROTELLA ARE FOR DISEASE & FIN CURL FREE)
-	}
-	### ADD HERE TO MODIFY BY FAMILY, HATCHERY, OR YEAR-CLASS
-	### CALCULATE CURRENT NUMBERS BY BASIN
-  ### NOTE: USING STOCKED AND SURVIVAL GAVE VERY DIFFERENT NUMBERS FROM 
-	### POP. ESTIMATES, SO JUST USING TO DEFINE FAMILY LOT PROPORTIONS 
-	### AND NOT TO DETERMINE THE NUMBER OF HATCHERY FISH AND AGE 
-	### DISTRIBUTION
-	tmp$stockingHistory$N_hat<-rbinom(1, tmp$stockingHistory$number,
-	                                  tmp$stockingHistory$survival_est)
+	
+	
+	### NATURAL CATCH HISTORY: CURRENT PARENTS IN THE NATURAL POPULATION
+	tmp$naturalCatchHistory<- input$catchHistory[[basin]]
+	Fhist<-ddply(tmp$stockingHistory, .(mother), summarize,
+	             first_encount=strptime(paste0(min(year),"-03-01"),
+	                                    format="%Y-%m-%d", tz="UTC"),
+	             last_encount=strptime(paste0(max(year),"-06-01"),
+	                                   format="%Y-%m-%d", tz="UTC"))
+	Fhist<- Fhist[-which(Fhist$mother %in% c("", "MIX", "UKNOWN", "GAVINS")),]
+	Fhist$sex<- 1
+	names(Fhist)[1]<-"individual"
+	tmp$naturalCatchHistory<-rbind.fill(tmp$naturalCatchHistory, Fhist)
+	
+	Mhist<-ddply(tmp$stockingHistory, .(father), summarize,
+	             first_encount=strptime(paste0(min(year),"-03-01"),
+	                                    format="%Y-%m-%d", tz="UTC"),
+	             last_encount=strptime(paste0(max(year),"-06-01"),
+	                                   format="%Y-%m-%d", tz="UTC"))
+	Mhist<- Mhist[-which(Mhist$father %in% c("", "MIX", "MIX2", "MIX*", 
+	                                         "MIX**", "UKNOWN", "GAVINS")),]
+	#NEED TO ALSO REMOVE LAST ENCOUNTERS THAT WERE DUE TO CRYOPRESERVED SPERM
+	Mhist$sex<- 0
+	names(Mhist)[1]<-"individual"
+	tmp$naturalCatchHistory<-rbind.fill(tmp$naturalCatchHistory, Mhist)
+	
+	rm(Fhist, Mhist)
+	tmp$naturalCatchHistory[is.na(tmp$naturalCatchHistory$length),"length"]<-0
+	tmp$naturalCatchHistory[is.na(tmp$naturalCatchHistory$sex),"sex"]<- -999
+	tmp$naturalCatchHistory<-ddply(tmp$naturalCatchHistory, .(individual), summarize,
+	                               sex=max(sex),
+	                               length=max(length),
+	                               dol=last_encount[which.max(length)],
+	                               first_encount=min(first_encount, na.rm=TRUE),
+	                               last_encount=max(last_encount, na.rm=TRUE))
+	tmp$naturalCatchHistory[which(tmp$naturalCatchHistory$length==0),"length"]<- NA
+	tmp$naturalCatchHistory[which(tmp$naturalCatchHistory$sex==-999),"sex"]<- NA
+	tmp$naturalCatchHistory$minAge<-round(as.numeric(difftime(tmp$naturalCatchHistory$dol, 
+	                                                          tmp$naturalCatchHistory$first_encount,
+	                                                          units = "days"))/
+	                                        (365.25/12)) + tmp$age_mat_min*12
+	
+	tmp$naturalCatchHistory$dT<-round(as.numeric(difftime(tmp$naturalCatchHistory$last_encount, 
+	                                                      tmp$naturalCatchHistory$dol,
+	                                                      units = "days"))/(365.25/12))
+	tmp$naturalCatchHistory$phi_dT<- round(as.numeric(difftime(strptime(paste0(tmp$startYear-1,"-12-31"),
+	                                                                    format="%Y-%m-%d", tz="UTC"), 
+	                                                           tmp$naturalCatchHistory$last_encount,
+	                                                           units = "days"))/(365.25/12)) 
+	tmp$naturalCatchHistory$pr<-tmp$phi2^(tmp$naturalCatchHistory$phi_dT/12)
 
 	
 	# SPATIAL
@@ -247,7 +300,7 @@ modelInputs<- function(input=NULL,
 		tmp$drift_prob[upper.tri(tmp$drift_prob)]<-0
 		if(basin=="upper")
 		{
-		  ## ADD ON LOWER YELLOWSTONE
+		  ## ADJUST FOR LOWER YELLOWSTONE
 		  tmp$drift_prob[nrow(tmp$drift_prob), 
 		                 (length(which(tmp$bend_meta$B_SEGMENT==4))+1):
 		                   (ncol(tmp$drift_prob)-1)]<-0
@@ -389,7 +442,7 @@ modelInputs<- function(input=NULL,
 #     rm(adult_mov_probL, adult_mov_probU)
 		#### SPAWNING
 		tmp$spn_bends<-input$spatialInput[[basin]]$spn_bends
-		if(migration & basin=="upper" & input$spatialInput[[basin]]$UYR$spawn)
+		if(migration & basin=="upper" & input$spatialInput[["upper"]]$UYR$spawn)
 		{
 		  tmp$spn_bends<-c(tmp$spn_bends, tmp$n_bends+1)
 		}
@@ -398,7 +451,7 @@ modelInputs<- function(input=NULL,
 		if(is.null(input$spatialInput[[basin]]$spn_bnd_probs))
 		{
 		  tmp$spn_bnd_probs<-runif(length(tmp$spn_bend))
-		  if(migration & basin=="upper" & input$spatialInput[[basin]]$UYR$spawn)
+		  if(migration & basin=="upper" & input$spatialInput[["upper"]]$UYR$spawn)
 		  {
 		    tmp$spn_bnd_probs[length(tmp$spn_bnd_probs)]<- 
 		      tmp$spn_bnd_probs[length(tmp$spn_bnd_probs)]*
@@ -428,8 +481,19 @@ modelInputs<- function(input=NULL,
 		#tmp$spn_mov_prob<- tmp$spn_mov_prob/apply(tmp$spn_mov_prob,1,sum)
 		
 		## SPATIAL STRUCTURE AGE-0
-		pp<- runif(tmp$n_bends)
-		tmp$natural_age0_rel_dens<- pp/sum(pp)
+		if(length(tmp$spn_bends)>1)
+		{
+		  tmp$natural_age0_rel_dens<- 
+		    colSums(tmp$drift_prob[tmp$spn_bends,]*tmp$spn_bnd_probs)
+		}
+		if(length(tmp$spn_bends)==1)
+		{
+		  tmp$natural_age0_rel_dens<- tmp$drift_prob[tmp$spn_bends,]
+		}
+		if(!migration)
+		{
+		  tmp$natural_age0_rel_dens<- tmp$natural_age0_rel_dens[1:tmp$n_bends]
+		}
 		pp<- runif(tmp$n_bends)
 		tmp$hatchery_age0_rel_dens<- pp/sum(pp)
 
@@ -444,23 +508,49 @@ modelInputs<- function(input=NULL,
 	if(!spatial & migration)
 	{
 	  tmp$p_retained<-input$spatialInput[[basin]]$p_retained
-	  tmp$p_migrate_out<-input$spatialInput[[basin]]$p_dwnstrm$to
-	  tmp$p_migrate_in<- input$spatialInput[[basin]]$p_dwnstrm$from
+	  p_migrate_out<-input$spatialInput[[basin]]$p_dwnstrm$to
+	  p_migrate_in<- input$spatialInput[[basin]]$p_dwnstrm$from
+	  tmp$migrate<-matrix(c(1-p_migrate_out, p_migrate_out,
+	                        p_migrate_in, 1-p_migrate_in),
+	                      nrow=2, ncol=2, byrow = TRUE)
 	  if(basin=="upper")
 	  {
-	    tmp$p_migrate_out<- tmp$p_migrate_out+
-	      input$spatialInput[[basin]]$p_upper_YR$to
-	    tmp$p_migrate_in<- (tmp$p_migrate_in*
-	      input$spatialInput[[basin]]$p_dwnstrm$to +
-	      input$spatialInput[[basin]]$p_upper_YR$from*
-	      input$spatialInput[[basin]]$p_upper_YR$to)/
-	      tmp$p_migrate_out
-	    tmp$drift_in<- input$spatialInput[[basin]]$UYR$p_passage*
+	    to_UYR<-input$spatialInput[[basin]]$p_upper_YR$to
+	    from_UYR<-input$spatialInput[[basin]]$p_upper_YR$from
+	    tmp$migrate<-matrix(c(tmp$migrate[1,1]-to_UYR, 
+	                          to_UYR, tmp$migrate[1,2],
+	                          from_UYR*(1-tmp$migrate[1,2]),
+	                          1-from_UYR, from_UYR*tmp$migrate[1,2],
+	                          tmp$migrate[2,1]*(1-to_UYR),
+	                          tmp$migrate[2,1]*to_UYR, tmp$migrate[2,2]),
+	                        nrow=3, ncol=3, byrow = TRUE)
+	    tmp$passage<- input$spatialInput[[basin]]$UYR$p_passage
+	    tmp$drift_in<- tmp$passage*
 	      input$spatialInput[[basin]]$UYR$p_retained_given_passage
 	    tmp$p_retained<- c(tmp$p_retained, 
 	                       input$spatialInput[[basin]]$LYR$p_retained)
 	  }
 	  tmp$p_retained<-mean(tmp$p_retained)
+	}
+	
+	# TOTAL TRACKED POPULATION NUMBERS
+	if(basin=="upper")
+	{
+	  tmp$total_natural<-ifelse(migration,
+	                            tmp$natural+tmp$LS_natural+tmp$UYR_natural,
+	                            tmp$natural)
+	  tmp$total_hatchery<-ifelse(migration,
+	                             tmp$hatchery+tmp$LS_hatchery+tmp$UYR_hatchery,
+	                             tmp$hatchery)
+	}
+	if(basin=="lower")
+	{
+	  tmp$total_natural<-ifelse(migration,
+	                            tmp$natural+tmp$MS_natural,
+	                            tmp$natural)
+	  tmp$total_hatchery<-ifelse(migration,
+	                             tmp$hatchery+tmp$MS_hatchery,
+	                             tmp$hatchery)
 	}
 	
 	
@@ -521,8 +611,10 @@ modelInputs<- function(input=NULL,
 	  {
 	    #### PULL FINGERLING FAMILY LOTS STOCKED DURING THE PAST YEAR
 	    tmp$broodstock$BROOD_1<-
-	      tmp$stockingHistory[which(stockingHistory$year==tmp$startYear-1 
-	                                & stockingHistory$current_age+9<24),]
+	      rbind(tmp$hatchery_age0,tmp$stockingHistory[
+	        which(tmp$stockingHistory$year==tmp$startYear-1 
+	              & tmp$stockingHistory$current_age+9<24),
+	        names(tmp$hatchery_age0)])
 	    #### ADD IN KNOWN FAMILY LOTS FROM THE PAST YEAR (2018) AND NUMBER 
 	    #### OF EGGS INCLUDING ANY MORTALITY INDICATED
 	    tmp2<- data.frame(mother=c("46263A6E1B", "462704502D", "462704502D",
@@ -539,10 +631,16 @@ modelInputs<- function(input=NULL,
 	                      no_offspring=c(37400, 0.5*25200, 0.5*25200, 1500, 
 	                                     28860, 7280, 18560, 6032, 19458, 
 	                                     17064, 7344, 6244, 6021))
-	    tmp$broodstock$BROOD_1<-merge(tmp$broodstock$BROOD_1[,c("mother", "father", "hatchery", "number")],
-	                                  tmp2,by=c("mother", "father", "hatchery"), 
+	    if(nrow(tmp$broodstock$BROOD_1)!=0)
+	    {
+	      tmp$broodstock$BROOD_1<-
+	        merge(tmp$broodstock$BROOD_1[,c("mother", "father", 
+	                                        "hatchery", "number")],
+	                                  tmp2,by=c("mother", "father", 
+	                                            "hatchery"), 
 	                                  all=TRUE)
-	    tmp$broodstock$BROOD_1[which(tmp$broodstock$BROOD_1$mother=="4627201358"),]$number<-1172
+	    }
+	    if(nrow(tmp$broodstock$BROOD_1)==0){tmp$broodstock$BROOD_1<-tmp2}
 	    tmp$broodstock$BROOD_1[is.na(tmp$broodstock$BROOD_1$number),]$number<-0
 	    rm(tmp2)
 	    # 2018 LB STOCKING REPORT INCLUDES FEMALE 4715674971 W/ 3,634  
@@ -559,8 +657,11 @@ modelInputs<- function(input=NULL,
 	  {
 	    ### PULL FINGERLING FAMILY LOTS STOCKED THIS YEAR
 	    tmp$broodstock$BROOD_1<-
-	      tmp$stockingHistory[which(tmp$stockingHistory$year==tmp$startYear-1 
-	                                & tmp$stockingHistory$age<12),]
+	      rbind(tmp$hatchery_age0,
+	            tmp$stockingHistory[
+	              which(tmp$stockingHistory$year==tmp$startYear-1 
+	                    & tmp$stockingHistory$current_age+9<24),
+	              names(tmp$hatchery_age0)])
 	    #### NOTE: IF WE HAVE DATA ON NUMBER OF EMBRYOS PRODUCED THIS WOULD 
 	    #### BE USEFUL HERE
 	    tmp$broodstock$BROOD_1<- tmp$broodstock$BROOD_1[, c("mother", "father", "hatchery", "number")]
@@ -586,10 +687,17 @@ modelInputs<- function(input=NULL,
 	    plogis(rnorm(nrow(tmp$broodstock$BROOD_1), 
 	                 log(tmp$phi0_Hcap_mean/(1-tmp$phi0_Hcap_mean)),
 	                 tmp$phi0_Hcap_er))
-	  tmp$broodstock$BROOD_1$remaining <-
-	    max(rbinom(1, tmp$broodstock$BROOD_1$no_offspring, 
-	               tmp$broodstock$BROOD_1$hatchery_survival),
-	        tmp$broodstock$BROOD_1$number)-tmp$broodstock$BROOD_1$number
+	  if(nrow(tmp$broodstock$BROOD_1)>0)
+	  {
+	    tmp$broodstock$BROOD_1$remaining <-
+	      max(rbinom(1, tmp$broodstock$BROOD_1$no_offspring, 
+	                 tmp$broodstock$BROOD_1$hatchery_survival),
+	          tmp$broodstock$BROOD_1$number)-tmp$broodstock$BROOD_1$number
+	  }
+	  if(nrow(tmp$broodstock$BROOD_1)==0)
+	  {
+	    tmp$broodstock$BROOD_1$remaining<-tmp$broodstock$BROOD_1$number
+	  }
 	  tmp$broodstock$BROOD_1<-tmp$broodstock$BROOD_1[,c("mother", "father", 
 	                                                    "hatchery", "remaining")]
 	  ## NOTE: AGE IS NOT INCLUDED AS WE HAVE ASSUMED ALL YEARLINGS WILL  
@@ -598,6 +706,7 @@ modelInputs<- function(input=NULL,
 	  ## SHOWS STOCKING OCCURS IN VARIOUS OTHER MONTHS... MAY NEED TO 
 	  ## REVISE TO ACCOUNT FOR
 	}
+	
 	# GENETICS INPUTS
 	#if(genetics)
 	#{

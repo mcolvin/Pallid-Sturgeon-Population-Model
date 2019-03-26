@@ -18,15 +18,28 @@ input$lower$hatchery<- round(12.9*689+5.53*587,0)
 input$upper$hatchery<- 16444
   # Rotella (2017)  2017 AM Report Table 3-1
 
+## NUMBER OF FISH IN OUTSIDE REGIONS
+### IN THE CASE OF THE LOWER BASIN THESE ARE ONLY COUNTING THE 
+### POPULATION OF FISH THAT MOVE BETWEEN MO AND MS, IT IS NOT THE TOTAL 
+### NUMBER OF MS FISH
+input$lower$MS_natural<- 0
+input$lower$MS_hatchery<- 500
+
+input$upper$LS_natural<- 0
+input$upper$UYR_natural<- 0
+input$upper$LS_hatchery<- 0
+input$upper$UYR_hatchery<- 0
+
 # LIKELY WANT THIS TO LINE UP WITH SPAWNING THE YEAR BEFORE...
 input$lower$natural_age0<- 200
 input$upper$natural_age0<- 200
+input$upper$UYR_natural_age0<- 0
 
 
 input$stockingHistory<- readRDS("./inputs/StockingHistory.rds") 
 
 
-input$stockingHistory$upper$differetial_survival<- NULL
+input$stockingHistory$upper$survival_est<- NULL
   #data.frame(hatchery=NA,
   #           mother=NA,
   #           father=NA,
@@ -36,7 +49,7 @@ input$stockingHistory$upper$differetial_survival<- NULL
   #           phi0=NA,
   #           phi1=NA,
   #           phi2=NA)
-input$stockingHistory$lower$differetial_survival<- NULL
+input$stockingHistory$lower$survival_est<- NULL
   #data.frame(hatchery=NA,
   #           mother=NA,
   #           father=NA,
@@ -355,6 +368,7 @@ input$simulationInput$size_indices<-TRUE
 
 
 ## GENETICS ##
+input$catchHistory<- readRDS("./inputs/CatchHistory.rds") 
 ### UPPER BASIN
 # input$geneticsInput$upper$fingerling<- data.frame(hatchery=c("Neosho"),
 #                                                   mother=c("TAG1"),

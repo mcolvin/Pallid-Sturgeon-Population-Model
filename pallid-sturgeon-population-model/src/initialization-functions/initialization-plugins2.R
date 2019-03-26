@@ -7,14 +7,19 @@
 
 
 # INITIALIZATION PLUGINS
-##[1] EXTRAPOLATE HATCHERY DATA
+##[1A] EXTRAPOLATE HATCHERY DATA
 ini_hatchery<-function(stockingHist=NULL,
+                       N0_hatchery=NULL,
                        genetics=NULL,
                        hatchery_name=NULL)
 {
-  stockingHist$current_number<-rbinom(nrow(stockingHist),
-                                      stockingHist$number,
-                                      stockingHist$survival_est)
+  stockingHist$N_hat<-rbinom(nrow(stockingHist),
+                             stockingHist$number,
+                             stockingHist$survival_est)
+  stockingHist$pr<-
+    stockingHist$N_hat/sum(stockingHist$N_hat)
+  
+  stockingHist$N0<-rmultinom(1, N0_hatchery, stockingHist$pr)
   # stockingHist$yr1<-ceiling(stockingHist$age/12)*12-
   #   stockingHist$age
   # stockingHist$yr2plus<-ifelse(stockingHist$MPStock>12, 
@@ -43,30 +48,55 @@ ini_hatchery<-function(stockingHist=NULL,
   #                                            stockingHist$p1*stockingHist$p2*stockingHist$p3)
   tmp<-lapply(1:nrow(stockingHist), function(i)
   {
-    out<-rnorm(stockingHist$current_number[i], 
+    out<-rnorm(stockingHist$N0[i], 
                stockingHist$length_mn[i],
                stockingHist$length_sd[i])
     return(out)
   })
   ini_H <- data.frame(L=unlist(tmp),
                       A=rep(stockingHist$current_age, 
-                            stockingHist$current_number),
+                            stockingHist$N0),
                       dA=rep(stockingHist$current_age-stockingHist$age,
-                             stockingHist$current_number))
+                             stockingHist$N0))
   ini_H$L <- ifelse(ini_H$L<=0, mean(stockingHist$length_mn), ini_H$L)
   if(genetics)
   {
     ini_H$M<-rep(stockingHist$mother, 
-                 stockingHist$current_number)
+                 stockingHist$N0)
     ini_H$D<-rep(stockingHist$father, 
-                 stockingHist$current_number)
+                 stockingHist$N0)
   }
   if(hatchery_name)
   {
     ini_H$H<-rep(stockingHist$hatchery, 
-                 stockingHist$current_number)
+                 stockingHist$N0)
   }
   return(ini_H)
+}
+
+##[1B] EXTRAPOLATE HATCHERY DATA
+ini_natural<-function(natHist=NULL,
+                      N0_natural=NULL,
+                      genetics=NULL)
+{
+  natHist$Z<-rbinom(nrow(natHist), 1, natHist$pr)
+  if(sum(natHist$Z)>N0_natural)
+  {
+    indx<-sample(which(natHist$Z==1), sum(natHist$Z)-N0_natural, 
+                 replace = FALSE)
+    natHist$Z[indx]<-0
+  }
+  ini_N <- data.frame(S=natHist[which(natHist$Z==1),]$sex,
+                      L=natHist[which(natHist$Z==1),]$length,
+                      A=natHist[which(natHist$Z==1),]$minAge,
+                      dT=natHist[which(natHist$Z==1),]$dT)
+  ini_N[which(is.na(ini_N$L)),"L"]<-0
+  ini_N[which(is.na(ini_N$dT)),"dT"]<-0
+  if(genetics)
+  {
+    ini_N$TAG<-natHist[which(natHist$Z==1),]$individual
+  }
+  return(ini_N)
 }
 
 ##[2] INITIALIZE GROWTH PARAMETERS (L_INF, K)	

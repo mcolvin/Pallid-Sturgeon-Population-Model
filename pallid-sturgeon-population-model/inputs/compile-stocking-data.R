@@ -12,6 +12,8 @@ library(RODBC)
 dat<- read.csv("inputs/_All Stocked Juveniles.csv")
 ## LOOK AT RPMA 2, 3, & 4 STOCKING ONLY
 dat <- subset(dat, RPMA %in% 2:4)
+## FIX ONE LB SPAWN DATE (DIFFERENT IN STOCKING REPORT)
+dat[which(dat$FEMALE=="4627201358" & dat$YEAR.STOCKED==2018),]$SPAWN.DATE<- "5/10/2018"
 ## CONVERT DATES TO POSIXct FORMAT
 dat$SPAWN_DATE <- strptime(dat$SPAWN.DATE, format="%m/%d/%Y")
 dat$STOCK_DATE <- strptime(dat$STOCK.DATE, format="%m/%d/%Y")
