@@ -258,8 +258,8 @@ initialize<- function(inputs)
 	    dyn$BEND_N[setdiff(1:inputs$total_natural, indx),j]<-2
 	    ### NATURAL AGE-0's
 	    dyn$AGE_0_N_BND[1:2,j]<- rmultinom(1, inputs$natural_age0,
-	                                       c(1-inputs$p_retained, 
-	                                         inputs$p_retained))
+	                                       c(inputs$p_retained, 
+	                                         1-inputs$p_retained))
 	    ### ADJUST UPPER BASIN VALUES FOR UPPER YELLOWSTONE
 	    if(inputs$basin=="upper")
 	    {
@@ -273,10 +273,10 @@ initialize<- function(inputs)
 	      dyn$BEND_N[indx,j]<-3
         #### NATURAL AGE-0's
 	      dyn$AGE_0_N_BND[,j]<- dyn$AGE_0_N_BND[,j] + 
-	        rmultinom(1, inputs$UYR_natural_age0, c(1-inputs$passage, 
-	                                                inputs$drift_in,
-	                                                inputs$passage*
-	                                                  (1-inputs$drift_in))
+	        rmultinom(1, inputs$UYR_natural_age0, 
+	                  c(inputs$passage*inputs$retained, 
+	                    inputs$passage*(1-inputs$retained),
+	                    1-inputs$passage)
 	                  )
 	    }
 	  }

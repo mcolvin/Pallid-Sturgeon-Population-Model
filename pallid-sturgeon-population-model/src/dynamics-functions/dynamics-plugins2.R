@@ -172,13 +172,13 @@ freeEmbryoDrift<- function(bendAbund=NULL,
                            driftMatrix=NULL)
 {
   ## ERROR CHECK
-  if(nrow(driftMatrix)!=nrow(bendAbund) 
-     | ncol(driftMatrix)!=(nrow(bendAbund)+1))
-  {
-    return(print("driftMatrix must have 1 row for every bend, 1 column
-                 for every bend, plus a last additional column with the 
-                 probability of drifting out of the basin."))
-  }
+  # if(nrow(driftMatrix)!=nrow(bendAbund) 
+  #    | ncol(driftMatrix)!=(nrow(bendAbund)+1))
+  # {
+  #   return(print("driftMatrix must have 1 row for every bend, 1 column
+  #                for every bend, plus a last additional column with the 
+  #                probability of drifting out of the basin."))
+  # }
   indx<-which(rowSums(bendAbund)>0)
   out<-lapply(indx, function(x)
   {

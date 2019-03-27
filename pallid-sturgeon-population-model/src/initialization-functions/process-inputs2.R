@@ -94,6 +94,19 @@ modelInputs<- function(input=NULL,
 	tmp$stockingHistory$current_age<- tmp$stockingHistory$age +
 	  tmp$stockingHistory$MPStock
 	tmp$hatchery_age0<- subset(tmp$stockingHistory, current_age<12)
+	if(is.null(tmp$hatchery_age0$survival_est))
+	{
+	  ### THIS IS BASED ON LB DATA... NEED TO UPDATE AND LIKEY ADD SOME
+	  ### VALUES TO THE DEFAULT INPUTS SECTION!!!  SAME FOR THE 
+	  ### STOCKING HISTORY SURVIVALS BELOW.
+	  phi1<- ifelse(6>tmp$hatchery_age0$month-tmp$hatchery_age0$age,
+	                6-tmp$hatchery_age0$month+tmp$hatchery_age0$age,
+	                0)
+	  tmp$hatchery_age0$survival_est<- 
+	    0.075^((12-tmp$hatchery_age0$age)/12)*
+	    0.279^(phi1/12)
+	  rm(phi1)
+	}
 	tmp$stockingHistory<- subset(tmp$stockingHistory, current_age>=12)
 	## ADD IN SURVIVAL ESTIMATES BY AGE AND YEARS SINCE STOCKING
 	### CALCULATE MONTHS IN EACH AGE CLASS
@@ -524,13 +537,22 @@ modelInputs<- function(input=NULL,
 	                          tmp$migrate[2,1]*(1-to_UYR),
 	                          tmp$migrate[2,1]*to_UYR, tmp$migrate[2,2]),
 	                        nrow=3, ncol=3, byrow = TRUE)
-	    tmp$passage<- input$spatialInput[[basin]]$UYR$p_passage
-	    tmp$drift_in<- tmp$passage*
-	      input$spatialInput[[basin]]$UYR$p_retained_given_passage
 	    tmp$p_retained<- c(tmp$p_retained, 
 	                       input$spatialInput[[basin]]$LYR$p_retained)
 	  }
 	  tmp$p_retained<-mean(tmp$p_retained)
+	  tmp$drift_prob<-matrix(c(tmp$p_retained, 1-tmp$p_retained, 0, 1),
+	                         nrow=2, ncol=2, byrow = TRUE)
+	  if(basin=="upper")
+	  {
+	    tmp$passage<- input$spatialInput[[basin]]$UYR$p_passage
+	    tmp$retained<- input$spatialInput[[basin]]$UYR$p_retained_given_passage
+	    tmp$drift_prob<- cbind(tmp$drift_prob, c(0,0))
+	    tmp$drift_prob<- rbind(tmp$drift_prob, 
+	                           c(tmp$passage*tmp$retained, 
+	                             tmp$passage*(1-tmp$retained), 
+	                             1-tmp$passage))
+	  }
 	}
 	
 	# TOTAL TRACKED POPULATION NUMBERS
@@ -571,6 +593,10 @@ modelInputs<- function(input=NULL,
 	    return(min(which(tmp$bend_meta$upper_rkm>=tmp$fingerling$stocking_rkm[i] & 
 	                       tmp$bend_meta$RIVER=="MO")))
 	  }))
+	  ## NEED TO ADJUST HOW THIS IS DONE!!!!
+	  tmp$hatchery_age0$bend<- sample(tmp$fingerling$bend, 
+	                                  nrow(tmp$hatchery_age0), 
+	                                  replace=TRUE)
 	  tmp$yearling$bend<-unlist(lapply(1:nrow(tmp$yearling),function(i)
 	  {
 	    return(min(which(tmp$bend_meta$upper>=tmp$yearling$stocking_rkm[i] & 
@@ -614,7 +640,7 @@ modelInputs<- function(input=NULL,
 	      rbind(tmp$hatchery_age0,tmp$stockingHistory[
 	        which(tmp$stockingHistory$year==tmp$startYear-1 
 	              & tmp$stockingHistory$current_age+9<24),
-	        names(tmp$hatchery_age0)])
+	        intersect(names(tmp$hatchery_age0), names(tmp$stockingHistory))])
 	    #### ADD IN KNOWN FAMILY LOTS FROM THE PAST YEAR (2018) AND NUMBER 
 	    #### OF EGGS INCLUDING ANY MORTALITY INDICATED
 	    tmp2<- data.frame(mother=c("46263A6E1B", "462704502D", "462704502D",
@@ -661,7 +687,8 @@ modelInputs<- function(input=NULL,
 	            tmp$stockingHistory[
 	              which(tmp$stockingHistory$year==tmp$startYear-1 
 	                    & tmp$stockingHistory$current_age+9<24),
-	              names(tmp$hatchery_age0)])
+	              intersect(names(tmp$hatchery_age0), 
+	                        names(tmp$stockingHistory))])
 	    #### NOTE: IF WE HAVE DATA ON NUMBER OF EMBRYOS PRODUCED THIS WOULD 
 	    #### BE USEFUL HERE
 	    tmp$broodstock$BROOD_1<- tmp$broodstock$BROOD_1[, c("mother", "father", "hatchery", "number")]

@@ -147,6 +147,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  {
 	    BEND_N <- dyn$BEND_N
 	    BEND_H <- dyn$BEND_H
+	    M<-ifelse(inputs$spatial, inputs$n_bends, 1)
 	  }
 	  
 	  inBasinH<-1
@@ -206,11 +207,12 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      N_BND_HAT_INI<- merge(N_BND_HAT_INI,app, by="id", all=TRUE)
 	    }
 	    N_BND_HAT_INI<- merge(N_BND_HAT_INI, 
-	                          data.frame(id=0:length(inputs$bend_lengths)),
-	                          by="id", all=TRUE)
+	                          data.frame(id=0:(inputs$n_bends+
+	                                             length(inputs$outside_bends))),
+	                                     by="id", all=TRUE)
 	    N_BND_HAT_INI<- N_BND_HAT_INI[order(N_BND_HAT_INI$id),]
 	    N_BND_HAT_INI<- matrix(unname(unlist(c(N_BND_HAT_INI[-1,-1]))), 
-	                           nrow=length(inputs$bend_lengths),
+	                           nrow=inputs$n_bends+length(inputs$outside_bends),
 	                           ncol=inputs$nreps)
 	    N_BND_HAT_INI[is.na(N_BND_HAT_INI)]<-0
 	    
@@ -223,11 +225,12 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      N_BND_NAT_INI<- merge(N_BND_NAT_INI,app, by="id", all=TRUE)
 	    }
 	    N_BND_NAT_INI<- merge(N_BND_NAT_INI, 
-	                          data.frame(id=0:length(inputs$bend_lengths)),
+	                          data.frame(id=0:(inputs$n_bends+
+	                                             length(inputs$outside_bends))),
 	                          by="id", all=TRUE)
 	    N_BND_NAT_INI<- N_BND_NAT_INI[order(N_BND_NAT_INI$id),]
 	    N_BND_NAT_INI<- matrix(unname(unlist(c(N_BND_NAT_INI[-1,-1]))), 
-	                           nrow=length(inputs$bend_lengths),
+	                           nrow=inputs$n_bends+length(inputs$outside_bends),
 	                           ncol=inputs$nreps)
 	    N_BND_NAT_INI[is.na(N_BND_NAT_INI)]<-0
 	  }
@@ -265,7 +268,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  
 	  
 	  # SIMULATE POPULATION DYNAMICS GIVEN INITIAL STATES
-	  for(i in 1:length(m)) 
+	  for(i in 1:length(m))
 	  {
 	    setTxtProgressBar(pb, i)
 	    
@@ -337,7 +340,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        indx<-which(SPN_N[,j]==1 & SEX_N[,j]==1)
 	        if(inputs$migration)
 	        {
-	          indx<-intersect(indx, which(BND_N[,j]<=inputs$n_bends))
+	          indx<-intersect(indx, which(BEND_N[,j]<=M))
 	        }
 	        # FEMALE CATCH
 	        indx<-sample(indx, rbinom(1, length(indx), inputs$broodstock$cp))
@@ -346,15 +349,15 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        priority<-ifelse(tags %in% bank_F[[j]], 0, 1)
 	        # USE ONLY FISH THAT WERE NOT PREVIOUSLY BRED
 	        ## ENOUGH NEW CATCH TO SATISFY GOAL
-	        if(sum(priority)>inputs$broodstock$breeder_no)
+	        if(sum(priority)>=inputs$broodstock$breeder_no)
 	        {
 	          #out<-indx[sample(which(priority==1),inputs$broodstock$breeder_no)]
 	          out<-indx[which(priority==1)[1:inputs$broodstock$breeder_no]]
 	        }
 	        ## NOT ENOUGH NEW CATCH TO SATISFY GOAL
-	        if(sum(priority)<=inputs$broodstock$breeder_no)
+	        if(sum(priority)<inputs$broodstock$breeder_no)
 	        {
-	          out<-indx
+	          out<-indx[which(priority==1)]
 	          # NO FISH AVAILABLE
 	          if(length(out)==0){out<-rep(NA,inputs$broodstock$breeder_no)}
 	          # USE AVAILABLE NEW BREEDERS IN MULTIPLE FAMILY LOTS
@@ -413,7 +416,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        indx<-which(SPN_N[,j]==1 & SEX_N[,j]==0)
 	        if(inputs$migration)
 	        {
-	          indx<-intersect(indx, which(BND_N[,j]<=inputs$n_bends))
+	          indx<-intersect(indx, which(BEND_N[,j]<=M))
 	        }
 	        # MALE CATCH
 	        indx<-sample(indx, rbinom(1, length(indx), inputs$broodstock$cp))
@@ -422,14 +425,15 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        priority<-ifelse(tags %in% bank_M[[j]], 0, 1)
 	        # USE ONLY FISH THAT WERE NOT PREVIOUSLY BRED
 	        ## ENOUGH NEW CATCH TO SATISFY GOAL
-	        if(sum(priority)>inputs$broodstock$breeder_no)
+	        if(sum(priority)>=inputs$broodstock$breeder_no)
 	        {
-	          out<-indx[sample(which(priority==1),inputs$broodstock$breeder_no)]
+	          out<-indx[which(priority==1)[1:inputs$broodstock$breeder_no]]
+	          #out<-indx[sample(which(priority==1),inputs$broodstock$breeder_no)]
 	        }
 	        ## NOT ENOUGH NEW CATCH TO SATISFY GOAL
-	        if(sum(priority)<=inputs$broodstock$breeder_no)
+	        if(sum(priority)<inputs$broodstock$breeder_no)
 	        {
-	          out<-indx
+	          out<-indx[which(priority==1)]
 	          # NO FISH AVAILABLE
 	          if(length(out)==0){out<-rep(NA,inputs$broodstock$breeder_no)}
 	          # USE AVAILABLE NEW BREEDERS IN MULTIPLE FAMILY LOTS
@@ -491,9 +495,6 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      #### SURVIVAL FROM AGE-0 TO AGE-1
 	      AGE_0_N_BND[]<- rbinom(length(AGE_0_N_BND),
 	                             AGE_0_N_BND,
-	                             inputs$phi0)
-	      AGE_0_N_OUT[]<- rbinom(length(AGE_0_N_OUT),
-	                             AGE_0_N_OUT,
 	                             inputs$phi0)
 	      if(sum(AGE_0_H$number)>0)
 	      {
@@ -613,7 +614,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	                            as.vector(AGE_0_H_DAT))
 	        }
 	      }
-	      ##### NATURALLY SPAWNED FISH WITHIN MISSOURI RIVER
+	      ##### NATURALLY SPAWNED FISH
 	      if(sum(AGE_0_N_BND)>0)
 	      {
 	        chk<-min(nrow(Z_N)-colSums(Z_N)-colSums(AGE_0_N_BND))
@@ -688,35 +689,8 @@ sim<- function(inputs=NULL, dyn=NULL,
 	          #                                      function(x){rep(1:inputs$n_bends,AGE_0_N_BND[,x])}))))
 	        }		
 	      }
-	      ##### NATURALLY SPAWNED FISH OUTSIDE OF FLOWING MISSOURI RIVER
-	      if(sum(AGE_0_N_OUT)>0)
-	      {
-          # BATCH AGE-1's FOR EACH REPLICATE
-	        tmp<-merge(data.frame(Origin=0, # 1 FOR HATCHERY, 0 FOR NATURAL
-	                              Age=12), 
-	                   data.frame(Number=AGE_0_N_OUT[1,],
-	                              Rep=1:inputs$nreps))
-	        # # ADD GROWTH COEFFICIENTS
-	        # tmp2<- ini_growth(n=nrow(tmp),
-	        #                   mu_ln_Linf=inputs$ln_Linf_mu,
-	        #                   mu_ln_k=inputs$ln_k_mu,
-	        #                   vcv=inputs$vcv,
-	        #                   maxLinf=inputs$maxLinf) 
-	        # tmp$Linf<-tmp2$linf
-	        # tmp$k<-tmp2$k
-	        # # ADD  INITIAL LENGTHS
-	        # ## METHOD 1: LENGTH DISTRIBUTION (SEE ABOVE FOR METHOD 2)
-	        # tmp$Length<-rnorm(nrow(tmp),
-	        #                   inputs$recruit_mean_length,
-	        #                   inputs$recruit_length_sd)				
-	        # # ASSIGN SEX
-	        # tmp$Sex<-ini_sex(n=nrow(tmp),
-	        #                  prob_F=inputs$sexratio)
-	        DRIFT_FISH<-rbind.fill(DRIFT_FISH, tmp)
-	      }
 	      #### ZERO OUT AGE-0's AFTER THEY MOVE TO AGE-1
 	      AGE_0_N_BND[]<-0
-	      AGE_0_N_OUT[]<-0
 	      AGE_0_H_DAT[]<-0
 	      AGE_0_H<-NULL
 	      
@@ -725,8 +699,8 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      ### GIVEN SEX AND SPAWNING STATUS
 	      if(inputs$migration)
 	      {
-	        inBasinH<-ifelse(BEND_H[indx_H] %in% 1:inputs$n_bends, 1, 0)
-	        inBasinN<-ifelse(BEND_N[indx_N] %in% 1:inputs$n_bends, 1, 0)
+	        inBasinH<-ifelse(BEND_H[indx_H] %in% 1:M, 1, 0)
+	        inBasinN<-ifelse(BEND_N[indx_N] %in% 1:M, 1, 0)
 	      }
 	      EGGS_H[indx_H]<-fecundity(fl=LEN_H[indx_H],
 	                                a=inputs$fec_a,
@@ -758,11 +732,12 @@ sim<- function(inputs=NULL, dyn=NULL,
 	          EGG_N_BND<- merge(EGG_N_BND, app, by="id", all=TRUE)
 	        }
 	        EGG_N_BND<- merge(EGG_N_BND, 
-	                          data.frame(id=0:length(inputs$bend_lengths)),
+	                          data.frame(id=0:(inputs$n_bends+
+	                                             length(inputs$outside_bends))),
 	                          by="id", all=TRUE)
 	        EGG_N_BND<- EGG_N_BND[order(EGG_N_BND$id),]
 	        EGG_N_BND<- matrix(unname(unlist(c(EGG_N_BND[-1,-1]))), 
-	                           nrow=length(inputs$bend_lengths),
+	                           nrow=inputs$n_bends+length(inputs$outside_bends),
 	                           ncol=inputs$nreps)
 	        EGG_N_BND[is.na(EGG_N_BND)]<-0
 	        # EGGS OF HATCHERY ORIGIN FISH BY BEND
@@ -775,11 +750,12 @@ sim<- function(inputs=NULL, dyn=NULL,
 	          EGG_H_BND<- merge(EGG_H_BND, app, by="id", all=TRUE)
 	        }
 	        EGG_H_BND<- merge(EGG_H_BND, 
-	                          data.frame(id=0:length(inputs$bend_lengths)),
+	                          data.frame(id=0:(inputs$n_bends+
+	                                             length(inputs$outside_bends))),
 	                          by="id", all=TRUE)
 	        EGG_H_BND<- EGG_H_BND[order(EGG_H_BND$id),]
 	        EGG_H_BND<- matrix(unname(unlist(c(EGG_H_BND[-1,-1]))), 
-	                           nrow=length(inputs$bend_lengths),
+	                           nrow=inputs$n_bends+length(inputs$outside_bends),
 	                           ncol=inputs$nreps)
 	        EGG_H_BND[is.na(EGG_H_BND)]<-0
 	        # TOTAL EGGS BY BEND
@@ -804,20 +780,18 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      
 	      ### ADJUST FOR THE AGE-0 THAT WERE INTERCEPTED AND RETAINED IN
 	      ### THE BASIN AND KEEP TRACK OF HOW MANY DRIFTED OUT OF THE BASIN
-	      AGE_0_N_OUT <- AGE_0_N_BND
-	      if(!inputs$spatial)
+	      if(!inputs$spatial & !inputs$migration)
 	      {
 	        AGE_0_N_BND[]<- rbinom(length(AGE_0_N_BND),
 	                               c(AGE_0_N_BND),
 	                               inputs$p_retained)
 	        
 	      }
-	      if(inputs$spatial)
+	      if(inputs$spatial | inputs$migration)
 	      {
 	        AGE_0_N_BND[]<- freeEmbryoDrift(bendAbund=AGE_0_N_BND, 
 	                                        driftMatrix=inputs$drift_prob)
-	      }
-	      AGE_0_N_OUT <- colSums(AGE_0_N_OUT)-colSums(AGE_0_N_BND)
+	      } 
 	    }
 	    
 	    
@@ -1200,8 +1174,8 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      indxN<-indx_N
 	      if(inputs$migration)
 	      {
-	        indxH<-indx_H[which(BEND_H[indx_H] %in% 1:inputs$n_bends),]
-	        indxN<-indx_N[which(BEND_N[indx_N] %in% 1:inputs$n_bends),]
+	        indxH<-indx_H[which(BEND_H[indx_H] %in% 1:M),]
+	        indxN<-indx_N[which(BEND_N[indx_N] %in% 1:M),]
 	      }
 	      WGT_H[indxH]<-dWeight(len=LEN_H[indxH],
 	                             a=inputs$a,
@@ -1221,12 +1195,12 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    {
 	      inBasinH<-sapply(1:inputs$nreps, function(x)
 	      {
-	        out<-ifelse(BEND_H[,x] %in% 1:inputs$n_bends, 1, 0)
+	        out<-ifelse(BEND_H[,x] %in% 1:M, 1, 0)
 	        return(out)
 	      })
 	      inBasinN<-sapply(1:inputs$nreps, function(x)
 	      {
-	        out<-ifelse(BEND_N[,x] %in% 1:inputs$n_bends, 1, 0)
+	        out<-ifelse(BEND_N[,x] %in% 1:M, 1, 0)
 	        return(out)
 	      }) 
 	    }
@@ -1285,7 +1259,14 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      ### CALCULATE EFFECTIVE POPULATION SIZE
 	      EffectivePop<-lapply(1:inputs$nreps, function(x)
 	      {
-	        tmp<-aggregate(MAT_H[,x]*inBasinH[,x], by=list(id=MOM_H[,x]), sum)
+	        if(inputs$migration)
+	        {
+	          tmp<-aggregate(MAT_H[,x]*inBasinH[,x], by=list(id=MOM_H[,x]), sum)
+	        }
+	        if(!inputs$migration)
+	        {
+	          tmp<-aggregate(MAT_H[,x], by=list(id=MOM_H[,x]), sum)
+	        }
 	        if(any(tmp$id=="0"))
 	        {
 	          tmp<- tmp[-which(tmp$id=="0"),]
@@ -1300,7 +1281,14 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      
 	      N_em<-lapply(1:inputs$nreps, function(x)
 	      {
-	        tmp<-aggregate(MAT_H[,x]*inBasinH[,x], by=list(id=DAD_H[,x]), sum)
+	        if(inputs$migration)
+	        {
+	          tmp<-aggregate(MAT_H[,x]*inBasinH[,x], by=list(id=DAD_H[,x]), sum)
+	        }
+	        if(!inputs$migration)
+	        {
+	          tmp<-aggregate(MAT_H[,x], by=list(id=DAD_H[,x]), sum)
+	        }
 	        if(any(tmp$id=="0"))
 	        {
 	          tmp<- tmp[-which(tmp$id=="0"),]
@@ -1329,6 +1317,8 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    
 	  }# end i 
 	  
+	  ### ADD SOMETHING SIMILAR TO THAT BELOW FOR MIGRATION SO THAT 
+	  ### WE CAN COMPARENUMBERS WITHIN AND WITHOUT
 	  if(inputs$spatial)
 	  {
 	    # ENDING BEND ABUNDANCE SUMMARIES
@@ -1341,11 +1331,12 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      N_BND_HAT_POST<- merge(N_BND_HAT_POST,app, by="id", all=TRUE)
 	    }
 	    N_BND_HAT_POST<- merge(N_BND_HAT_POST, 
-	                           data.frame(id=0:length(inputs$bend_lengths)),
+	                           data.frame(id=0:(inputs$n_bends+
+	                                              length(inputs$outside_bends))),
 	                           by="id", all=TRUE)
 	    N_BND_HAT_POST<- N_BND_HAT_POST[order(N_BND_HAT_POST$id),]
 	    N_BND_HAT_POST<- matrix(unname(unlist(c(N_BND_HAT_POST[-1,-1]))), 
-	                            nrow=length(inputs$bend_lengths),
+	                            nrow=inputs$n_bends+length(inputs$outside_bends),
 	                            ncol=inputs$nreps)
 	    N_BND_HAT_POST[is.na(N_BND_HAT_POST)]<-0
 	    
@@ -1358,11 +1349,12 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      N_BND_NAT_POST<- merge(N_BND_NAT_POST,app, by="id", all=TRUE)
 	    }
 	    N_BND_NAT_POST<- merge(N_BND_NAT_POST, 
-	                           data.frame(id=0:length(inputs$bend_lengths)),
+	                           data.frame(id=0:(inputs$n_bends+
+	                                              length(inputs$outside_bends))),
 	                           by="id", all=TRUE)
 	    N_BND_NAT_POST<- N_BND_NAT_POST[order(N_BND_NAT_POST$id),]
 	    N_BND_NAT_POST<- matrix(unname(unlist(c(N_BND_NAT_POST[-1,-1]))), 
-	                            nrow=length(inputs$bend_lengths),
+	                            nrow=inputs$n_bends+length(inputs$outside_bends),
 	                            ncol=inputs$nreps)
 	    N_BND_NAT_POST[is.na(N_BND_NAT_POST)]<-0
 	  }
