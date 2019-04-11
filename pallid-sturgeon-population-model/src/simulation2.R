@@ -268,7 +268,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  
 	  
 	  # SIMULATE POPULATION DYNAMICS GIVEN INITIAL STATES
-	  for(i in 1:length(m))
+	  for(i in 10:17)#length(m))
 	  {
 	    setTxtProgressBar(pb, i)
 	    
@@ -474,8 +474,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      LEN_N[tmp]<-0
 	    }
 
-	    # IF JUNE, RECRUITMENT AND NATURAL SPAWNING MODULES
-	    ### RECRUITMENT AND SPAWNING
+	    # IF JUNE, NATURAL RECRUITMENT AND SPAWNING MODULES
 	    if(recruitmentFreq>0 & m[i]==6)
 	    {
 	      ### ZERO OUT FISH THAT DIED
@@ -491,130 +490,11 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      EGGS_H<-EGGS_H*Z_H
 	      EGGS_N<-EGGS_N*Z_N
 	      
-	      ### AGE-1 RECRUITMENT
+	      ### AGE-1 RECRUITMENT: NATURALLY SPAWNED FISH
 	      #### SURVIVAL FROM AGE-0 TO AGE-1
 	      AGE_0_N_BND[]<- rbinom(length(AGE_0_N_BND),
 	                             AGE_0_N_BND,
 	                             inputs$phi0)
-	      if(sum(AGE_0_H$number)>0)
-	      {
-	        AGE_0_H_DAT<- matrix(rbinom(inputs$nreps*nrow(AGE_0_H),
-	                                    AGE_0_H$number,
-	                                    AGE_0_H$survival_est),
-	                             ncol=inputs$nreps,
-	                             nrow=nrow(AGE_0_H))
-	      }
-	      if(sum(AGE_0_H$number)==0)
-	      {
-	        AGE_0_H_DAT<- matrix(0, ncol=inputs$nreps, nrow=1)
-	      }
-	      
-	      #### ADD SURVIVING FISH TO POPULATION
-	      ##### HATCHERY STOCKED FISH
-	      if(sum(AGE_0_H_DAT)>0)
-	      {
-	        chk<-min(nrow(Z_H)-colSums(Z_H)-colSums(AGE_0_H_DAT))
-	        if(chk<0)
-	        {
-	          z0<-matrix(0,ncol=ncol(Z_H), nrow=abs(chk))
-	          Z_H<-rbind(Z_H,z0)
-	          AGE_H<-rbind(AGE_H,z0)
-	          MAT_H<-rbind(MAT_H,z0)
-	          MPS_H<-rbind(MPS_H,z0)
-	          SPN_H<-rbind(SPN_H,z0)
-	          SEX_H<-rbind(SEX_H,z0)
-	          EGGS_H<-rbind(EGGS_H,z0)
-	          k_H<-rbind(k_H,z0)
-	          Linf_H<-rbind(Linf_H,z0)
-	          LEN_H<-rbind(LEN_H,z0)
-	          if(weightCalc)
-	          {
-	            WGT_H<-rbind(WGT_H,z0)
-	          }
-	          if(inputs$spatial | inputs$migration)
-	          {
-	            BEND_H<-rbind(BEND_H,z0)
-	          }
-	          if(inputs$genetics)
-	          {
-	            MOM_H<-rbind(MOM_H,z0)
-	            DAD_H<-rbind(DAD_H,z0)
-	          }
-	          if(inputs$hatchery_name)
-	          {
-	            HATCH<-rbind(HATCH,z0)
-	          }
-	        }
-	        # INDEX OF OPEN SLOTS
-	        indxr<- unlist(sapply(1:inputs$nreps,function(x)
-	        {
-	          tmp<-NULL
-	          if(sum(AGE_0_H_DAT[,x])>0)
-	          {
-	            tmp<-which(Z_H[,x]==0)[1:sum(AGE_0_H_DAT[,x])]
-	          }
-	          return(tmp)
-	        }))		
-	        indxr<- cbind(c(indxr),sort(rep(1:inputs$nreps,colSums(AGE_0_H_DAT))))
-	        # ADD NEW 1 YEAR OLD RECRUITS
-	        Z_H[indxr]<-1 
-	        # ADD AGE OF RECRUITS
-	        AGE_H[indxr]<-12 	
-	        # UPDATE GROWTH COEFFICIENTS
-	        tmp<- ini_growth(n=sum(AGE_0_H_DAT),
-	                         mu_ln_Linf=inputs$ln_Linf_mu,
-	                         mu_ln_k=inputs$ln_k_mu,
-	                         vcv=inputs$vcv,
-	                         maxLinf=inputs$maxLinf) 
-	        Linf_H[indxr]<-tmp$linf
-	        k_H[indxr]<-tmp$k
-	        # ADD  INITIAL LENGTH OF RECRUITS
-	        ## METHOD 1: RECRUIT DISTRIBUTION
-	        LEN_H[indxr]<-rnorm(length(indxr[,1]),
-	                            inputs$recruit_mean_length,
-	                            inputs$recruit_length_sd)				
-	        ### METHOD 2: LENGTH FROM AGE AND VB GROWTH 
-	        #LEN_H[indxr]<-rnorm(length(indxr[,1]),
-	        #                    rep(rep(AGE_0_H$length_mn,inputs$nreps), 
-	        #                        as.vector(AGE_0_H_DAT)),
-	        #                    rep(rep(AGE_0_H$length_sd,inputs$nreps), 
-	        #                        as.vector(AGE_0_H_DAT)))
-	        #Linf_H[indxr]<-ifelse(LEN_H[indxr]<Linf_H[indxr], 
-	        #                      Linf_H[indxr],
-	        #                      LEN_H[indxr]*1.1)
-	        #LEN_H[indxr]<-dLength(k=k_H[indxr], 
-	        #                      linf=Linf_H[indxr],
-	        #                      length1=LEN_H[indxr]
-	        #                      dT=0.5)
-	        # ASSIGN SEX
-	        SEX_H[indxr]<-ini_sex(n=length(indxr[,1]),
-	                              prob_F=inputs$sexratio)
-	        # ASSIGN LOCATION OF RECRUITS
-	        if(!inputs$spatial & inputs$migration)
-	        {
-	          BEND_H[indxr]<-1
-	        }
-	        if(inputs$spatial)
-	        {
-	          BEND_H[indxr]<-rep(rep(AGE_0_H$bend, inputs$nreps),
-	                             as.vector(AGE_0_H_DAT))
-	          #CAN ADD IN DISPERSAL HERE
-	          #BEND_H[indxr]<- dispersal stuff
-	        }
-	        if(inputs$genetics)
-	        {
-	          MOM_H[indxr]<-rep(rep(AGE_0_H$mother, inputs$nreps),
-	                            as.vector(AGE_0_H_DAT))
-	          DAD_H[indxr]<-rep(rep(AGE_0_H$father, inputs$nreps),
-	                            as.vector(AGE_0_H_DAT))
-	        }
-	        if(inputs$hatchery_name)
-	        {
-	          HATCH[indxr]<-rep(rep(AGE_0_H$hatchery, inputs$nreps),
-	                            as.vector(AGE_0_H_DAT))
-	        }
-	      }
-	      ##### NATURALLY SPAWNED FISH
 	      if(sum(AGE_0_N_BND)>0)
 	      {
 	        chk<-min(nrow(Z_N)-colSums(Z_N)-colSums(AGE_0_N_BND))
@@ -691,8 +571,6 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      }
 	      #### ZERO OUT AGE-0's AFTER THEY MOVE TO AGE-1
 	      AGE_0_N_BND[]<-0
-	      AGE_0_H_DAT[]<-0
-	      AGE_0_H<-NULL
 	      
 	      ##### NATURAL REPRODUCTION
 	      ### UPDATE THE NUMBER OF EGGS IN A FEMALE 
@@ -795,13 +673,148 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    }
 	    
 	    
-	    # IF JUNE, BROODSTOCK REPRODUCTION 
-	    ### RECRUITMENT AND SPAWNING
+	    # IF JUNE, RECRUITMENT OF STOCKED FINGERLINGS AND 
+	    # BROODSTOCK REPRODUCTION 
 	    if(stockingFreq>0 & m[i]==6)
 	    {
+	      ### ZERO OUT FISH THAT DIED
+	      MAT_H<-MAT_H*Z_H 
+	      MAT_N<-MAT_N*Z_N
+	      
+	      MPS_H<-MPS_H*Z_H 
+	      MPS_N<-MPS_N*Z_N 
+
+	      SPN_H<-SPN_H*Z_H
+	      SPN_N<-SPN_N*Z_N
+	      
+	      EGGS_H<-EGGS_H*Z_H
+	      EGGS_N<-EGGS_N*Z_N
+	      
+	      ### AGE-1 RECRUITMENT: STOCKED FINGERLINGS
+	      #### SURVIVAL FROM AGE-0 TO AGE-1
+	      if(sum(AGE_0_H$number)>0)
+	      {
+	        AGE_0_H_DAT<- matrix(rbinom(inputs$nreps*nrow(AGE_0_H),
+	                                    AGE_0_H$number,
+	                                    AGE_0_H$survival_est),
+	                             ncol=inputs$nreps,
+	                             nrow=nrow(AGE_0_H))
+	      }
+	      if(sum(AGE_0_H$number)==0)
+	      {
+	        AGE_0_H_DAT<- matrix(0, ncol=inputs$nreps, nrow=1)
+	      }
+	      #### ADD SURVIVING FISH TO POPULATION
+	      if(sum(AGE_0_H_DAT)>0)
+	      {
+	        chk<-min(nrow(Z_H)-colSums(Z_H)-colSums(AGE_0_H_DAT))
+	        if(chk<0)
+	        {
+	          z0<-matrix(0,ncol=ncol(Z_H), nrow=abs(chk))
+	          Z_H<-rbind(Z_H,z0)
+	          AGE_H<-rbind(AGE_H,z0)
+	          MAT_H<-rbind(MAT_H,z0)
+	          MPS_H<-rbind(MPS_H,z0)
+	          SPN_H<-rbind(SPN_H,z0)
+	          SEX_H<-rbind(SEX_H,z0)
+	          EGGS_H<-rbind(EGGS_H,z0)
+	          k_H<-rbind(k_H,z0)
+	          Linf_H<-rbind(Linf_H,z0)
+	          LEN_H<-rbind(LEN_H,z0)
+	          if(weightCalc)
+	          {
+	            WGT_H<-rbind(WGT_H,z0)
+	          }
+	          if(inputs$spatial | inputs$migration)
+	          {
+	            BEND_H<-rbind(BEND_H,z0)
+	          }
+	          if(inputs$genetics)
+	          {
+	            MOM_H<-rbind(MOM_H,z0)
+	            DAD_H<-rbind(DAD_H,z0)
+	          }
+	          if(inputs$hatchery_name)
+	          {
+	            HATCH<-rbind(HATCH,z0)
+	          }
+	        }
+	        ### INDEX OF OPEN SLOTS
+	        indxr<- unlist(sapply(1:inputs$nreps,function(x)
+	        {
+	          tmp<-NULL
+	          if(sum(AGE_0_H_DAT[,x])>0)
+	          {
+	            tmp<-which(Z_H[,x]==0)[1:sum(AGE_0_H_DAT[,x])]
+	          }
+	          return(tmp)
+	        }))		
+	        indxr<- cbind(c(indxr),sort(rep(1:inputs$nreps,colSums(AGE_0_H_DAT))))
+	        # ADD NEW 1 YEAR OLD RECRUITS
+	        Z_H[indxr]<-1 
+	        # ADD AGE OF RECRUITS
+	        AGE_H[indxr]<-12 	
+	        # UPDATE GROWTH COEFFICIENTS
+	        tmp<- ini_growth(n=sum(AGE_0_H_DAT),
+	                         mu_ln_Linf=inputs$ln_Linf_mu,
+	                         mu_ln_k=inputs$ln_k_mu,
+	                         vcv=inputs$vcv,
+	                         maxLinf=inputs$maxLinf) 
+	        Linf_H[indxr]<-tmp$linf
+	        k_H[indxr]<-tmp$k
+	        # ADD  INITIAL LENGTH OF RECRUITS
+	        ## METHOD 1: RECRUIT DISTRIBUTION
+	        LEN_H[indxr]<-rnorm(length(indxr[,1]),
+	                            inputs$recruit_mean_length,
+	                            inputs$recruit_length_sd)				
+	        ### METHOD 2: LENGTH FROM AGE AND VB GROWTH 
+	        #LEN_H[indxr]<-rnorm(length(indxr[,1]),
+	        #                    rep(rep(AGE_0_H$length_mn,inputs$nreps), 
+	        #                        as.vector(AGE_0_H_DAT)),
+	        #                    rep(rep(AGE_0_H$length_sd,inputs$nreps), 
+	        #                        as.vector(AGE_0_H_DAT)))
+	        #Linf_H[indxr]<-ifelse(LEN_H[indxr]<Linf_H[indxr], 
+	        #                      Linf_H[indxr],
+	        #                      LEN_H[indxr]*1.1)
+	        #LEN_H[indxr]<-dLength(k=k_H[indxr], 
+	        #                      linf=Linf_H[indxr],
+	        #                      length1=LEN_H[indxr]
+	        #                      dT=0.5)
+	        # ASSIGN SEX
+	        SEX_H[indxr]<-ini_sex(n=length(indxr[,1]),
+	                              prob_F=inputs$sexratio)
+	        # ASSIGN LOCATION OF RECRUITS
+	        if(!inputs$spatial & inputs$migration)
+	        {
+	          BEND_H[indxr]<-1
+	        }
+	        if(inputs$spatial)
+	        {
+	          BEND_H[indxr]<-rep(rep(AGE_0_H$bend, inputs$nreps),
+	                             as.vector(AGE_0_H_DAT))
+	          #CAN ADD IN DISPERSAL HERE
+	          #BEND_H[indxr]<- dispersal stuff
+	        }
+	        if(inputs$genetics)
+	        {
+	          MOM_H[indxr]<-rep(rep(AGE_0_H$mother, inputs$nreps),
+	                            as.vector(AGE_0_H_DAT))
+	          DAD_H[indxr]<-rep(rep(AGE_0_H$father, inputs$nreps),
+	                            as.vector(AGE_0_H_DAT))
+	        }
+	        if(inputs$hatchery_name)
+	        {
+	          HATCH[indxr]<-rep(rep(AGE_0_H$hatchery, inputs$nreps),
+	                            as.vector(AGE_0_H_DAT))
+	        }
+	      }
+	      #### ZERO OUT AGE-0's AFTER THEY MOVE TO AGE-1
+	      AGE_0_H_DAT[]<-0
+	      AGE_0_H<-NULL
+	      
+	      ##### GENERATE GENETICS STOCKING DATA
 	      if(inputs$genetics)
 	      {
-	        ##### GENERATE GENETICS STOCKING DATA
 	        ### UPDATE BROODSTOCK LENGTH AND AGE
 	        BRST_DAT$Age<-BRST_DAT$Age+3
 	        BRST_DAT$Length<-dLength(k=BRST_DAT$k,
@@ -961,7 +974,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	            indx_R<- lapply(1:inputs$nreps,
 	                            function(x){out<- which(Z_H[,x]==0)[1:sum(yearling[which(yearling$rep==x),]$number)]}) 
 	            indx_R<- cbind(unlist(indx_R),
-	                           rep(1:inputs$nreps, sum(yearling[which(yearling$rep==x),]$number)))
+	                           rep(1:inputs$nreps, each=sum(yearling[which(yearling$rep==x),]$number)))
 	            
 	          }
 	          if(!inputs$genetics)
@@ -971,7 +984,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	            indx_R<- lapply(1:inputs$nreps,
 	                            function(x){out<- which(Z_H[,x]==0)[1:sum(yearling$number)]}) 
 	            indx_R<- cbind(unlist(indx_R),
-	                           rep(1:inputs$nreps, sum(yearling$number)))
+	                           rep(1:inputs$nreps, each=sum(yearling$number)))
 	            
 
 	          }
@@ -1099,7 +1112,8 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        if(!inputs$genetics)
 	        {
 	          ### STOCKED AGE-0's
-	          AGE_0_H<-data.frame(number=sum(fingerling$stocking_no))
+	          AGE_0_H<-data.frame(number=sum(fingerling$stocking_no),
+	                              survival_est=sum(fingerling$stocking_no*fingerling$phi0_mn)/sum(fingerling$stocking_no))
 	        }
 	      }
 	
