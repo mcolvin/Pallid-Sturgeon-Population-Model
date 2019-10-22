@@ -9,7 +9,7 @@ library(RODBC)
 
 # PULL, CLEAN, & ORGANIZE STOCKING DATA
 # setwd("./GitHub/Pallid-Sturgeon-Population-Model/pallid-sturgeon-population-model")
-dat<- read.csv("inputs/_All Stocked Juveniles.csv")
+dat<- read.csv("inputs/dat/_All Stocked Juveniles.csv")
 ## LOOK AT RPMA 2, 3, & 4 STOCKING ONLY
 dat <- subset(dat, RPMA %in% 2:4)
 ## FIX ONE LB SPAWN DATE (DIFFERENT IN STOCKING REPORT)
@@ -111,7 +111,8 @@ stockHist[NA_indx$indx,]$length_mn<-tmp$length_mn[NA_indx$age_indx]
 ### SD
 NA_indx<-lapply(tmp$age_cat, function(x)
 {
-  out1<-which(stockHist$age_cat==x & is.na(stockHist$length_sd))
+  out1<-which(stockHist$age_cat==x & 
+                (is.na(stockHist$length_sd) | stockHist$length_sd==0))
   out2<-which(tmp$age_cat==x)
   return(data.frame(indx=out1, age_indx=out2))
 })

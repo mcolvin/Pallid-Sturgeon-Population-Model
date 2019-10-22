@@ -24,7 +24,7 @@ dLength<- function(k, linf,length1,dT)
   # k    growth coefficient
   # linf    length at infinity
   # length1    length at t-dt
-  # dT    change in time
+  # dT    change in time in years
   length2<-((linf-length1)*(1-exp(-k*dT))+ length1) 
   return(length2)# return the predicted length
 }
@@ -124,14 +124,14 @@ adultMovement<- function(previousLocation=NULL,
   ## MONTHS WITHOUT SPAWNING MOVEMENT
   if(!(month %in% c(6))) #TO EXPAND NEED TO CHANGE WHEN SPAWNING IS UPDATED
   {
-    out<-lapply(unique(previousLocation) ,function(x)
+    out<-lapply(unique(previousLocation), function(x)
     {
       indx<- which(previousLocation==x)
       new<-sample(1:ncol(fromToMatrix),
                   length(indx),
                   prob=fromToMatrix[x,],
                   replace=TRUE)
-      return(cbind(indx,new))
+      return(data.frame(indx=indx,new=new))
     })
     out<-do.call("rbind",out)# convert list to dataframe
     out<- out[order(out[,1]),]
@@ -140,7 +140,7 @@ adultMovement<- function(previousLocation=NULL,
   {
     indxS<-which(spn==1)
     locS<-previousLocation[indxS]
-    locNS<-previousLocation[-indxS]
+    locNS<-previousLocation[setdiff(1:length(spn),indxS)]
     outNS<-lapply(unique(locNS) ,function(x)
     {
       indx<- which(previousLocation==x & spn==0)
@@ -148,7 +148,7 @@ adultMovement<- function(previousLocation=NULL,
                   length(indx),
                   prob=fromToMatrix[x,],
                   replace=TRUE)
-      return(cbind(indx,new))
+      return(data.frame(indx=indx,new=new))
     })
     outNS<-do.call("rbind",outNS)# convert list to dataframe
     outS<-lapply(unique(locS) ,function(x)
@@ -158,7 +158,7 @@ adultMovement<- function(previousLocation=NULL,
                   length(indx),
                   prob=spnMatrix[x,],
                   replace=TRUE)
-      return(cbind(indx,new))
+      return(data.frame(indx=indx,new=new))
     })
     outS<-do.call("rbind",outS)# convert list to dataframe
     out<-rbind(outNS, outS)

@@ -3,7 +3,7 @@ setwd("C:/Users/sreynolds/Documents/GitHub/Pallid-Sturgeon-Population-Model/pall
 
 
 # LOAD BEND METADATA 
-bends<- read.csv("./inputs/bends_access.csv")
+bends<- read.csv("./inputs/dat/bends_access.csv")
 # REMOVE ROW NAMES
 bends<-bends[,2:ncol(bends)]
 # ADD IN BASIN

@@ -316,13 +316,24 @@ input$stockingInput$lower$yearling<-data.frame(month=c(9),
 ## SPATIAL INPUTS ##
 ### SPATIAL STRUCTURE
 input$spatialInput$adult_spatial_structure<- "Uniform" # "Emperical"
+input$spatialInput$drift_spatial_structure<- "Emperical" # "Uniform"
 input$spatialInput$age0_n_spatial_structure<- "Uniform"# "Emperical"
 input$spatialInput$age0_h_spatial_structure<- "Uniform"# "Emperical"
 ### SPAWNING HOTSPOTS
 input$spatialInput$upper$spn_bends<- c(154, 156, 157) 
 input$spatialInput$lower$spn_bends<- c(316)
 ### DRIFT DYNAMICS   <!-- fix: improve inputs -->
-#### CAN ALSO USE EMPERICAL DRIFT MATRIX... 
+#### FOR "EMPERICAL" STRUCTURE:
+input$spatialInput$discharge_structure<- "Probabilistic"  #"Fixed"
+input$spatialInput$discharge_scenarios<- c("10pct", "30pct", "50pct", "70pct", "90pct")
+input$spatialInput$drift_matrices<-readRDS("./inputs/drift_matrices.rds")
+##### FOR "PROBABILISTIC":
+input$spatialInput$upper$discharge_probs<- c(0.1, 0.2, 0.4, 0.2, 0.1) 
+input$spatialInput$lower$discharge_probs<- c(0.1, 0.2, 0.4, 0.2, 0.1)
+##### FOR "FIXED":
+input$spatialInput$upper$discharge<- NULL
+input$spatialInput$lower$discharge<- NULL
+#### FOR "UNIFORM" STRUCTURE: 
 input$spatialInput$upper$p_retained<- rep(0.5, nrow(bend_meta$upper))
 input$spatialInput$lower$p_retained<- rep(0.5, nrow(bend_meta$lower))
 input$spatialInput$upper$LYR$p_retained<- 0.5
@@ -415,6 +426,3 @@ input$catchHistory<- readRDS("./inputs/CatchHistory.rds")
 
 #input$lower$hatchery_age0<- sum(input$geneticsInput$lower$age0$no_stocked)
 #input$upper$hatchery_age0<- sum(input$geneticsInput$upper$age0$no_stocked)
-
-
-

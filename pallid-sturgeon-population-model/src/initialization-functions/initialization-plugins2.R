@@ -1,8 +1,14 @@
 
 #### FUNCTIONS TO ASSIGN RKM TO BENDS FOR UPPER AND LOWER
-#rkm_start<-seq(1,1000,length=317)
-#bend<- c(1:317)
-#rkm2bend<- approxfun(rkm_start,bend,method='constant')
+rkm2bend<- function(basin=NULL,
+                    bend_meta=NULL,
+                    rkm=NULL)
+{
+  bounds<- c(0,bend_meta[[basin]]$UPPER_RIVER_RKM)
+  bends<- c(1, 1:nrow(bend_meta[[basin]]))
+  r2b<- approxfun(bounds, bends, method='constant', f=1)
+  return(r2b(rkm))
+}
 #bend2rkm<- approxfun(bend,rkm_start,method='constant')
 
 
@@ -182,12 +188,12 @@ ini_maturity<- function(age, mat_cdf)  ##INCLUDE LENGTH IN FUTURE? DO LARGER YOU
   mat_cdf<-c(0, mat_cdf) #ADD IN ZERO MATURATIONS FOR AGE-0 FISH
   pr<-mat_cdf[a+1]
   M2<- rbinom(length(a),1,pr) #GIVES A 1 FOR MATURE FISH
-  # WHICH OF THE MATURE FISH ARE FIRST SPAWNERS?
+  # WHICH OF THE MATURE FISH WERE FIRST SPAWNERS?
   pr<-sapply(a, FUN=function(x)
     {
       ifelse(mat_cdf[x+1]==0,0,(mat_cdf[x+1]-mat_cdf[x])/mat_cdf[x+1])
     })
-  FS<-rbinom(length(M2), 1, pr) #GIVES A 1 IF THE FISH JUST BECAME MATURE
+  FS<-rbinom(length(M2), 1, pr*M2) #GIVES A 1 IF THE FISH JUST BECAME MATURE
   return(list(mature=M2, FirstSpawn=FS))				
 }
 
