@@ -934,7 +934,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	          }
 	          if(!inputs$genetics)
 	          {
-	            names(yearling)[3]<-"number"
+	            names(yearling)[which(names(yearling)=="stocking_no")]<-"number"
 	            #### GET INDEXES OF OPEN SLOTS TO STICK STOCKED INDIVIDUALS
 	            indx_R<- lapply(1:inputs$nreps,
 	                            function(x){out<- which(Z_H[,x]==0)[1:sum(yearling$number)]}) 
