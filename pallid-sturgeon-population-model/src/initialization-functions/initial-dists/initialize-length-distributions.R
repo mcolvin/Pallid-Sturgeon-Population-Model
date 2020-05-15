@@ -110,6 +110,13 @@ len_ini_low_natural_nospace<-approxfun(out_N_low_nospace$quantile,
                                        out_N_low_nospace$val,
                                        rule=2)
 
+### FIGURE ###
+plot(len_ini_low_hatchery_nospace(seq(0,1,0.01)),seq(0,1,0.01), xlim=c(0,1200), type="l", xlab="Length (mm)", ylab="Frequency")
+points(len_ini_low_natural_nospace(seq(0,1,0.01)),seq(0,1,0.01), type="l", col="red")
+legend("topleft", c("Hatchery", "Natural"), 
+       col=c("black", "red"), bty="n", lty=1)
+
+
 # ## LOOK AT SEGMENT SAMPLE SIZES
 # tbl<-aggregate(freq~SEGMENT_ID+HATCHERY_ORIGIN, dat, sum)
 # tbl<-tbl[which(tbl$SEGMENT_ID %in% c(2:4,7:10,13,14)),]

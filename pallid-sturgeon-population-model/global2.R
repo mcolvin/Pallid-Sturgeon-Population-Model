@@ -20,7 +20,7 @@ b=0.3
 bend_meta$upper$irc_p<- plogis(a+b*bend_meta$upper$irc)
 bend_meta$lower$irc_p<- plogis(a+b*bend_meta$lower$irc)
 rm(a,b)
-source("./inputs/default-inputs2.R")
+source("./inputs/default-inputs.R")
 
 
 ## LOAD FUNCTION TO PROCESS INPUTS
