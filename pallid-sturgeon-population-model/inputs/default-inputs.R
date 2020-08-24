@@ -107,8 +107,8 @@ input$upper$lw_er<-0.165
 
 
 #[5] SEX RATIO CONVERTED TO PROBABILITY A FISH IS FEMALE
-input$lower$sexratio<-0.33
-  # SOURCE: 
+input$lower$sexratio<-0.35
+  # SOURCE: THE 63:115 F:M RATIO REPORTED IN STEFFENSEN ET AL. (2013)
 input$upper$sexratio<-0.32 
   # SOURCE: THE 40:85 ADULT F:M RATIO ESTIMATED BY JAEGER ET AL. (2009) 
   # IN THE 2017 AM REPORT (TABLE 3-1)   
