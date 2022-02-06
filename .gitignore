@@ -11,6 +11,9 @@ _literature
 *.pub
 *.SESSION
 
+# ignore .rds files
+*.rds
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
