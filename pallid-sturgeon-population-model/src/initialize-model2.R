@@ -69,9 +69,9 @@ initialize<- function(inputs)
 			               maxLinf=inputs$maxLinf) 
 		dyn$Linf_H[,j]<-tmp$linf
 		dyn$k_H[,j]<-tmp$k
-		dyn$Linf_H[1:nrow(ini_H),j]<-ifelse(ini_H$L[indxH]<dyn$Linf_H[1:nrow(ini_H),j],
-		                       dyn$Linf_H[1:nrow(ini_H),j], 
-		                       ini_H$L[indxH]*1.1)
+		dyn$Linf_H[1:nrow(ini_H),j]<-
+		  ifelse(ini_H$L[indxH] < dyn$Linf_H[1:nrow(ini_H),j],
+		         dyn$Linf_H[1:nrow(ini_H),j], ini_H$L[indxH]*1.1)
 		
 		tmp<- ini_growth(n=inputs$daug_N,
 			               mu_ln_Linf=inputs$ln_Linf_mu,
@@ -80,21 +80,21 @@ initialize<- function(inputs)
 			               maxLinf=inputs$maxLinf) 
 		dyn$Linf_N[,j]<-tmp$linf
 		dyn$k_N[,j]<-tmp$k	
-		dyn$Linf_N[1:nrow(ini_N),j]<-ifelse(ini_N$L[indxN]<dyn$Linf_N[1:nrow(ini_N),j],
-		                                    dyn$Linf_N[1:nrow(ini_N),j], 
-		                                    ini_N$L[indxN]*1.1)
+		dyn$Linf_N[1:nrow(ini_N),j]<- 
+		  ifelse(ini_N$L[indxN] < dyn$Linf_N[1:nrow(ini_N),j],
+		         dyn$Linf_N[1:nrow(ini_N),j], ini_N$L[indxN]*1.1)
 	
 		## [3] INITIALIZE LENGTH
 		### HATCHERY ORIGIN LENGTH FROM DATA AND RANDOM GROWTH COEFFICIENTS
 		dyn$LEN_H[1:nrow(ini_H),j]<-dLength(dyn$k_H[1:nrow(ini_H),j], 
 		                                    dyn$Linf_H[1:nrow(ini_H),j],
 		                                    ini_H$L[indxH],
-		                                    ini_H$dA[indxH])
+		                                    ini_H$dA[indxH]/12)
 		### NATURAL ORIGIN LENGTH FROM CATCH DATA AND RANDOM GROWTH COEFFICIENTS
 		dyn$LEN_N[1:nrow(ini_N),j]<-dLength(dyn$k_N[1:nrow(ini_N),j], 
 		                                    dyn$Linf_N[1:nrow(ini_N),j],
 		                                    ini_N$L[indxN],
-		                                    ini_N$dT[indxN])
+		                                    ini_N$dT[indxN]/12)
 		### REMAINING UNKNOWN NATURAL ORIGIN LENGTH FROM DISTRIBUTION
 		dyn$LEN_N[,j]<-ifelse(dyn$LEN_N[,j]==0,
 		                      dyn$Z_N[,j]*ini_length(n=inputs$daug_N, 
@@ -170,7 +170,7 @@ initialize<- function(inputs)
 		dyn$MPS_N[,j]<-dyn$Z_N[,j]*ini_mps(n=inputs$daug_N,
 			                                 mature=dyn$MAT_N[,j],
 			                                 FirstSpawn=tmp_N$FirstSpawn)
-		
+		## CORRECT MPS AND MAT OF FISH FROM BROODSTOCK!!!!!!!!
 
 	  ## [9] INITIALIZE IF A FISH SPAWNED (DURING INITIAL YEAR) 
 	  dyn$SPN_H[,j] <- dyn$Z_H[,j]*spawn(mps=dyn$MPS_H[,j],

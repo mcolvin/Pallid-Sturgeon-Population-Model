@@ -61,7 +61,6 @@ sim<- function(inputs=NULL, dyn=NULL,
 	# TRYING TO CALCULATE THIS EXPLICITLY GIVEN THE VB PARAM BIVARIATE 
 	# DIST, AGE, AND SIZE AT HATCH...WORK IN PROGRESS...FOR NOW ASSUME 
 	# ALL AGE CLASSES THE SAME WITH TRUNCATED NORMAL DISTRIBUTION:
-	#### BY AGE CLASS
 	if(inputs$basin=="upper")
 	{
 	  L_min<- (300 - 1260.167)/277.404 #NORMALIZED MIN OF ALK FOR FISH AGE 8+; CALCULATE MIN BASED ON BIVARIATE?
@@ -195,6 +194,9 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  N_NAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
 	  N_HAT<- matrix(0,nrow=length(m),ncol=inputs$nreps)
 	  
+	  N_MAT_N<- matrix(0,nrow=length(m),ncol=inputs$nreps)
+	  N_MAT_H<- matrix(0,nrow=length(m),ncol=inputs$nreps)
+	  
 	  if(inputs$spatial)
 	  {
 	    # INITIAL BEND ABUNDANCE
@@ -268,7 +270,7 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  
 	  
 	  # SIMULATE POPULATION DYNAMICS GIVEN INITIAL STATES
-	  for(i in 10:17)#length(m))
+	  for(i in 1:length(m))
 	  {
 	    setTxtProgressBar(pb, i)
 	    
@@ -667,8 +669,18 @@ sim<- function(inputs=NULL, dyn=NULL,
 	      }
 	      if(inputs$spatial | inputs$migration)
 	      {
+	        if(inputs$drift_structure=="Emperical")
+	        {
+	          yr<-ceiling(m[i]/12)
+	          dis<-tmp$discharge[yr]
+	          drift_mat<-inputs$drift_prob[[dis]]
+	        }
+	        if(inputs$drift_structure=="Uniform")
+	        {
+	          drift_mat<-inputs$drift_prob
+	        }
 	        AGE_0_N_BND[]<- freeEmbryoDrift(bendAbund=AGE_0_N_BND, 
-	                                        driftMatrix=inputs$drift_prob)
+	                                        driftMatrix=drift_mat)
 	      } 
 	    }
 	    
@@ -1112,8 +1124,20 @@ sim<- function(inputs=NULL, dyn=NULL,
 	        if(!inputs$genetics)
 	        {
 	          ### STOCKED AGE-0's
-	          AGE_0_H<-data.frame(number=sum(fingerling$stocking_no),
-	                              survival_est=sum(fingerling$stocking_no*fingerling$phi0_mn)/sum(fingerling$stocking_no))
+	          if(inputs$spatial)
+	          {
+	            AGE_0_H<- ddply(fingerling, .(bend), summarize,
+	                            number=sum(stocking_no),
+	                            survival_est=ifelse(number==0,
+	                                                mean(phi0_mn),
+	                                                sum(stocking_no*phi0_mn)/sum(stocking_no))
+	            )
+	          }
+	          if(!inputs$spatial)
+	          {
+	            AGE_0_H<-data.frame(number=sum(fingerling$stocking_no),
+	                                survival_est=sum(fingerling$stocking_no*fingerling$phi0_mn)/sum(fingerling$stocking_no))
+	          }
 	        }
 	      }
 	
@@ -1156,11 +1180,14 @@ sim<- function(inputs=NULL, dyn=NULL,
 	                                     spn=SPN_H[indx_H],
 	                                     fromToMatrix=inputs$adult_mov_prob,
 	                                     spnMatrix=inputs$spn_mov_prob)
-	      BEND_N[indx_N]<- adultMovement(previousLocation=BEND_N[indx_N],
-	                                     month=m[i],
-	                                     spn=SPN_N[indx_N],
-	                                     fromToMatrix=inputs$adult_mov_prob,
-	                                     spnMatrix=inputs$spn_mov_prob)
+	      if(length(BEND_N[indx_N])>0)
+	      {
+	        BEND_N[indx_N]<- adultMovement(previousLocation=BEND_N[indx_N],
+	                                       month=m[i],
+	                                       spn=SPN_N[indx_N],
+	                                       fromToMatrix=inputs$adult_mov_prob,
+	                                       spnMatrix=inputs$spn_mov_prob)
+	      }
 	    }
 	    
 	    
@@ -1220,6 +1247,9 @@ sim<- function(inputs=NULL, dyn=NULL,
 	    }
 	    N_NAT[i,]<-colSums(Z_N*inBasinN) 
 	    N_HAT[i,]<-colSums(Z_H*inBasinH) 
+	    
+	    N_MAT_N[i,]<-colSums(Z_N*MAT_N*inBasinN)
+	    N_MAT_H[i,]<-colSums(Z_H*MAT_H*inBasinH)
 	    
 	    if(weightCalc)
 	    {
@@ -1377,6 +1407,8 @@ sim<- function(inputs=NULL, dyn=NULL,
 	  out<-list(
 	    total_N=N_NAT,
 	    total_H=N_HAT,
+	    total_mat_N=N_MAT_N,
+	    total_mat_H=N_MAT_H,
 	    months=m,
 	    recruits=RECRUITS,
 	    mean_length_n=MEANLENGTH_N,

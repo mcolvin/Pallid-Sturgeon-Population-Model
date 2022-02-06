@@ -50,16 +50,16 @@ modelInputs<- function(input=NULL,
 	tmp$pMatC[1]<-tmp$propM[1]
 	for(i in 2:length(tmp$pMatC))
 	{
-	  tmp$pMatC[i]<-ifelse(tmp$propM[i-1]==1, 1, 
+	  tmp$pMatC[i]<-ifelse(tmp$propM[i-1]==1, 0, 
 	                      (tmp$propM[i]-tmp$propM[i-1])/(1-tmp$propM[i-1]))
 	}
 	#### PROBABILITY A FISH MATURES AT AGE A (GIVEN CONSTANT SURVIVAL) 
-	tmp$pMat<-rep(0, length(tmp$propM))
-	tmp$pMat[1]<-tmp$propM[1]
-	for(i in 2:length(tmp$pMat))
-	{
-	  tmp$pMat[i]<-tmp$propM[i]-tmp$propM[i-1]
-	}
+	# tmp$pMat<-rep(0, length(tmp$propM))
+	# tmp$pMat[1]<-tmp$propM[1]
+	# for(i in 2:length(tmp$pMat))
+	# {
+	#   tmp$pMat[i]<-tmp$propM[i]-tmp$propM[i-1]
+	# }
 	rm(i)
 	#####################################################################
 	#   CAN ALSO GO IN REVERSE IF ESTIMATING pMat (FISH MATURES AT AGE  #
@@ -235,12 +235,15 @@ modelInputs<- function(input=NULL,
 	                               last_encount=max(last_encount, na.rm=TRUE))
 	tmp$naturalCatchHistory[which(tmp$naturalCatchHistory$length==0),"length"]<- NA
 	tmp$naturalCatchHistory[which(tmp$naturalCatchHistory$sex==-999),"sex"]<- NA
-	tmp$naturalCatchHistory$minAge<-round(as.numeric(difftime(tmp$naturalCatchHistory$dol, 
+	tmp$naturalCatchHistory$minAge<-round(as.numeric(difftime(strptime(paste0(tmp$startYear-1,"-12-31"),
+	                                                                   format="%Y-%m-%d", tz="UTC"),
+	                                                          #tmp$naturalCatchHistory$dol, 
 	                                                          tmp$naturalCatchHistory$first_encount,
 	                                                          units = "days"))/
 	                                        (365.25/12)) + tmp$age_mat_min*12
 	
-	tmp$naturalCatchHistory$dT<-round(as.numeric(difftime(tmp$naturalCatchHistory$last_encount, 
+	tmp$naturalCatchHistory$dT<-round(as.numeric(difftime(strptime(paste0(tmp$startYear-1,"-12-31"),
+	                                                               format="%Y-%m-%d", tz="UTC"), 
 	                                                      tmp$naturalCatchHistory$dol,
 	                                                      units = "days"))/(365.25/12))
 	tmp$naturalCatchHistory$phi_dT<- round(as.numeric(difftime(strptime(paste0(tmp$startYear-1,"-12-31"),
@@ -307,38 +310,87 @@ modelInputs<- function(input=NULL,
 		### FREE EMBRYOS
 		#### UNIFORM RANDOM DRIFT:  ENTRY ij IS THE PROBABILTY OF DRIFTING
 		####    FROM BEND i TO BEND j; ROW 1 IS FARTHEST DOWNSTREAM)
-		tmp$p_retained<- input$spatialInput[[basin]]$p_retained
-		tmp$drift_prob<- matrix(runif(tmp$n_bends*tmp$n_bends),
-		                        nrow=tmp$n_bends, ncol=tmp$n_bends)
-		tmp$drift_prob[upper.tri(tmp$drift_prob)]<-0
-		if(basin=="upper")
+		tmp$drift_structure<- input$spatialInput$drift_spatial_structure
+		if(tmp$drift_structure=="Uniform")
 		{
-		  ## ADJUST FOR LOWER YELLOWSTONE
-		  tmp$drift_prob[nrow(tmp$drift_prob), 
-		                 (length(which(tmp$bend_meta$B_SEGMENT==4))+1):
-		                   (ncol(tmp$drift_prob)-1)]<-0
-		  tmp$p_retained<-c(tmp$p_retained, 
-		                    input$spatialInput[[basin]]$LYR$p_retained)
-		  if(migration)
+		  tmp$p_retained<- input$spatialInput[[basin]]$p_retained
+		  tmp$drift_prob<- matrix(runif(tmp$n_bends*tmp$n_bends),
+		                          nrow=tmp$n_bends, ncol=tmp$n_bends)
+		  tmp$drift_prob[upper.tri(tmp$drift_prob)]<-0
+		  if(basin=="upper")
 		  {
-		    ## ADD ON UPPER YELLOWSTONE
-		    tmp$drift_prob <- rbind(tmp$drift_prob, runif(tmp$n_bends))
+		    ## ADJUST FOR LOWER YELLOWSTONE
 		    tmp$drift_prob[nrow(tmp$drift_prob), 
 		                   (length(which(tmp$bend_meta$B_SEGMENT==4))+1):
 		                     (ncol(tmp$drift_prob)-1)]<-0
 		    tmp$p_retained<-c(tmp$p_retained, 
-		                      input$spatialInput[[basin]]$UYR$p_passage*
-		                        input$spatialInput[[basin]]$UYR$p_retained_given_passage)
+		                      input$spatialInput[[basin]]$LYR$p_retained)
+		    if(migration)
+		    {
+		      ## ADD ON UPPER YELLOWSTONE
+		      tmp$drift_prob <- rbind(tmp$drift_prob, runif(tmp$n_bends))
+		      tmp$drift_prob[nrow(tmp$drift_prob), 
+		                     (length(which(tmp$bend_meta$B_SEGMENT==4))+1):
+		                       (ncol(tmp$drift_prob)-1)]<-0
+		      tmp$p_retained<-c(tmp$p_retained, 
+		                        input$spatialInput[[basin]]$UYR$p_passage*
+		                          input$spatialInput[[basin]]$UYR$p_retained_given_passage)
+		    }
+		  }
+		  tmp$drift_prob<- tmp$drift_prob/apply(tmp$drift_prob,1,sum)*tmp$p_retained
+		  if(migration & basin=="upper")
+		  {
+		    tmp$drift_prob <- cbind(tmp$drift_prob, 
+		                            c(rep(0, tmp$n_bends),
+		                              1-input$spatialInput[[basin]]$UYR$p_passage))
+		  }
+		  tmp$drift_prob<- cbind(tmp$drift_prob, 1-rowSums(tmp$drift_prob))
+		}
+		if(tmp$drift_structure=="Emperical")
+		{
+		  tmp$discharge_structure<- input$spatialInput$discharge_structure
+		  if(tmp$discharge_structure=="Probabilistic")
+		  {
+		    tmp$discharge_scenarios<- input$spatialInput$discharge_scenarios
+		    tmp$discharge_probs<- input$spatialInput$discharge_probs
+		    tmp$discharge<- sample(tmp$discharge_scenarios,
+		                           tmp$nyears,
+		                           replace=TRUE,
+		                           tmp$discharge_probs)
+		  }
+		  if(tmp$discharge_structure=="Fixed")
+		  {
+		    if(!is.null(input$spatialInput[[basin]]$discharge))
+		    {
+		      tmp$discharge<- input$spatialInput[[basin]]$discharge
+		      if(length(tmp$discharge)<tmp$nyears)
+		      {
+		        return(print("Discharge input vector must be at least as long 
+                          as the number of years simulated."))
+		      }
+		    }
+		    if(is.null(input$spatialInput[[basin]]$discharge))
+		    {
+		      tmp$discharge<- rep("50pct", tmp$nyears)
+		    }
+		  }
+		  tmp$drift_prob<- input$spatialInput$drift_matrices[[basin]]
+		  tmp$p_retained<- 1-unname(rowSums(tmp$drift_prob))
+		  if(migration)
+		  {
+		    if(basin=="upper")
+		    {
+		      tmp$drift_prob<- cbind(tmp$drift_prob, rep(0, tmp$n_bends))
+		      tmp$drift_prob<- rbind(tmp$drift_prob, 
+		                             input$spatialInput$drift_matrices[[UYR]])
+		      tmp$p_retained<- c(p_retained, 
+		                         sum(tmp$drift_prob[nrow(tmp$drift_prob),
+		                                            1:tmp$n_bends]))
+		    }
+		    tmp$drift_prob<- cbind(tmp$drift_prob, 
+		                           1-unname(rowSums(tmp$drift_prob)))
 		  }
 		}
-		tmp$drift_prob<- tmp$drift_prob/apply(tmp$drift_prob,1,sum)*tmp$p_retained
-		if(migration & basin=="upper")
-		{
-		  tmp$drift_prob <- cbind(tmp$drift_prob, 
-		                          c(rep(0, tmp$n_bends),
-		                            1-input$spatialInput[[basin]]$UYR$p_passage))
-		}
-		tmp$drift_prob<- cbind(tmp$drift_prob, 1-rowSums(tmp$drift_prob))
 		
 		# ### FINGERLING DISPERSAL
 		# ### NOT IN USE YET... NEEDS ADDITIONS FOR MIGRATION AS WELL
@@ -520,6 +572,8 @@ modelInputs<- function(input=NULL,
 	
 	if(!spatial & migration)
 	{
+	  ### ADD ABILITY TO WORK WITH EMPIRICAL DRIFT DATA HERE TOO... 
+	  ### EXPAND MODEL FOR SPATIAL COMPILATIONN RAN NON-SPATIALLY
 	  tmp$p_retained<-input$spatialInput[[basin]]$p_retained
 	  p_migrate_out<-input$spatialInput[[basin]]$p_dwnstrm$to
 	  p_migrate_in<- input$spatialInput[[basin]]$p_dwnstrm$from
@@ -583,7 +637,8 @@ modelInputs<- function(input=NULL,
 	tmp$yearling<- input$stockingInput[[basin]]$yearling
 	if(spatial)
 	{
-	  tmp$bend_meta$upper_rkm<-tmp$bend_meta$LOWER_RIVER_MILE[1]*1.60934+cumsum(tmp$bend_meta$Length.RKM)
+	  tmp$bend_meta$upper_rkm<- tmp$bend_meta$UPPER_RIVER_RKM
+	  #tmp$bend_meta$upper_rkm<-tmp$bend_meta$LOWER_RIVER_MILE[1]*1.60934+cumsum(tmp$bend_meta$Length.RKM)
 	  if(basin=="upper")
 	  {
 	    tmp$bend_meta$upper_rkm[nrow(tmp$bend_meta)]<-tmp$bend_meta$Length.RKM[nrow(tmp$bend_meta)]
